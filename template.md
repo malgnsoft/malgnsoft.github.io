@@ -256,6 +256,7 @@ p.setVar("is_admin", false);  // false
 
 메인 페이지에 여러 컴포넌트를 조합:
 
+**/html/main/index.html**:
 ```html
 <html>
 <body>
@@ -278,7 +279,14 @@ NoticeDao notice = new NoticeDao();
 DataSet list = notice.query("SELECT * FROM tb_notice ORDER BY reg_date DESC", 5);
 
 p.setLoop("notice", list);
+p.setBody("main.notice_latest");
+p.display();
+
 %>
+```
+
+**/html/main/notice_latest.html**:
+```html
 <div class="notice-latest">
     <h3>최신 공지사항</h3>
     <ul>

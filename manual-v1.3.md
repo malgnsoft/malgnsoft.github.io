@@ -105,6 +105,24 @@ if(m.isPost()) {
 }
 ```
 
+### JSP에서 HTML 직접 출력 금지
+JSP 파일 내에 HTML을 직접 작성하지 마세요. 반드시 별도의 템플릿 파일로 분리하고 `setBody()`와 `display()`를 사용하세요:
+
+```jsp
+// 잘못된 예
+<%
+p.setVar("title", "제목");
+%>
+<html><body>{{title}}</body></html>
+
+// 올바른 예
+<%
+p.setVar("title", "제목");
+p.setBody("main.index");
+p.display();
+%>
+```
+
 ### 한글 인코딩
 모든 JSP 파일 상단에 charset 지정:
 ```jsp
@@ -1303,6 +1321,7 @@ p.setVar("is_admin", false);  // false
 
 메인 페이지에 여러 컴포넌트를 조합:
 
+**/html/main/index.html**:
 ```html
 <html>
 <body>
@@ -1325,7 +1344,14 @@ NoticeDao notice = new NoticeDao();
 DataSet list = notice.query("SELECT * FROM tb_notice ORDER BY reg_date DESC", 5);
 
 p.setLoop("notice", list);
+p.setBody("main.notice_latest");
+p.display();
+
 %>
+```
+
+**/html/main/notice_latest.html**:
+```html
 <div class="notice-latest">
     <h3>최신 공지사항</h3>
     <ul>
