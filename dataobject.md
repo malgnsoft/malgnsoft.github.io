@@ -24,8 +24,6 @@ DataObject는 맑은프레임워크의 핵심 DAO(Data Access Object) 베이스 
 ### 기본 구조
 
 ```java
-package com.example.dao;
-
 import malgnsoft.db.*;
 
 public class UserDao extends DataObject {
@@ -37,11 +35,11 @@ public class UserDao extends DataObject {
 }
 ```
 
-### WEB-INF/src 폴더 구조
+### /src 폴더 구조
 
 ```
-/WEB-INF/src/
-└── com/example/dao/
+/src/
+└── dao/
     ├── UserDao.java
     ├── BoardDao.java
     └── ProductDao.java
