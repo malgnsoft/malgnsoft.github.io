@@ -70,12 +70,51 @@ if("user".equals(resource)) {
 %>
 ```
 
-### 3. 디렉토리 구조
+### 3. /api/init.jsp 공통 초기화 파일
+
+API 폴더의 모든 JSP 파일에서 공통으로 사용할 객체와 인증을 초기화합니다.
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ page import="java.util.*, java.io.*, dao.*, malgnsoft.db.*, malgnsoft.util.*" %><%
+
+Malgn m = new Malgn(request, response, out);
+
+Form f = new Form();
+f.setRequest(request);
+
+Page p = new Page();
+p.setRequest(request);
+p.setWriter(out);
+p.setPageContext(pageContext);
+
+Auth auth = new Auth(request, response);
+
+Json j = new Json();
+
+RestAPI api = new RestAPI(request, response);
+
+// 인증 체크
+int userId = 0;
+String userName = null;
+
+if(auth.isValid()) {
+    userId = auth.getInt("user_id");
+    userName = auth.getString("user_name");
+}
+
+// Path parameter (index.jsp에서 설정)
+String id = (String)request.getAttribute("id");
+
+%>
+```
+
+### 4. 디렉토리 구조
 
 ```
 webapp/
 ├── api/
 │   ├── index.jsp          (라우터)
+│   ├── init.jsp           (공통 초기화)
 │   ├── user.jsp           → /api/user, /api/user/123
 │   ├── product.jsp        → /api/product, /api/product/456
 │   └── order.jsp          → /api/order, /api/order/789
@@ -83,31 +122,21 @@ webapp/
     └── web.xml
 ```
 
-### 4. 동작 방식
+### 5. 동작 방식
 
-- `/api/user` → `index.jsp` → `/api/user.jsp`
+- `/api/user` → `index.jsp` → `/api/user.jsp` (includes `init.jsp`)
 - `/api/user/123` → `index.jsp` → `/api/user.jsp` (id="123")
-- `/api/product` → `index.jsp` → `/api/product.jsp`
+- `/api/product` → `index.jsp` → `/api/product.jsp` (includes `init.jsp`)
 - `/api/product/456` → `index.jsp` → `/api/product.jsp` (id="456")
 
 ---
 
 ## 기본 사용법
 
-### /api/user.jsp 예시 (Path parameter 활용)
+### /api/user.jsp 예시 (init.jsp 사용)
 
 ```jsp
-<%@ page contentType="application/json; charset=utf-8" %><%@ page import="java.util.*, java.io.*, dao.*, malgnsoft.db.*, malgnsoft.util.*" %><%
-
-Malgn m = new Malgn(request, response, out);
-Json j = new Json();
-Form f = new Form();
-f.setRequest(request);
-
-RestAPI api = new RestAPI(request, response);
-
-// index.jsp에서 설정한 path parameter 가져오기
-String id = (String)request.getAttribute("id");
+<%@ include file="/api/init.jsp" %><%
 
 // GET /api/user - 목록 조회
 // GET /api/user/123 - 단일 조회
@@ -182,64 +211,50 @@ api.delete(() -> {
 %>
 ```
 
+**장점:**
+- `/api/init.jsp`에서 공통 객체 초기화 (m, f, p, auth, j, api)
+- 각 API 파일은 비즈니스 로직만 작성
+- 인증 체크와 Path parameter 처리 자동화
+- 코드 중복 제거
+
 ---
 
 ## 인증 처리
 
-REST API에서 인증 실패 시 HTTP 상태 코드와 함께 에러를 반환할 수 있습니다.
+`/api/init.jsp`에서 기본적인 인증 체크를 수행하지만, 각 API에서 추가 인증이 필요한 경우 처리할 수 있습니다.
+
+### /api/admin/user.jsp 예시 (관리자 전용 API)
 
 ```jsp
-<%@ page contentType="application/json; charset=utf-8" %><%@ page import="java.util.*, java.io.*, dao.*, malgnsoft.db.*, malgnsoft.util.*" %><%
+<%@ include file="/api/init.jsp" %><%
 
-Malgn m = new Malgn(request, response, out);
-Json j = new Json();
-Form f = new Form();
-f.setRequest(request);
-
-Auth auth = new Auth(request, response);
-RestAPI api = new RestAPI(request, response);
-
-// 인증 체크
-int userId = 0;
-if(auth.isValid()) {
-    userId = auth.getInt("user_id");
-}
-
+// 로그인 체크
 if(userId == 0) {
     api.error(401, "로그인이 필요합니다.");
     return;
 }
 
-// Path parameter
-String id = (String)request.getAttribute("id");
+// 관리자 권한 체크
+int userLevel = auth.getInt("user_level");
+if(userLevel < 10) {
+    api.error(403, "관리자만 접근할 수 있습니다.");
+    return;
+}
 
-// GET - 목록 조회 또는 단일 조회
+// GET - 사용자 목록 조회
 api.get(() -> {
     UserDao user = new UserDao();
-
-    if(id != null && !id.isEmpty()) {
-        // 단일 조회
-        DataSet info = user.get(Integer.parseInt(id));
-        if(info.next()) {
-            j.add("id", info.i("id"));
-            j.add("name", info.s("name"));
-            j.print();
-        } else {
-            j.error("사용자를 찾을 수 없습니다.");
-        }
-    } else {
-        // 목록 조회
-        DataSet list = user.find();
-        j.add("users", list);
-        j.print();
-    }
+    DataSet list = user.find();
+    j.add("users", list);
+    j.print();
 });
 
-// POST - 생성
+// POST - 사용자 생성
 api.post(() -> {
     UserDao user = new UserDao();
     user.item("name", f.get("name"));
-    user.item("created_by", userId);
+    user.item("email", f.get("email"));
+    user.item("created_by", userId);  // init.jsp에서 설정된 userId 사용
 
     if(user.insert()) {
         j.success("등록되었습니다.", user.id);
@@ -248,8 +263,28 @@ api.post(() -> {
     }
 });
 
+// DELETE - 사용자 삭제
+api.delete(() -> {
+    if(id == null || id.isEmpty()) {
+        api.error(400, "ID는 필수입니다.");
+        return;
+    }
+
+    UserDao user = new UserDao();
+    if(user.delete(Integer.parseInt(id))) {
+        j.success("삭제되었습니다.");
+    } else {
+        j.error(user.getErrMsg());
+    }
+});
+
 %>
 ```
+
+**장점:**
+- `init.jsp`에서 기본 인증 처리 (userId, userName 설정)
+- 각 API에서 필요한 추가 권한 체크만 수행
+- 로그인 사용자 정보 자동 설정
 
 ---
 
