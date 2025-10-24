@@ -868,6 +868,294 @@ api.get(() -> {
 
 ---
 
+## CORS 설정
+
+외부 도메인에서 API를 호출할 때 필요한 CORS(Cross-Origin Resource Sharing) 헤더 설정입니다.
+
+### 1. init.jsp에 CORS 헤더 추가
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ page import="java.util.*, java.io.*, dao.*, malgnsoft.db.*, malgnsoft.util.*" %><%
+
+// CORS 헤더 설정
+response.setHeader("Access-Control-Allow-Origin", "*");  // 모든 도메인 허용 (또는 특정 도메인)
+response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+response.setHeader("Access-Control-Max-Age", "3600");  // preflight 캐시 1시간
+
+// OPTIONS 요청 (preflight) 처리
+if("OPTIONS".equals(request.getMethod())) {
+    response.setStatus(HttpServletResponse.SC_OK);
+    return;
+}
+
+Malgn m = new Malgn(request, response, out);
+// ... 나머지 초기화
+%>
+```
+
+### 2. 특정 도메인만 허용
+
+```jsp
+// 특정 도메인만 허용
+String origin = request.getHeader("Origin");
+if("https://yourdomain.com".equals(origin) || "https://app.yourdomain.com".equals(origin)) {
+    response.setHeader("Access-Control-Allow-Origin", origin);
+    response.setHeader("Access-Control-Allow-Credentials", "true");  // 쿠키 전송 허용
+}
+```
+
+### 3. 동적 도메인 허용
+
+```jsp
+// 화이트리스트 기반
+String origin = request.getHeader("Origin");
+List<String> allowedOrigins = Arrays.asList(
+    "https://yourdomain.com",
+    "https://app.yourdomain.com",
+    "http://localhost:3000"  // 개발 환경
+);
+
+if(allowedOrigins.contains(origin)) {
+    response.setHeader("Access-Control-Allow-Origin", origin);
+    response.setHeader("Access-Control-Allow-Credentials", "true");
+}
+```
+
+### 4. 클라이언트에서 CORS 요청
+
+```javascript
+// 쿠키를 포함한 요청 (credentials)
+fetch('https://api.yourdomain.com/api/user', {
+    method: 'GET',
+    credentials: 'include',  // 쿠키 전송
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    }
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+---
+
+## 에러 응답 표준
+
+일관된 에러 응답 형식을 사용하면 클라이언트에서 처리하기 쉽습니다.
+
+### 1. Json 클래스 사용 (권장)
+
+```jsp
+api.get("/:id", () -> {
+    int id = api.getParamInt("id");
+
+    UserDao user = new UserDao();
+    DataSet info = user.get(id);
+
+    if(info.next()) {
+        j.add("user", info);
+        j.print();
+    } else {
+        // 에러 응답
+        j.error("사용자를 찾을 수 없습니다.");
+        // 또는 상세 에러
+        j.add("error", "NOT_FOUND");
+        j.add("message", "사용자를 찾을 수 없습니다.");
+        j.add("id", id);
+        j.print();
+    }
+});
+```
+
+### 2. HTTP 상태 코드와 함께
+
+```jsp
+api.post("/", () -> {
+    String email = f.get("email");
+    String name = f.get("name");
+
+    // 유효성 검사
+    if("".equals(email)) {
+        response.setStatus(400);  // Bad Request
+        j.add("error", "VALIDATION_ERROR");
+        j.add("message", "이메일은 필수입니다.");
+        j.add("field", "email");
+        j.print();
+        return;
+    }
+
+    UserDao user = new UserDao();
+    user.item("email", email);
+    user.item("name", name);
+
+    if(user.insert()) {
+        response.setStatus(201);  // Created
+        j.success("등록되었습니다.", user.id);
+    } else {
+        response.setStatus(500);  // Internal Server Error
+        j.add("error", "DATABASE_ERROR");
+        j.add("message", user.getErrMsg());
+        j.print();
+    }
+});
+```
+
+### 3. 표준 에러 응답 형식
+
+```json
+{
+  "success": false,
+  "error": "ERROR_CODE",
+  "message": "사용자에게 보여줄 메시지",
+  "details": {
+    "field": "email",
+    "value": "invalid@email"
+  }
+}
+```
+
+### 4. 주요 에러 코드 예시
+
+| HTTP 상태 | 에러 코드 | 설명 |
+|-----------|----------|------|
+| 400 | `VALIDATION_ERROR` | 유효성 검사 실패 |
+| 401 | `UNAUTHORIZED` | 인증 실패 |
+| 403 | `FORBIDDEN` | 권한 없음 |
+| 404 | `NOT_FOUND` | 리소스 없음 |
+| 409 | `CONFLICT` | 중복 (이메일 등) |
+| 500 | `SERVER_ERROR` | 서버 오류 |
+
+---
+
+## 페이징 응답 표준
+
+페이징 정보를 포함한 일관된 응답 형식입니다.
+
+### 1. 기본 페이징 응답
+
+```jsp
+api.get("/", () -> {
+    int page = m.ri("page", 1);
+    int size = m.ri("size", 20);
+
+    UserDao user = new UserDao();
+    DataSet list = user.findWithPaging(page, size);
+    int total = user.getTotal();
+
+    // 페이징 응답
+    j.add("data", list);  // 실제 데이터
+    j.add("pagination", new JSONObject()
+        .put("page", page)
+        .put("size", size)
+        .put("total", total)
+        .put("totalPages", (int) Math.ceil((double) total / size))
+    );
+    j.print();
+});
+```
+
+**응답 예시:**
+```json
+{
+  "success": true,
+  "data": [
+    {"id": 1, "name": "홍길동"},
+    {"id": 2, "name": "김철수"}
+  ],
+  "pagination": {
+    "page": 1,
+    "size": 20,
+    "total": 156,
+    "totalPages": 8
+  }
+}
+```
+
+### 2. Json 클래스 활용
+
+```jsp
+api.get("/", () -> {
+    int page = m.ri("page", 1);
+    int size = m.ri("size", 20);
+    String keyword = m.rs("keyword");
+
+    UserDao user = new UserDao();
+    DataSet list = user.search(keyword, page, size);
+    int total = user.getTotal();
+
+    j.add("users", list);
+    j.add("total", total);
+    j.add("page", page);
+    j.add("size", size);
+    j.add("totalPages", (int) Math.ceil((double) total / size));
+    j.add("hasNext", page < Math.ceil((double) total / size));
+    j.add("hasPrev", page > 1);
+    j.print();
+});
+```
+
+### 3. 커서 기반 페이징 (무한 스크롤)
+
+```jsp
+api.get("/", () -> {
+    int cursor = m.ri("cursor", 0);  // 마지막 ID
+    int size = m.ri("size", 20);
+
+    UserDao user = new UserDao();
+    DataSet list = user.findByCursor(cursor, size);
+
+    int nextCursor = 0;
+    if(list.last()) {
+        nextCursor = list.i("id");
+    }
+
+    j.add("data", list);
+    j.add("cursor", nextCursor);
+    j.add("hasMore", list.size() == size);  // size만큼 가져왔으면 더 있을 가능성
+    j.print();
+});
+```
+
+**클라이언트 사용:**
+```javascript
+let cursor = 0;
+
+function loadMore() {
+    fetch(`/api/user?cursor=${cursor}&size=20`)
+        .then(response => response.json())
+        .then(data => {
+            // 데이터 추가
+            appendUsers(data.data);
+
+            // 다음 커서 저장
+            cursor = data.cursor;
+
+            // 더 있으면 버튼 표시
+            if(data.hasMore) {
+                showLoadMoreButton();
+            }
+        });
+}
+```
+
+### 4. 메타데이터 포함 응답
+
+```jsp
+j.add("data", list);
+j.add("meta", new JSONObject()
+    .put("total", total)
+    .put("page", page)
+    .put("size", size)
+    .put("totalPages", totalPages)
+    .put("timestamp", System.currentTimeMillis())
+    .put("version", "v1")
+);
+j.print();
+```
+
+---
+
 ## 관련 문서
 
 - [JSON 처리](json.md) - Json 클래스 상세 가이드
