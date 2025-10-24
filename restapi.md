@@ -64,33 +64,112 @@ API가 많거나 자주 추가되는 경우, 필터를 사용하여 `/api/*` 경
          http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
          version="3.1">
 
-    <!-- API URL 자동 매핑 필터 -->
-    <filter>
-        <filter-name>ApiUrlRewriteFilter</filter-name>
-        <filter-class>malgnsoft.servlet.ApiUrlRewriteFilter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>ApiUrlRewriteFilter</filter-name>
+    <!-- API URL 자동 매핑 라우터 (권장) -->
+    <servlet>
+        <servlet-name>ApiRouter</servlet-name>
+        <servlet-class>malgnsoft.util.ApiRouter</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ApiRouter</servlet-name>
         <url-pattern>/api/*</url-pattern>
-    </filter-mapping>
+    </servlet-mapping>
 
 </web-app>
 ```
 
-맑은프레임워크의 `ApiUrlRewriteFilter` 클래스가 자동으로 URL을 JSP 파일로 매핑합니다.
+맑은프레임워크의 `ApiRouter` 서블릿이 자동으로 URL을 JSP 파일로 라우팅합니다.
 
 **장점:**
 - 한 번 설정으로 모든 `/api/*` 경로 처리
 - 새로운 API 추가 시 설정 불필요
 - 하위 폴더 자동 지원 (`/api/v1/user`, `/api/admin/user`)
-
-**단점:**
-- 추가 필터 클래스 필요
+- **Path parameter 지원** (`/api/user/123`)
+- 서블릿 방식으로 필터보다 성능 우수
+- 범용적으로 사용 가능 (`/rest/*`, `/v1/*` 등 어떤 경로에도 적용)
 
 **동작 방식:**
-1. `/api/user` 요청 → 자동으로 `/api/user.jsp` 실행
-2. `/api/v1/user` 요청 → 자동으로 `/api/v1/user.jsp` 실행
-3. `/api/admin/product` 요청 → 자동으로 `/api/admin/product.jsp` 실행
+1. 기본 경로:
+   - `/api/user` → `/api/user.jsp`
+   - `/api/v1/user` → `/api/v1/user.jsp`
+   - `/rest/product` → `/rest/product.jsp`
+
+2. **Path parameter 지원:**
+   - `/api/user/123` → `/api/user.jsp` + `request.getAttribute("id") = "123"`
+   - `/api/post/456/comment` → `/api/post.jsp` + `getAttribute("id") = "456"`, `getAttribute("subResource") = "comment"`
+   - `/api/post/456/comment/789` → `/api/post.jsp` + `getAttribute("id") = "456"`, `getAttribute("subId") = "789"`
+
+**Path parameter 사용 예시:**
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ page import="java.util.*, java.io.*, dao.*, malgnsoft.db.*, malgnsoft.util.*" %><%
+
+Malgn m = new Malgn(request, response, out);
+Json j = new Json();
+Form f = new Form();
+f.setRequest(request);
+
+RestAPI api = new RestAPI(request, response);
+
+// Path parameter 추출
+String id = (String)request.getAttribute("id");
+
+// GET /api/user/123 - 단일 조회
+api.get(() -> {
+    if(id != null && !id.isEmpty()) {
+        UserDao user = new UserDao();
+        DataSet info = user.get(Integer.parseInt(id));
+
+        if(info.next()) {
+            j.add("id", info.i("id"));
+            j.add("name", info.s("name"));
+            j.print();
+        } else {
+            j.error("사용자를 찾을 수 없습니다.");
+        }
+    } else {
+        // GET /api/user - 목록 조회
+        UserDao user = new UserDao();
+        DataSet list = user.find();
+        j.add("users", list);
+        j.print();
+    }
+});
+
+// PUT /api/user/123 - 수정
+api.put(() -> {
+    if(id == null || id.isEmpty()) {
+        api.error(400, "ID는 필수입니다.");
+        return;
+    }
+
+    UserDao user = new UserDao();
+    user.get(Integer.parseInt(id));
+    user.item("name", f.get("name"));
+
+    if(user.update()) {
+        j.success("수정되었습니다.");
+    } else {
+        j.error(user.getErrMsg());
+    }
+});
+
+// DELETE /api/user/123 - 삭제
+api.delete(() -> {
+    if(id == null || id.isEmpty()) {
+        api.error(400, "ID는 필수입니다.");
+        return;
+    }
+
+    UserDao user = new UserDao();
+    if(user.delete(Integer.parseInt(id))) {
+        j.success("삭제되었습니다.");
+    } else {
+        j.error(user.getErrMsg());
+    }
+});
+
+%>
+```
 
 ---
 
@@ -156,7 +235,7 @@ Tuckey URLRewriteFilter를 사용하면 정규식으로 간단하게 URL을 매�
 ### 권장 사항
 
 - **소규모 프로젝트**: 방법 1 (직접 매핑) - 가장 간단
-- **중대형 프로젝트**: 방법 2 (필터 사용) - 맑은프레임워크 내장
+- **중대형 프로젝트**: 방법 2 (ApiRouter) - 맑은프레임워크 내장, 성능 우수 (권장)
 - **복잡한 URL 패턴**: 방법 3 (URLRewriteFilter) - 정규식 지원
 
 **디렉토리 구조:**
