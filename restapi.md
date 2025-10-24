@@ -94,10 +94,70 @@ API가 많거나 자주 추가되는 경우, 필터를 사용하여 `/api/*` 경
 
 ---
 
+### web.xml 설정 (방법 3: URLRewriteFilter 사용)
+
+Tuckey URLRewriteFilter를 사용하면 정규식으로 간단하게 URL을 매핑할 수 있습니다:
+
+**1. 의존성 추가 (pom.xml 또는 라이브러리 다운로드)**
+```xml
+<dependency>
+    <groupId>org.tuckey</groupId>
+    <artifactId>urlrewritefilter</artifactId>
+    <version>4.0.4</version>
+</dependency>
+```
+
+**2. web.xml 설정**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+         version="3.1">
+
+    <filter>
+        <filter-name>UrlRewriteFilter</filter-name>
+        <filter-class>org.tuckey.web.filters.urlrewrite.UrlRewriteFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>UrlRewriteFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+</web-app>
+```
+
+**3. WEB-INF/urlrewrite.xml 생성**
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE urlrewrite PUBLIC "-//tuckey.org//DTD UrlRewrite 4.0//EN"
+        "http://www.tuckey.org/res/dtds/urlrewrite4.0.dtd">
+<urlrewrite>
+    <!-- /api/* 경로를 /api/*.jsp로 매핑 -->
+    <rule>
+        <from>^/api/(.+)$</from>
+        <to>/api/$1.jsp</to>
+    </rule>
+</urlrewrite>
+```
+
+**장점:**
+- 정규식을 사용한 강력한 URL 매핑
+- 설정 파일로 관리하여 유지보수 용이
+- 외부 라이브러리 사용으로 검증된 솔루션
+
+**단점:**
+- 외부 라이브러리 의존성 추가
+- 별도 설정 파일 관리 필요
+
+---
+
 ### 권장 사항
 
-- **소규모 프로젝트**: 방법 1 (직접 매핑) 사용
-- **중대형 프로젝트**: 방법 2 (필터 사용) 권장
+- **소규모 프로젝트**: 방법 1 (직접 매핑) - 가장 간단
+- **중대형 프로젝트**: 방법 2 (필터 사용) - 맑은프레임워크 내장
+- **복잡한 URL 패턴**: 방법 3 (URLRewriteFilter) - 정규식 지원
 
 **디렉토리 구조:**
 ```
