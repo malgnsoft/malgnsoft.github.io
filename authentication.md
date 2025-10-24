@@ -179,7 +179,7 @@ p.display();
 %>
 ```
 
-### HTML 템플릿 (login.vm)
+### HTML 템플릿 (/html/main/login.html)
 
 ```html
 <h2>로그인</h2>
