@@ -78,13 +78,22 @@ Json j = new Json();
 
 RestAPI api = new RestAPI(request, response);
 
-// 인증 체크
+// 인증 체크 (세션 기반)
 int userId = 0;
 String userName = null;
+int userLevel = 0;
 
 if(auth.isValid()) {
     userId = auth.getInt("user_id");
     userName = auth.getString("user_name");
+    userLevel = auth.getInt("user_level");
+}
+
+// JWT 토큰 인증 (Authorization 헤더 체크)
+if(userId == 0 && auth.isValidToken()) {
+    userId = auth.getInt("user_id");
+    userName = auth.getString("user_name");
+    userLevel = auth.getInt("user_level");
 }
 
 %>
@@ -416,6 +425,186 @@ api.get(() -> {
     }
 });
 ```
+
+---
+
+## JWT 인증
+
+맑은프레임워크는 `Auth` 클래스에서 JWT(JSON Web Token) 기반 인증을 지원합니다. 세션 기반 인증과 달리 stateless API에 적합합니다.
+
+### 1. JWT 토큰 생성
+
+로그인 성공 시 JWT 토큰을 생성하여 클라이언트에 전달합니다.
+
+#### /api/auth/login.jsp
+
+```jsp
+<%@ include file="/api/init.jsp" %><%
+
+api.post(() -> {
+    String email = f.get("email");
+    String password = f.get("password");
+
+    // 사용자 인증 확인
+    UserDao user = new UserDao();
+    DataSet info = user.getByEmail(email);
+
+    if(info.next() && user.checkPassword(password, info.s("password"))) {
+        // Auth 객체에 사용자 정보 저장
+        auth.put("user_id", info.i("id"));
+        auth.put("user_name", info.s("name"));
+        auth.put("user_level", info.i("level"));
+
+        // JWT 토큰 생성 (60분 유효)
+        String token = auth.generateToken(60);
+
+        j.add("token", token);
+        j.add("user_id", info.i("id"));
+        j.add("user_name", info.s("name"));
+        j.add("user_level", info.i("level"));
+        j.print();
+    } else {
+        api.error(401, "이메일 또는 비밀번호가 일치하지 않습니다.");
+    }
+});
+
+%>
+```
+
+### 2. JWT 토큰 검증
+
+`/api/init.jsp`에서 자동으로 JWT 토큰을 검증합니다:
+
+```jsp
+// JWT 토큰 인증 (Authorization 헤더 체크)
+if(userId == 0 && auth.isValidToken()) {
+    userId = auth.getInt("user_id");
+    userName = auth.getString("user_name");
+    userLevel = auth.getInt("user_level");
+}
+```
+
+`auth.isValidToken()`은 다음을 자동으로 처리합니다:
+1. `Authorization: Bearer <token>` 헤더에서 토큰 추출
+2. 토큰 서명 검증
+3. 토큰 만료 시간 확인
+4. 토큰의 Claims를 Auth 객체에 저장
+
+### 3. 클라이언트 사용법
+
+#### JavaScript (fetch API)
+
+```javascript
+// 1. 로그인하여 토큰 받기
+fetch('/api/auth/login', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: 'email=user@example.com&password=1234'
+})
+.then(response => response.json())
+.then(data => {
+    // 토큰을 로컬스토리지에 저장
+    localStorage.setItem('token', data.token);
+    console.log('로그인 성공:', data);
+});
+
+// 2. 인증이 필요한 API 호출 시 토큰 전송
+const token = localStorage.getItem('token');
+
+fetch('/api/user', {
+    method: 'GET',
+    headers: {
+        'Authorization': `Bearer ${token}`
+    }
+})
+.then(response => response.json())
+.then(data => console.log(data));
+
+// 3. POST 요청에도 토큰 전송
+fetch('/api/user', {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: 'name=홍길동&email=hong@example.com'
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+### 4. 권한 체크 예시
+
+JWT 토큰으로 인증된 사용자의 권한을 체크합니다.
+
+#### /api/admin/stats.jsp
+
+```jsp
+<%@ include file="/api/init.jsp" %><%
+
+// 로그인 체크
+if(userId == 0) {
+    api.error(401, "로그인이 필요합니다.");
+    return;
+}
+
+// 관리자 권한 체크 (userLevel은 init.jsp에서 자동 설정됨)
+if(userLevel < 10) {
+    api.error(403, "관리자만 접근할 수 있습니다.");
+    return;
+}
+
+// GET - 통계 조회
+api.get(() -> {
+    StatsDao stats = new StatsDao();
+    DataSet data = stats.getMonthlyStats();
+
+    j.add("stats", data);
+    j.add("requested_by", userName);  // JWT 토큰에서 추출된 userName 사용
+    j.print();
+});
+
+%>
+```
+
+### 5. JWT vs 세션 비교
+
+| 구분 | 세션 기반 (Cookie) | JWT 토큰 |
+|------|-------------------|----------|
+| 저장 위치 | 서버 세션 | 클라이언트 (로컬스토리지) |
+| 상태 | Stateful | Stateless |
+| 확장성 | 서버 증설 시 세션 공유 필요 | 서버 증설 용이 |
+| 인증 방법 | `auth.isValid()` | `auth.isValidToken()` |
+| 토큰 생성 | `auth.save()` | `auth.generateToken(분)` |
+| 사용 예 | 웹 브라우저 | 모바일 앱, SPA |
+| 만료 관리 | 서버에서 자동 갱신 | 클라이언트에서 재발급 요청 |
+
+**init.jsp에서 두 방식 모두 지원:**
+```jsp
+// 세션 인증 먼저 확인
+if(auth.isValid()) {
+    userId = auth.getInt("user_id");
+    userName = auth.getString("user_name");
+    userLevel = auth.getInt("user_level");
+}
+
+// 세션이 없으면 JWT 토큰 확인
+if(userId == 0 && auth.isValidToken()) {
+    userId = auth.getInt("user_id");
+    userName = auth.getString("user_name");
+    userLevel = auth.getInt("user_level");
+}
+```
+
+### 6. 보안 고려사항
+
+1. **HTTPS 필수**: JWT 토큰은 반드시 HTTPS를 통해 전송해야 합니다.
+2. **토큰 만료 시간**: 보안을 위해 짧은 만료 시간(30~60분)을 권장합니다.
+3. **Refresh Token**: 장기 로그인이 필요한 경우 Refresh Token 패턴 구현을 고려하세요.
+4. **비밀키 관리**: `Config.getSecretId()`로 반환되는 비밀키는 안전하게 보관하세요.
+5. **토큰 저장**: XSS 공격 방지를 위해 `httpOnly` 쿠키 저장도 고려하세요.
 
 ---
 
