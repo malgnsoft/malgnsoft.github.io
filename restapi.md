@@ -10,6 +10,8 @@ REST API에서는 일반적으로 `/api/user`와 같이 확장자 없는 깔끔�
 
 ### web.xml 설정
 
+`/api` 경로의 모든 요청을 자동으로 `.jsp` 파일로 매핑하도록 필터를 설정합니다.
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
@@ -18,52 +20,105 @@ REST API에서는 일반적으로 `/api/user`와 같이 확장자 없는 깔끔�
          http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
          version="3.1">
 
-    <!-- API URL 매핑 -->
-    <servlet>
-        <servlet-name>UserAPI</servlet-name>
-        <jsp-file>/api/user.jsp</jsp-file>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>UserAPI</servlet-name>
-        <url-pattern>/api/user</url-pattern>
-    </servlet-mapping>
-
-    <servlet>
-        <servlet-name>ProductAPI</servlet-name>
-        <jsp-file>/api/product.jsp</jsp-file>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>ProductAPI</servlet-name>
-        <url-pattern>/api/product</url-pattern>
-    </servlet-mapping>
+    <!-- API URL 자동 매핑 필터 -->
+    <filter>
+        <filter-name>ApiUrlRewriteFilter</filter-name>
+        <filter-class>malgnsoft.servlet.ApiUrlRewriteFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>ApiUrlRewriteFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
 
 </web-app>
 ```
 
-**설정 방법:**
-1. `/api/user` 요청이 들어오면 `/api/user.jsp` 파일이 실행됨
-2. 클라이언트는 `/api/user`로 호출 (확장자 없음)
-3. 실제 파일은 `/api/user.jsp`로 작성
+### ApiUrlRewriteFilter 구현
+
+맑은프레임워크에는 `ApiUrlRewriteFilter` 클래스가 포함되어 있어 별도 구현이 필요 없습니다.
+
+```java
+package malgnsoft.servlet;
+
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.IOException;
+
+public class ApiUrlRewriteFilter implements Filter {
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        String requestURI = httpRequest.getRequestURI();
+        String contextPath = httpRequest.getContextPath();
+
+        // 컨텍스트 패스를 제거한 경로
+        String path = requestURI.substring(contextPath.length());
+
+        // 이미 .jsp로 끝나는 경우 그대로 처리
+        if (path.endsWith(".jsp")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // /api/로 시작하는 경로를 /api/*.jsp로 변환
+        if (path.startsWith("/api/")) {
+            String jspPath = path + ".jsp";
+            RequestDispatcher dispatcher = request.getRequestDispatcher(jspPath);
+
+            if (dispatcher != null) {
+                dispatcher.forward(request, response);
+                return;
+            }
+        }
+
+        // 매칭되지 않으면 기본 처리
+        chain.doFilter(request, response);
+    }
+}
+```
+
+**동작 방식:**
+1. `/api/user` 요청 → 자동으로 `/api/user.jsp` 실행
+2. `/api/v1/user` 요청 → 자동으로 `/api/v1/user.jsp` 실행
+3. `/api/admin/product` 요청 → 자동으로 `/api/admin/product.jsp` 실행
+4. 클라이언트는 확장자 없이 호출, 실제 파일은 `.jsp`로 작성
+5. 하위 폴더도 자동 매핑됨 (매번 web.xml 설정 불필요)
 
 **디렉토리 구조:**
 ```
 webapp/
 ├── api/
-│   ├── user.jsp       (실제 API 로직)
-│   ├── product.jsp
-│   └── order.jsp
+│   ├── user.jsp           → /api/user 로 호출
+│   ├── product.jsp        → /api/product 로 호출
+│   ├── v1/
+│   │   ├── user.jsp       → /api/v1/user 로 호출
+│   │   └── product.jsp    → /api/v1/product 로 호출
+│   └── admin/
+│       ├── user.jsp       → /api/admin/user 로 호출
+│       └── stats.jsp      → /api/admin/stats 로 호출
 ├── WEB-INF/
-│   └── web.xml        (URL 매핑 설정)
-└── ...
+│   └── web.xml            (필터 설정)
+└── src/
+    └── malgnsoft/
+        └── servlet/
+            └── ApiUrlRewriteFilter.java
 ```
 
 **호출 예시:**
 ```javascript
-// /api/user로 호출 (확장자 없음)
-fetch('/api/user', { method: 'GET' });
-fetch('/api/user', { method: 'POST', body: data });
-fetch('/api/user', { method: 'PUT', body: data });
-fetch('/api/user', { method: 'DELETE' });
+// 기본 API
+fetch('/api/user', { method: 'GET' });          // → /api/user.jsp
+fetch('/api/product', { method: 'POST' });      // → /api/product.jsp
+
+// 버전별 API
+fetch('/api/v1/user', { method: 'GET' });       // → /api/v1/user.jsp
+fetch('/api/v2/user', { method: 'GET' });       // → /api/v2/user.jsp
+
+// 관리자 API
+fetch('/api/admin/user', { method: 'DELETE' });  // → /api/admin/user.jsp
 ```
 
 ---
