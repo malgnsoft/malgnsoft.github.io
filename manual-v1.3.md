@@ -83,8 +83,8 @@ p.display();
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 UserDao user = new UserDao();
 DataSet list = user.query("SELECT * FROM tb_user ORDER BY id DESC");
-p.setLoop("list", list);
 p.setBody("user.list");
+p.setLoop("list", list);
 p.display();
 %>
 ```
@@ -92,6 +92,51 @@ p.display();
 ---
 
 ## 중요 참고사항
+
+### Page 메소드 호출 순서
+Page 클래스 메소드는 반드시 다음 순서로 호출해야 합니다:
+
+```jsp
+1. p.setLayout()    // 레이아웃 설정 (선택사항)
+2. p.setBody()      // 템플릿 파일 지정 (필수)
+3. p.setVar()       // 변수 설정 (선택사항)
+   p.setLoop()      // 루프 변수 설정 (선택사항)
+4. p.display()      // 출력 (필수)
+```
+
+**올바른 예**:
+```jsp
+p.setBody("main.index");
+p.setVar("title", "제목");
+p.display();
+```
+
+**잘못된 예**:
+```jsp
+p.setVar("title", "제목");  // setBody() 전에 setVar() 호출 - 잘못됨!
+p.setBody("main.index");
+p.display();
+```
+
+### JSP에서 HTML 직접 출력 금지
+JSP 파일 내에 HTML을 직접 작성하지 마세요. 반드시 별도의 템플릿 파일로 분리하고 `setBody()`와 `display()`를 사용하세요:
+
+**잘못된 예**:
+```jsp
+<%
+p.setVar("title", "제목");
+%>
+<html><body>{{title}}</body></html>
+```
+
+**올바른 예**:
+```jsp
+<%
+p.setBody("main.index");
+p.setVar("title", "제목");
+p.display();
+%>
+```
 
 ### if(m.isPost()) 사용 시 주의
 모든 `if(m.isPost())` 블록은 반드시 `return;`으로 종료해야 합니다:
@@ -103,24 +148,6 @@ if(m.isPost()) {
     m.jsReplace("list.jsp");
     return;  // 필수!
 }
-```
-
-### JSP에서 HTML 직접 출력 금지
-JSP 파일 내에 HTML을 직접 작성하지 마세요. 반드시 별도의 템플릿 파일로 분리하고 `setBody()`와 `display()`를 사용하세요:
-
-```jsp
-// 잘못된 예
-<%
-p.setVar("title", "제목");
-%>
-<html><body>{{title}}</body></html>
-
-// 올바른 예
-<%
-p.setVar("title", "제목");
-p.setBody("main.index");
-p.display();
-%>
 ```
 
 ### 한글 인코딩
@@ -1343,8 +1370,8 @@ p.setVar("is_admin", false);  // false
 NoticeDao notice = new NoticeDao();
 DataSet list = notice.query("SELECT * FROM tb_notice ORDER BY reg_date DESC", 5);
 
-p.setLoop("notice", list);
 p.setBody("main.notice_latest");
+p.setLoop("notice", list);
 p.display();
 
 %>
@@ -1926,7 +1953,7 @@ f.addElement("name", null, "title:'이름', required:'Y'");
 
 ### 회원가입 폼
 
-**JSP**:
+**JSP** (`/main/user_join.jsp`):
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
@@ -1962,7 +1989,15 @@ if(m.isPost() && f.validate()) {
     return;
 }
 
+p.setBody("main.user_join");
+p.setVar("form_script", f.getScript());
+p.display();
+
 %>
+```
+
+**HTML** (`/html/main/user_join.html`):
+```html
 <form name="form1" method="post">
     <p>아이디 : <input type="text" name="id" placeholder="4-12자"></p>
     <p>비밀번호 : <input type="password" name="passwd" placeholder="4자 이상"></p>
@@ -1981,7 +2016,7 @@ if(m.isPost() && f.validate()) {
     <p><label><input type="checkbox" name="agree" value="Y"> 약관에 동의합니다</label></p>
     <p><input type="submit" value="회원가입"></p>
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 ---
@@ -2107,7 +2142,7 @@ p.display();
 
 ### 단일 파일
 
-**JSP**:
+**JSP** (`/main/file_upload.jsp`):
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
@@ -2130,13 +2165,21 @@ if(m.isPost() && f.validate()) {
     return;
 }
 
+p.setBody("main.file_upload");
+p.setVar("form_script", f.getScript());
+p.display();
+
 %>
+```
+
+**HTML** (`/html/main/file_upload.html`):
+```html
 <form name="form1" method="post" enctype="multipart/form-data">
     <p>이름 : <input type="text" name="name"></p>
     <p>파일 : <input type="file" name="file"></p>
     <p><input type="submit" value="업로드"></p>
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 ### 파일 확장자 제한
@@ -3476,6 +3519,7 @@ p.display();
 
 ### Pager 클래스 직접 사용
 
+**JSP**:
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
@@ -3487,8 +3531,16 @@ pg.setPageNum(10);  // 페이지 링크 개수
 pg.setLinkType(9);  // 링크 타입
 pg.setLink("/main/list.jsp");  // 기본 URL
 
+p.setBody("main.custom_paging");
+p.setVar("pager", pg.getPager());
+p.display();
+
 %>
-<%= pg.getPager() %>
+```
+
+**HTML** (`/html/main/custom_paging.html`):
+```html
+{{pager}}
 ```
 
 ### 링크 타입

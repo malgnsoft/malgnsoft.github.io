@@ -158,7 +158,7 @@ f.addElement("name", null, "title:'이름', required:'Y'");
 
 ### 회원가입 폼
 
-**JSP**:
+**JSP** (`/main/user_join.jsp`):
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
@@ -194,7 +194,15 @@ if(m.isPost() && f.validate()) {
     return;
 }
 
+p.setBody("main.user_join");
+p.setVar("form_script", f.getScript());
+p.display();
+
 %>
+```
+
+**HTML** (`/html/main/user_join.html`):
+```html
 <form name="form1" method="post">
     <p>아이디 : <input type="text" name="id" placeholder="4-12자"></p>
     <p>비밀번호 : <input type="password" name="passwd" placeholder="4자 이상"></p>
@@ -213,7 +221,7 @@ if(m.isPost() && f.validate()) {
     <p><label><input type="checkbox" name="agree" value="Y"> 약관에 동의합니다</label></p>
     <p><input type="submit" value="회원가입"></p>
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 ---
@@ -339,7 +347,7 @@ p.display();
 
 ### 단일 파일
 
-**JSP**:
+**JSP** (`/main/file_upload.jsp`):
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
@@ -362,13 +370,21 @@ if(m.isPost() && f.validate()) {
     return;
 }
 
+p.setBody("main.file_upload");
+p.setVar("form_script", f.getScript());
+p.display();
+
 %>
+```
+
+**HTML** (`/html/main/file_upload.html`):
+```html
 <form name="form1" method="post" enctype="multipart/form-data">
     <p>이름 : <input type="text" name="name"></p>
     <p>파일 : <input type="file" name="file"></p>
     <p><input type="submit" value="업로드"></p>
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 ### 파일 확장자 제한

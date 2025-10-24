@@ -325,6 +325,7 @@ p.display();
 
 ### Pager 클래스 직접 사용
 
+**JSP**:
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
@@ -336,8 +337,16 @@ pg.setPageNum(10);  // 페이지 링크 개수
 pg.setLinkType(9);  // 링크 타입
 pg.setLink("/main/list.jsp");  // 기본 URL
 
+p.setBody("main.custom_paging");
+p.setVar("pager", pg.getPager());
+p.display();
+
 %>
-<%= pg.getPager() %>
+```
+
+**HTML** (`/html/main/custom_paging.html`):
+```html
+{{pager}}
 ```
 
 ### 링크 타입

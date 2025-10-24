@@ -278,8 +278,8 @@ p.setVar("is_admin", false);  // false
 NoticeDao notice = new NoticeDao();
 DataSet list = notice.query("SELECT * FROM tb_notice ORDER BY reg_date DESC", 5);
 
-p.setLoop("notice", list);
 p.setBody("main.notice_latest");
+p.setLoop("notice", list);
 p.display();
 
 %>
