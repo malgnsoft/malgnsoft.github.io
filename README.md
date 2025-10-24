@@ -17,6 +17,7 @@
 1. [프레임워크 소개](introduction.md) - 주요 특징 및 아키텍처
 2. [설치 및 환경설정](installation.md) - WAS 설치 및 데이터베이스 연결
 3. [시작하기](getting-started.md) - Hello World부터 시작하기
+4. [코딩 원칙](coding-principles.md) - 설계 철학과 개발 가이드 (필독)
 
 ## 주요 특징
 
@@ -79,6 +80,7 @@ m.download(filePath, fileName);
 - [프레임워크 소개](introduction.md) - 주요 특징과 장점
 - [설치 및 환경설정](installation.md) - WAS 설치, DB 연결
 - [시작하기](getting-started.md) - Hello World부터 첫 CRUD까지
+- [코딩 원칙](coding-principles.md) - 설계 철학, 베스트 프랙티스 (필독)
 
 ### 핵심 기능
 웹 애플리케이션 개발의 핵심 기능들입니다.
@@ -166,13 +168,15 @@ p.display();
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-try {
-    BoardDao dao = new BoardDao();
-    DataSet list = dao.findAll("ORDER BY id DESC LIMIT 10");
+BoardDao board = new BoardDao();
+board.setOrderBy("id DESC");
+board.setLimit(10);
+DataSet list = board.find();
 
+if(list != null) {
     j.success("조회 성공", list);
-} catch(Exception e) {
-    j.error("조회 실패: " + e.getMessage());
+} else {
+    j.error("조회 실패: " + board.getErrMsg());
 }
 
 %>

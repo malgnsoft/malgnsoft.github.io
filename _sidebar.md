@@ -5,6 +5,7 @@
 - [프레임워크 소개](introduction.md)
 - [설치 및 환경설정](installation.md)
 - [시작하기](getting-started.md)
+- [코딩 원칙](coding-principles.md)
 
 **핵심 기능**
 

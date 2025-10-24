@@ -269,22 +269,22 @@ if(m.isPost() && f.validate()) {
 
     data.first();
     while(data.next()) {
-        DataMap user = new DataMap();
-        user.put("user_id", data.getString("col0"));
-        user.put("name", data.getString("col1"));
-        user.put("email", data.getString("col2"));
-        user.put("reg_date", m.time());
+        dao.item("user_id", data.getString("col0"));
+        dao.item("name", data.getString("col1"));
+        dao.item("email", data.getString("col2"));
+        dao.item("reg_date", m.time());
 
-        try {
-            dao.insert(user);
+        if(dao.insert()) {
             successCount++;
-        } catch(Exception e) {
-            m.p("오류: " + e.getMessage());
+        } else {
+            m.p("오류: " + dao.getErrMsg());
         }
+        dao.clear();
     }
 
     m.jsAlert(successCount + "명의 회원이 등록되었습니다.");
     m.jsReplace("list.jsp");
+    return;
 }
 
 p.setBody("main.upload_excel");
@@ -303,16 +303,17 @@ String mode = m.rs("mode");
 
 if("download".equals(mode)) {
 
-    // 검색 조건으로 데이터 조회
-    ListManager lm = new ListManager();
-    lm.setRequest(request);
-    lm.setTable("tb_blog");
-    lm.addSearch("subject,content", f.get("keyword"), "LIKE");
-    lm.addSearch("status", f.getInt("status"));
+    // 검색 조건으로 데이터 조회 (페이징 없으므로 DataObject 사용)
+    BlogDao blog = new BlogDao();
+    blog.addSearch("subject,content", f.get("keyword"), "LIKE");
 
-    // 페이징 없이 전체 조회
-    lm.setListNum(100000);
-    DataSet list = lm.getDataSet();
+    int status = f.getInt("status", -1);
+    if(status >= 0) {
+        blog.addSearch("status", status);
+    }
+
+    blog.setOrderBy("id DESC");
+    DataSet list = blog.find();
 
     // Excel 생성
     ExcelX excel = new ExcelX();
@@ -333,7 +334,7 @@ if("download".equals(mode)) {
     return;
 }
 
-// 일반 목록 화면
+// 일반 목록 화면 (페이징이 필요하므로 ListManager 사용)
 ListManager lm = new ListManager();
 lm.setRequest(request);
 lm.setTable("tb_blog");
