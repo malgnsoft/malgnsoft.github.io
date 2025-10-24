@@ -233,6 +233,54 @@ p.display();
 - 이중 처리 방지
 - 명확한 흐름 제어
 
+### 4-1. 페이지 이동: jsReplace vs redirect
+
+페이지 이동 시 메시지 표시 여부에 따라 적절한 메소드를 선택하세요.
+
+**jsReplace() - 메시지와 함께 이동:**
+```jsp
+<%
+if(m.isPost()) {
+    UserDao user = new UserDao();
+    user.item("name", f.get("name"));
+
+    if(user.insert()) {
+        m.jsAlert("등록되었습니다.");
+        m.jsReplace("list.jsp");  // 메시지 표시 후 이동
+    }
+    return;
+}
+%>
+```
+
+**redirect() - 즉시 이동:**
+```jsp
+<%
+if(m.isPost()) {
+    UserDao user = new UserDao();
+    user.item("name", f.get("name"));
+
+    if(user.insert()) {
+        m.redirect("list.jsp");  // 즉시 이동 (메시지 없음)
+    }
+    return;
+}
+%>
+```
+
+**사용 기준:**
+- **jsReplace()**: 사용자에게 메시지를 보여줄 필요가 있을 때
+  - 성공/실패 알림과 함께 이동
+  - 예: 로그인 성공, 등록 완료, 수정 완료
+- **redirect()**: 메시지 없이 바로 이동할 때
+  - 로그인 후 메인 페이지로 이동
+  - 권한 체크 후 리다이렉트
+  - 예: 로그인 안된 사용자를 로그인 페이지로 이동
+
+**차이점:**
+- `jsReplace()`: JavaScript alert/confirm 등과 함께 사용, 사용자 확인 후 이동
+- `redirect()`: HTTP 302 리다이렉트, 즉시 이동
+
 ---
 
 ### 5. Page 메소드 호출 순서 준수

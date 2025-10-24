@@ -253,8 +253,7 @@ if(userId == 0) {
 
 // 관리자 권한 체크 (userLevel은 init.jsp에서 설정됨)
 if(userLevel < 10) {
-    m.jsAlert("관리자만 접근할 수 있습니다.");
-    m.jsBack();
+    m.jsError("관리자만 접근할 수 있습니다.");
     return;
 }
 

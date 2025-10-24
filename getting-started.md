@@ -330,10 +330,10 @@ m.jsReplace("user_list.jsp");  // location.replace
 m.jsUrl("user_list.jsp");      // location.href
 ```
 
-### 4. 이전 페이지로 이동
+### 4. 에러 메시지와 함께 뒤로 가기
 
 ```jsp
-m.jsBack();  // history.back()
+m.jsError("에러 메시지");  // 메시지 출력 후 history.back()
 ```
 
 ### 5. POST 방식 체크

@@ -1027,10 +1027,10 @@ m.jsReplace("user_list.jsp");  // location.replace
 m.jsUrl("user_list.jsp");      // location.href
 ```
 
-### 4. 이전 페이지로 이동
+### 4. 에러 메시지와 함께 뒤로 가기
 
 ```jsp
-m.jsBack();  // history.back()
+m.jsError("에러 메시지");  // 메시지 출력 후 history.back()
 ```
 
 ### 5. POST 방식 체크
@@ -7433,8 +7433,7 @@ if(!auth.isLogin()) {
 // 관리자 권한 체크
 int userLevel = auth.getInt("user_level");
 if(userLevel < 10) {
-    m.jsAlert("관리자만 접근할 수 있습니다.");
-    m.jsBack();
+    m.jsError("관리자만 접근할 수 있습니다.");
     return;
 }
 
@@ -12935,7 +12934,7 @@ if(debugMode) {
 Config.reload();
 
 m.jsAlert("설정이 다시 로드되었습니다.");
-m.jsBack();
+m.jsReplace("admin.jsp");
 
 %>
 ```

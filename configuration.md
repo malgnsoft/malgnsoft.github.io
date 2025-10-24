@@ -149,7 +149,7 @@ if(debugMode) {
 Config.reload();
 
 m.jsAlert("설정이 다시 로드되었습니다.");
-m.jsBack();
+m.jsReplace("admin.jsp");
 
 %>
 ```
