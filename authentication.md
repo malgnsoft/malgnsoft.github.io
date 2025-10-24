@@ -28,7 +28,7 @@
 **init.jsp에서 Auth 객체를 생성하고 전역 변수를 설정하는 것이 핵심입니다:**
 
 ```jsp
-<%@ page contentType="text/html; charset=utf-8" %><%@ page import="java.util.*, java.io.*, malgnsoft.db.*, malgnsoft.util.*" %><%
+<%@ page contentType="text/html; charset=utf-8" %><%@ page import="java.util.*, java.io.*, dao.*, malgnsoft.db.*, malgnsoft.util.*" %><%
 
 Malgn m = new Malgn(request, response, out);
 
@@ -404,7 +404,7 @@ p.display();
 **init.jsp에 자동 로그인 로직 추가:**
 
 ```jsp
-<%@ page contentType="text/html; charset=utf-8" %><%@ page import="java.util.*, java.io.*, malgnsoft.db.*, malgnsoft.util.*" %><%
+<%@ page contentType="text/html; charset=utf-8" %><%@ page import="java.util.*, java.io.*, dao.*, malgnsoft.db.*, malgnsoft.util.*" %><%
 
 Malgn m = new Malgn(request, response, out);
 
@@ -528,7 +528,7 @@ if(m.isPost() && f.validate()) {
 ### 4. init.jsp에 전역 인증 변수 설정
 
 ```jsp
-<%@ page contentType="text/html; charset=utf-8" %><%@ page import="java.util.*, java.io.*, malgnsoft.db.*, malgnsoft.util.*" %><%
+<%@ page contentType="text/html; charset=utf-8" %><%@ page import="java.util.*, java.io.*, dao.*, malgnsoft.db.*, malgnsoft.util.*" %><%
 
 Malgn m = new Malgn(request, response, out);
 
