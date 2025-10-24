@@ -107,6 +107,14 @@ m.download(filePath, fileName);
 - [인증 처리](authentication.md) - 로그인, 세션, 권한
 - [OAuth 소셜 로그인](oauth.md) - Google, Naver, Kakao 연동
 
+### REST API 개발
+RESTful API 서버를 구축하는 방법입니다.
+
+- **[REST API 개발](restapi.md)** - 라우팅, Path Parameter, 클라이언트 호출
+- **[JWT 인증](restapi-jwt.md)** - JWT 토큰 생성/검증, 퍼블릭 라우팅
+- **[CORS 설정](restapi-cors.md)** - CORS 헤더, 도메인 허용, Preflight
+- **[응답 표준](restapi-response.md)** - 에러/성공 응답, 페이징
+
 ### 고급 기능
 고급 개발을 위한 추가 기능들입니다.
 
