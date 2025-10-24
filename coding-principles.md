@@ -170,12 +170,12 @@ p.display();
 HTML 템플릿 파일 (`/html/main/user_list.html`):
 ```html
 <div class="user-list">
-    {{#user}}
+    <!--@loop(user)-->
     <div class="user">
-        <h3>{{name}}</h3>
-        <p>{{email}}</p>
+        <h3>{{user.name}}</h3>
+        <p>{{user.email}}</p>
     </div>
-    {{/user}}
+    <!--/loop(user)-->
 </div>
 ```
 
