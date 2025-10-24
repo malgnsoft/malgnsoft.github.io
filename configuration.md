@@ -187,7 +187,6 @@ if(posts == null) {
 }
 
 // 데이터 사용
-posts.first();
 while(posts.next()) {
     m.p(posts.getString("subject"));
 }

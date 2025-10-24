@@ -34,7 +34,6 @@ excel.setSheet(0);
 DataSet data = excel.getDataSet();
 
 // 데이터 출력
-data.first();
 while(data.next()) {
     m.p(data.getString("col0"));  // 첫 번째 열
     m.p(data.getString("col1"));  // 두 번째 열
@@ -96,7 +95,6 @@ if(data.validate()) {
 }
 
 // 데이터 출력
-data.first();
 while(data.next()) {
     m.p(data.getString("col0"));
     m.p(data.getString("col1"));
@@ -130,7 +128,6 @@ ExcelX excel = new ExcelX();
 // 컬럼 정의 (col이름=>헤더명)
 String[] columns = {"col0=>아이디", "col1=>이름", "col2=>이메일", "col3=>전화번호"};
 
-data.first();
 excel.setSheet("회원정보");
 excel.setData(data, columns);
 
@@ -163,7 +160,6 @@ users.put("col1", "김철수");
 users.put("col2", "kim@example.com");
 
 String[] userColumns = {"col0=>아이디", "col1=>이름", "col2=>이메일"};
-users.first();
 excel.setSheet("회원정보");
 excel.setData(users, userColumns);
 
@@ -180,7 +176,6 @@ orders.put("col1", "ORD002");
 orders.put("col2", "35000");
 
 String[] orderColumns = {"col0=>주문일", "col1=>주문번호", "col2=>금액"};
-orders.first();
 excel.setSheet("주문내역");
 excel.setData(orders, orderColumns);
 
@@ -228,7 +223,6 @@ String[] columns = {
     "reg_date=>가입일"
 };
 
-users.first();
 excel.setSheet("회원목록");
 excel.setData(users, columns);
 
@@ -383,7 +377,6 @@ String[] columns = {
     "total=>매출합계"
 };
 
-monthly.first();
 excel.setSheet("월별통계");
 excel.setData(monthly, columns);
 

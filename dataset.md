@@ -260,7 +260,6 @@ j.print(0, "완료되었습니다", dataMap);
 UserDao dao = new UserDao();
 DataSet list = dao.query("WHERE status = 1 ORDER BY id DESC");
 
-list.first();
 while(list.next()) {
     m.p(list.getInt("id"));
     m.p(list.getString("name"));
@@ -355,13 +354,13 @@ lm.setOrderBy("id DESC");
 DataSet list = lm.getDataSet();
 
 // 날짜 포맷팅 추가
-list.first();
 while(list.next()) {
     String regDate = list.getString("reg_date");
     String formatted = m.time("yyyy-MM-dd", regDate);
     list.put("formatted_date", formatted);
 }
 
+// setLoop()는 내부에서 first() 수행하므로 다시 호출 불필요
 p.setBody("main.blog_list");
 p.setLoop("list", list);
 p.display();
@@ -489,10 +488,16 @@ int age = ds.getInt("age");
 ### 3. 순회 패턴
 
 ```jsp
-// 항상 first() 후 next()
-ds.first();
-while(ds.next()) {
+// DB 조회 후 첫 순회: first() 불필요
+DataSet list = dao.find();
+while(list.next()) {
     // 처리
+}
+
+// 두 번째 순회: first() 필요
+list.first();
+while(list.next()) {
+    // 재처리
 }
 ```
 

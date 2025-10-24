@@ -344,14 +344,12 @@ while(events.next()) {
 }
 
 // 달력 데이터에 일정 카운트 추가
-calendar.first();
 while(calendar.next()) {
     String date = calendar.s("date");
     int count = eventCounts.getOrDefault(date, 0);
     calendar.put("event_count", count);
 }
 
-calendar.first();
 p.setBody("main.event_calendar");
 p.setLoop("days", calendar);
 p.setVar("month", month);
@@ -588,7 +586,6 @@ for(int i = 9; i <= 18; i++) {
     hours.put("id", (i < 10 ? "0" : "") + i);
     hours.put("name", i + "시");
 }
-hours.first();
 
 DataSet minutes = new DataSet();
 minutes.addRow();
@@ -597,7 +594,6 @@ minutes.put("name", "00분");
 minutes.addRow();
 minutes.put("id", "30");
 minutes.put("name", "30분");
-minutes.first();
 
 p.setBody("main.reservation_form");
 p.setLoop("years", years);

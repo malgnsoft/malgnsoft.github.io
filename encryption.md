@@ -328,7 +328,6 @@ String secretKey = Config.get("personalDataKey");
 AES aes = new AES(secretKey);
 
 // 복호화
-users.first();
 while(users.next()) {
     String encryptedSsn = users.getString("ssn");
     String encryptedPhone = users.getString("phone");

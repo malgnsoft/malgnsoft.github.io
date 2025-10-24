@@ -44,7 +44,6 @@ m.p(logDir);
 // XPath로 여러 노드 추출
 DataSet users = xml.getDataSet("//config/users/user");
 
-users.first();
 while(users.next()) {
     m.p(users.getString("id"));
     m.p(users.getString("name"));
@@ -130,7 +129,6 @@ DataSet users = xml.getDataSet("//config/users/user");
 
 m.p("총 " + users.size() + "명의 사용자");
 
-users.first();
 while(users.next()) {
     String id = users.getString("id");
     String name = users.getString("name");
@@ -386,7 +384,6 @@ StringBuilder xml = new StringBuilder();
 xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 xml.append("<users>\n");
 
-users.first();
 while(users.next()) {
     xml.append("  <user>\n");
     xml.append("    <id>").append(users.getInt("id")).append("</id>\n");
