@@ -38,26 +38,23 @@ REST API에서는 `/api/user`와 같이 확장자 없는 깔끔한 URL을 사용
 ```jsp
 <%@ page contentType="application/json; charset=utf-8" %><%@ page import="malgnsoft.util.*" %><%
 
+RestAPI router = new RestAPI(request, response);
+
 // 라우팅 그룹 등록
-RestAPI.use("/api/user", "/api/user.jsp");
-RestAPI.use("/api/product", "/api/product.jsp");
-RestAPI.use("/api/admin/user", "/api/admin/user.jsp");
-RestAPI.use("/api/admin/stats", "/api/admin/stats.jsp");
+router.use("/api/user", "/api/user.jsp");
+router.use("/api/product", "/api/product.jsp");
+router.use("/api/admin/user", "/api/admin/user.jsp");
+router.use("/api/admin/stats", "/api/admin/stats.jsp");
 
-// 요청 URI와 매칭되는 라우트 찾기
-String jspPath = RestAPI.findRoute(request.getRequestURI(), request.getContextPath());
-
-if(jspPath != null) {
-    try {
-        request.getRequestDispatcher(jspPath).forward(request, response);
-    } catch(Exception e) {
-        response.sendError(500, "Internal Server Error: " + e.getMessage());
-    }
-} else {
-    response.sendError(404, "API endpoint not found");
-}
+// 등록된 라우트로 자동 포워딩
+router.forward();
 
 %>
+```
+
+또는 `dispatch()` 사용 (동일한 기능):
+```jsp
+router.dispatch();
 ```
 
 ### 3. /api/init.jsp 공통 초기화 파일
