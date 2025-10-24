@@ -8,9 +8,53 @@
 
 REST API에서는 일반적으로 `/api/user`와 같이 확장자 없는 깔끔한 URL을 사용합니다. 이를 위해 web.xml에서 URL을 JSP 파일로 매핑해야 합니다.
 
-### web.xml 설정
+### web.xml 설정 (방법 1: 간단한 매핑)
 
-`/api` 경로의 모든 요청을 자동으로 `.jsp` 파일로 매핑하도록 필터를 설정합니다.
+가장 간단한 방법은 JSP 파일을 직접 서블릿으로 매핑하는 것입니다:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+         version="3.1">
+
+    <!-- API 파일을 URL 패턴에 매핑 -->
+    <servlet>
+        <servlet-name>UserAPI</servlet-name>
+        <jsp-file>/api/user.jsp</jsp-file>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>UserAPI</servlet-name>
+        <url-pattern>/api/user</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ProductAPI</servlet-name>
+        <jsp-file>/api/product.jsp</jsp-file>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProductAPI</servlet-name>
+        <url-pattern>/api/product</url-pattern>
+    </servlet-mapping>
+
+</web-app>
+```
+
+**장점:**
+- 필터 없이 web.xml만으로 처리
+- 매우 간단하고 명확함
+
+**단점:**
+- API가 많아지면 web.xml이 길어짐
+- 새로운 API 추가 시마다 설정 필요
+
+---
+
+### web.xml 설정 (방법 2: 필터를 통한 자동 매핑)
+
+API가 많거나 자주 추가되는 경우, 필터를 사용하여 `/api/*` 경로를 자동 매핑할 수 있습니다:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -33,59 +77,27 @@ REST API에서는 일반적으로 `/api/user`와 같이 확장자 없는 깔끔�
 </web-app>
 ```
 
-### ApiUrlRewriteFilter 구현
+맑은프레임워크의 `ApiUrlRewriteFilter` 클래스가 자동으로 URL을 JSP 파일로 매핑합니다.
 
-맑은프레임워크에는 `ApiUrlRewriteFilter` 클래스가 포함되어 있어 별도 구현이 필요 없습니다.
+**장점:**
+- 한 번 설정으로 모든 `/api/*` 경로 처리
+- 새로운 API 추가 시 설정 불필요
+- 하위 폴더 자동 지원 (`/api/v1/user`, `/api/admin/user`)
 
-```java
-package malgnsoft.servlet;
-
-import javax.servlet.*;
-import javax.servlet.http.*;
-import java.io.IOException;
-
-public class ApiUrlRewriteFilter implements Filter {
-
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
-
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
-        String requestURI = httpRequest.getRequestURI();
-        String contextPath = httpRequest.getContextPath();
-
-        // 컨텍스트 패스를 제거한 경로
-        String path = requestURI.substring(contextPath.length());
-
-        // 이미 .jsp로 끝나는 경우 그대로 처리
-        if (path.endsWith(".jsp")) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        // /api/로 시작하는 경로를 /api/*.jsp로 변환
-        if (path.startsWith("/api/")) {
-            String jspPath = path + ".jsp";
-            RequestDispatcher dispatcher = request.getRequestDispatcher(jspPath);
-
-            if (dispatcher != null) {
-                dispatcher.forward(request, response);
-                return;
-            }
-        }
-
-        // 매칭되지 않으면 기본 처리
-        chain.doFilter(request, response);
-    }
-}
-```
+**단점:**
+- 추가 필터 클래스 필요
 
 **동작 방식:**
 1. `/api/user` 요청 → 자동으로 `/api/user.jsp` 실행
 2. `/api/v1/user` 요청 → 자동으로 `/api/v1/user.jsp` 실행
 3. `/api/admin/product` 요청 → 자동으로 `/api/admin/product.jsp` 실행
-4. 클라이언트는 확장자 없이 호출, 실제 파일은 `.jsp`로 작성
-5. 하위 폴더도 자동 매핑됨 (매번 web.xml 설정 불필요)
+
+---
+
+### 권장 사항
+
+- **소규모 프로젝트**: 방법 1 (직접 매핑) 사용
+- **중대형 프로젝트**: 방법 2 (필터 사용) 권장
 
 **디렉토리 구조:**
 ```
@@ -94,31 +106,24 @@ webapp/
 │   ├── user.jsp           → /api/user 로 호출
 │   ├── product.jsp        → /api/product 로 호출
 │   ├── v1/
-│   │   ├── user.jsp       → /api/v1/user 로 호출
-│   │   └── product.jsp    → /api/v1/product 로 호출
+│   │   ├── user.jsp       → /api/v1/user 로 호출 (필터 사용 시)
+│   │   └── product.jsp    → /api/v1/product 로 호출 (필터 사용 시)
 │   └── admin/
-│       ├── user.jsp       → /api/admin/user 로 호출
-│       └── stats.jsp      → /api/admin/stats 로 호출
-├── WEB-INF/
-│   └── web.xml            (필터 설정)
-└── src/
-    └── malgnsoft/
-        └── servlet/
-            └── ApiUrlRewriteFilter.java
+│       ├── user.jsp       → /api/admin/user 로 호출 (필터 사용 시)
+│       └── stats.jsp      → /api/admin/stats 로 호출 (필터 사용 시)
+└── WEB-INF/
+    └── web.xml
 ```
 
 **호출 예시:**
 ```javascript
-// 기본 API
-fetch('/api/user', { method: 'GET' });          // → /api/user.jsp
-fetch('/api/product', { method: 'POST' });      // → /api/product.jsp
+// 기본 API (두 방법 모두 동일)
+fetch('/api/user', { method: 'GET' });
+fetch('/api/product', { method: 'POST' });
 
-// 버전별 API
-fetch('/api/v1/user', { method: 'GET' });       // → /api/v1/user.jsp
-fetch('/api/v2/user', { method: 'GET' });       // → /api/v2/user.jsp
-
-// 관리자 API
-fetch('/api/admin/user', { method: 'DELETE' });  // → /api/admin/user.jsp
+// 하위 폴더 API (필터 사용 시에만 가능)
+fetch('/api/v1/user', { method: 'GET' });
+fetch('/api/admin/user', { method: 'DELETE' });
 ```
 
 ---
