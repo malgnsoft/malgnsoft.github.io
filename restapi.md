@@ -485,14 +485,43 @@ if(userId == 0 && auth.isValidToken()) {
 ```
 
 `auth.isValidToken()`은 다음을 자동으로 처리합니다:
-1. `Authorization: Bearer <token>` 헤더에서 토큰 추출
+1. `Authorization: Bearer <token>` 헤더에서 토큰 추출 (또는 `auth.setToken()`으로 설정된 토큰 사용)
 2. 토큰 서명 검증
 3. 토큰 만료 시간 확인
 4. 토큰의 Claims를 Auth 객체에 저장
 
+#### 파라미터로 토큰 전달 (선택사항)
+
+Authorization 헤더를 사용하지 않고 파라미터로 토큰을 전달하는 경우:
+
+```jsp
+// /api/init.jsp 수정
+String token = f.get("token");  // 파라미터에서 토큰 추출
+if(token != null && !"".equals(token)) {
+    auth.setToken(token);  // 토큰 설정
+}
+
+// JWT 토큰 인증
+if(userId == 0 && auth.isValidToken()) {
+    userId = auth.getInt("user_id");
+    userName = auth.getString("user_name");
+    userLevel = auth.getInt("user_level");
+}
+```
+
+클라이언트에서 사용:
+```javascript
+// URL 파라미터로 토큰 전달
+fetch('/api/user?token=' + token)
+    .then(response => response.json())
+    .then(data => console.log(data));
+```
+
 ### 3. 클라이언트 사용법
 
-#### JavaScript (fetch API)
+#### Authorization 헤더 방식 (권장)
+
+JavaScript (fetch API):
 
 ```javascript
 // 1. 로그인하여 토큰 받기
