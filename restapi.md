@@ -33,23 +33,28 @@ REST API에서는 `/api/user`와 같이 확장자 없는 깔끔한 URL을 사용
 
 ### 2. /api/index.jsp 라우터 구현
 
-단순히 확장자만 추가하여 해당 JSP 파일로 포워딩합니다.
+라우팅 그룹을 등록하고 요청을 해당 JSP로 포워딩합니다.
 
 ```jsp
-<%@ page contentType="application/json; charset=utf-8" %><%
+<%@ page contentType="application/json; charset=utf-8" %><%@ page import="malgnsoft.util.*" %><%
 
-// 요청 경로에 .jsp 확장자 추가하여 포워딩
-String requestURI = request.getRequestURI();
-String contextPath = request.getContextPath();
-String path = requestURI.substring(contextPath.length());
+// 라우팅 그룹 등록
+RestAPI.use("/api/user", "/api/user.jsp");
+RestAPI.use("/api/product", "/api/product.jsp");
+RestAPI.use("/api/admin/user", "/api/admin/user.jsp");
+RestAPI.use("/api/admin/stats", "/api/admin/stats.jsp");
 
-// /api/user → /api/user.jsp
-String jspPath = path + ".jsp";
+// 요청 URI와 매칭되는 라우트 찾기
+String jspPath = RestAPI.findRoute(request.getRequestURI(), request.getContextPath());
 
-try {
-    request.getRequestDispatcher(jspPath).forward(request, response);
-} catch(Exception e) {
-    response.sendError(404, "API endpoint not found: " + path);
+if(jspPath != null) {
+    try {
+        request.getRequestDispatcher(jspPath).forward(request, response);
+    } catch(Exception e) {
+        response.sendError(500, "Internal Server Error: " + e.getMessage());
+    }
+} else {
+    response.sendError(404, "API endpoint not found");
 }
 
 %>
@@ -104,47 +109,50 @@ webapp/
 
 ### 5. 동작 방식
 
-- `/api/user` → `index.jsp` → `/api/user.jsp`
-- `/api/user?id=123` → `index.jsp` → `/api/user.jsp` (f.get("id")로 처리)
-- `/api/product` → `index.jsp` → `/api/product.jsp`
+- `/api/user` → `index.jsp` → `/api/user.jsp` → `api.get("/", ...)`
+- `/api/user/123` → `index.jsp` → `/api/user.jsp` → `api.get("/:id", ...)` (path parameter)
+- `/api/user?keyword=홍길동` → `index.jsp` → `/api/user.jsp` → `api.get("/", ...)` (query string)
 - `/api/admin/stats` → `index.jsp` → `/api/admin/stats.jsp`
 
 ---
 
 ## 기본 사용법
 
-### /api/user.jsp 예시 (init.jsp 사용)
+### /api/user.jsp 예시 (라우팅 그룹 방식)
 
 ```jsp
 <%@ include file="/api/init.jsp" %><%
 
-// GET /api/user - 목록 조회
-// GET /api/user?id=123 - 단일 조회
-api.get(() -> {
-    UserDao user = new UserDao();
-    String id = f.get("id");
+// 이 파일의 base path 설정
+api.setBasePath("/api/user");
 
-    if(!"".equals(id)) {
-        // 단일 조회
-        DataSet info = user.get(Integer.parseInt(id));
-        if(info.next()) {
-            j.add("id", info.i("id"));
-            j.add("name", info.s("name"));
-            j.add("email", info.s("email"));
-            j.print();
-        } else {
-            j.error("사용자를 찾을 수 없습니다.");
-        }
-    } else {
-        // 목록 조회
-        DataSet list = user.find();
-        j.add("users", list);
+// GET /api/user - 목록 조회
+api.get("/", () -> {
+    UserDao user = new UserDao();
+    DataSet list = user.find();
+    j.add("users", list);
+    j.print();
+});
+
+// GET /api/user/:id - 단일 조회 (path parameter)
+api.get("/:id", () -> {
+    int id = api.getParamInt("id");  // path parameter에서 id 추출
+
+    UserDao user = new UserDao();
+    DataSet info = user.get(id);
+
+    if(info.next()) {
+        j.add("id", info.i("id"));
+        j.add("name", info.s("name"));
+        j.add("email", info.s("email"));
         j.print();
+    } else {
+        j.error("사용자를 찾을 수 없습니다.");
     }
 });
 
 // POST /api/user - 생성
-api.post(() -> {
+api.post("/", () -> {
     UserDao user = new UserDao();
     user.item("name", f.get("name"));
     user.item("email", f.get("email"));
@@ -156,17 +164,14 @@ api.post(() -> {
     }
 });
 
-// PUT /api/user?id=123 - 수정
-api.put(() -> {
-    String id = f.get("id");
-    if("".equals(id)) {
-        api.error(400, "ID는 필수입니다.");
-        return;
-    }
+// PUT /api/user/:id - 수정 (path parameter)
+api.put("/:id", () -> {
+    int id = api.getParamInt("id");
 
     UserDao user = new UserDao();
-    user.get(Integer.parseInt(id));
+    user.get(id);
     user.item("name", f.get("name"));
+    user.item("email", f.get("email"));
 
     if(user.update()) {
         j.success("수정되었습니다.");
@@ -175,16 +180,12 @@ api.put(() -> {
     }
 });
 
-// DELETE /api/user?id=123 - 삭제
-api.delete(() -> {
-    String id = f.get("id");
-    if("".equals(id)) {
-        api.error(400, "ID는 필수입니다.");
-        return;
-    }
+// DELETE /api/user/:id - 삭제 (path parameter)
+api.delete("/:id", () -> {
+    int id = api.getParamInt("id");
 
     UserDao user = new UserDao();
-    if(user.delete(Integer.parseInt(id))) {
+    if(user.delete(id)) {
         j.success("삭제되었습니다.");
     } else {
         j.error(user.getErrMsg());
@@ -195,10 +196,11 @@ api.delete(() -> {
 ```
 
 **장점:**
-- `/api/init.jsp`에서 공통 객체 초기화 (m, f, auth, j, api)
+- **라우팅 그룹**: `/api/user` 관련 모든 경로를 user.jsp에서 처리
+- **Path parameter 지원**: `/:id` 패턴으로 RESTful URL 구현 가능
+- **Express.js 스타일**: 익숙한 라우팅 패턴
+- **계층적 구조**: 리소스별로 파일 분리, 관리 용이
 - 각 API 파일은 비즈니스 로직만 작성
-- 표준 query string 방식으로 파라미터 전달 (`f.get("id")`)
-- 코드가 매우 간결하고 명확함
 
 ---
 
@@ -325,8 +327,13 @@ fetch('/api/user')
     .then(response => response.json())
     .then(data => console.log(data));
 
-// GET /api/user?id=123 - 단일 조회
-fetch('/api/user?id=123')
+// GET /api/user/123 - 단일 조회 (path parameter)
+fetch('/api/user/123')
+    .then(response => response.json())
+    .then(data => console.log(data));
+
+// GET /api/user?keyword=홍길동 - 검색 (query string)
+fetch('/api/user?keyword=홍길동')
     .then(response => response.json())
     .then(data => console.log(data));
 
@@ -341,8 +348,8 @@ fetch('/api/user', {
     .then(response => response.json())
     .then(data => console.log(data));
 
-// PUT /api/user?id=123 - 수정
-fetch('/api/user?id=123', {
+// PUT /api/user/123 - 수정 (path parameter)
+fetch('/api/user/123', {
     method: 'PUT',
     headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -352,8 +359,8 @@ fetch('/api/user?id=123', {
     .then(response => response.json())
     .then(data => console.log(data));
 
-// DELETE /api/user?id=123 - 삭제
-fetch('/api/user?id=123', {
+// DELETE /api/user/123 - 삭제 (path parameter)
+fetch('/api/user/123', {
     method: 'DELETE'
 })
     .then(response => response.json())
@@ -393,9 +400,30 @@ RestAPI 클래스는 내부적으로 예외를 처리하므로 try-catch가 필�
 
 ### 5. 파라미터 전달
 
-Path parameter 대신 표준 query string 사용:
-- ✅ `/api/user?id=123` (권장)
-- ❌ `/api/user/123` (미지원)
+**Path parameter (권장):**
+```jsp
+// /:id 패턴
+api.get("/:id", () -> {
+    int id = api.getParamInt("id");  // /api/user/123 → id=123
+    // ...
+});
+
+// 복수 parameter
+api.get("/:category/:id", () -> {
+    String category = api.getParam("category");  // /api/product/food/123
+    int id = api.getParamInt("id");
+    // ...
+});
+```
+
+**Query string (검색, 필터링):**
+```jsp
+api.get("/", () -> {
+    String keyword = m.rs("keyword");  // /api/user?keyword=홍길동
+    int page = m.ri("page");           // /api/user?page=2
+    // ...
+});
+```
 
 ### 6. GET 파라미터 보안 (선택사항)
 
@@ -412,6 +440,187 @@ api.get(() -> {
         // ...
     }
 });
+```
+
+---
+
+## Path Parameter 상세
+
+### 지원 패턴
+
+```jsp
+// 단일 parameter
+api.get("/:id", () -> {
+    int id = api.getParamInt("id");
+    // /api/user/123 → id=123
+});
+
+// 복수 parameter
+api.get("/:category/:id", () -> {
+    String category = api.getParam("category");
+    int id = api.getParamInt("id");
+    // /api/product/food/123 → category=food, id=123
+});
+
+// 혼합 사용
+api.get("/:id/comments", () -> {
+    int id = api.getParamInt("id");
+    // /api/post/123/comments → id=123
+});
+```
+
+### Parameter 추출 메소드
+
+| 메소드 | 반환 타입 | 설명 | 예시 |
+|--------|----------|------|------|
+| `api.getParam(name)` | String | 문자열로 반환 | `String name = api.getParam("category");` |
+| `api.getParamInt(name)` | int | 정수로 변환 (실패시 0) | `int id = api.getParamInt("id");` |
+
+### Query string과 함께 사용
+
+Path parameter와 query string을 동시에 사용할 수 있습니다:
+
+```jsp
+// GET /api/user/123?includeOrders=true
+api.get("/:id", () -> {
+    int id = api.getParamInt("id");                    // path parameter
+    boolean includeOrders = m.rb("includeOrders");     // query string
+
+    UserDao user = new UserDao();
+    DataSet info = user.get(id);
+
+    if(info.next()) {
+        j.add("user", info);
+
+        if(includeOrders) {
+            OrderDao order = new OrderDao();
+            DataSet orders = order.getByUserId(id);
+            j.add("orders", orders);
+        }
+
+        j.print();
+    }
+});
+```
+
+### RESTful 라우팅 예시
+
+```jsp
+<%@ include file="/api/init.jsp" %><%
+
+api.setBasePath("/api/product");
+
+// GET /api/product - 전체 목록
+api.get("/", () -> {
+    String keyword = m.rs("keyword");
+    int page = m.ri("page", 1);
+
+    ProductDao product = new ProductDao();
+    DataSet list = product.find(keyword, page);
+    j.add("products", list);
+    j.print();
+});
+
+// GET /api/product/:category - 카테고리별 목록
+api.get("/:category", () -> {
+    String category = api.getParam("category");
+
+    ProductDao product = new ProductDao();
+    DataSet list = product.findByCategory(category);
+    j.add("products", list);
+    j.add("category", category);
+    j.print();
+});
+
+// GET /api/product/:category/:id - 특정 상품 조회
+api.get("/:category/:id", () -> {
+    String category = api.getParam("category");
+    int id = api.getParamInt("id");
+
+    ProductDao product = new ProductDao();
+    DataSet info = product.get(id);
+
+    if(info.next() && category.equals(info.s("category"))) {
+        j.add("product", info);
+        j.print();
+    } else {
+        j.error("상품을 찾을 수 없습니다.");
+    }
+});
+
+// POST /api/product - 상품 생성
+api.post("/", () -> {
+    ProductDao product = new ProductDao();
+    product.item("name", f.get("name"));
+    product.item("category", f.get("category"));
+    product.item("price", f.get("price"));
+
+    if(product.insert()) {
+        j.success("등록되었습니다.", product.id);
+    } else {
+        j.error(product.getErrMsg());
+    }
+});
+
+// PUT /api/product/:id - 상품 수정
+api.put("/:id", () -> {
+    int id = api.getParamInt("id");
+
+    ProductDao product = new ProductDao();
+    product.get(id);
+    product.item("name", f.get("name"));
+    product.item("price", f.get("price"));
+
+    if(product.update()) {
+        j.success("수정되었습니다.");
+    } else {
+        j.error(product.getErrMsg());
+    }
+});
+
+// DELETE /api/product/:id - 상품 삭제
+api.delete("/:id", () -> {
+    int id = api.getParamInt("id");
+
+    ProductDao product = new ProductDao();
+    if(product.delete(id)) {
+        j.success("삭제되었습니다.");
+    } else {
+        j.error(product.getErrMsg());
+    }
+});
+
+%>
+```
+
+**클라이언트에서 호출:**
+```javascript
+// GET /api/product - 전체 목록
+fetch('/api/product')
+
+// GET /api/product?keyword=노트북 - 검색
+fetch('/api/product?keyword=노트북')
+
+// GET /api/product/electronics - 전자제품 카테고리
+fetch('/api/product/electronics')
+
+// GET /api/product/electronics/123 - 특정 상품
+fetch('/api/product/electronics/123')
+
+// POST /api/product - 상품 생성
+fetch('/api/product', {
+    method: 'POST',
+    body: 'name=노트북&category=electronics&price=1000000'
+})
+
+// PUT /api/product/123 - 상품 수정
+fetch('/api/product/123', {
+    method: 'PUT',
+    body: 'name=게이밍노트북&price=1500000'
+})
+
+// DELETE /api/product/123 - 상품 삭제
+fetch('/api/product/123', { method: 'DELETE' })
 ```
 
 ---
