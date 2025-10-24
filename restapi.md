@@ -217,20 +217,7 @@ web.xml 설정 없이 JSP 파일을 직접 호출하여 REST API를 구현할 �
 #### /api/user.jsp (직접 호출)
 
 ```jsp
-<%@ page contentType="application/json; charset=utf-8" %><%@ page import="java.util.*, java.io.*, dao.*, malgnsoft.db.*, malgnsoft.util.*" %><%
-
-RestAPI api = new RestAPI(request, response);
-
-// CORS 설정
-api.cors();
-
-// OPTIONS 요청 처리
-if(api.handlePreflight()) return;
-
-Malgn m = new Malgn(request, response, out);
-Form f = new Form();
-f.setRequest(request);
-Json j = new Json(out);
+<%@ include file="/api/init.jsp" %><%
 
 // GET /api/user.jsp - 목록 조회
 api.get("/", () -> {
@@ -283,6 +270,11 @@ api.delete("/", () -> {
 %>
 ```
 
+**주의:**
+- `init.jsp`를 include하면 CORS, OPTIONS, 인증 처리가 자동으로 적용됩니다
+- `api`, `m`, `f`, `j` 객체가 자동으로 생성됩니다
+- JWT 인증이 필요하면 `init.jsp`에서 `api.publicRoute()`로 퍼블릭 경로를 지정하세요
+
 ### 클라이언트 호출
 
 ```javascript
@@ -331,8 +323,14 @@ fetch('/api/user.jsp?id=123', {
 2. **모든 HTTP 메소드 지원**
    - GET, POST, PUT, DELETE, PATCH 모두 사용 가능
 
-3. **인증 처리**
-   - init.jsp를 include하지 않으므로 각 파일에서 직접 처리 필요
+3. **init.jsp include 권장**
+   - `init.jsp`를 include하면 CORS, OPTIONS, JWT 인증이 자동으로 처리됩니다
+   - `api`, `m`, `f`, `j` 객체가 자동으로 생성되어 편리합니다
+   - 각 파일마다 객체 생성 코드를 작성할 필요가 없습니다
+
+4. **인증이 필요 없는 경우**
+   - 퍼블릭 API는 `init.jsp`에서 `api.publicRoute()`로 지정
+   - 또는 `init.jsp`의 `api.auth()` 부분을 주석 처리
 
 **권장사항:** 프로덕션 환경에서는 web.xml 라우팅 방식을 권장합니다.
 
