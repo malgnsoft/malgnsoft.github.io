@@ -113,9 +113,9 @@ Json j = new Json(out);
 if(!api.auth()) return;
 
 // 인증된 사용자 정보
-int userId = api.getInt("user_id");
-String userName = api.get("user_name");
-int userLevel = api.getInt("user_level");
+int userId = api.getDataInt("user_id");
+String userName = api.getData("user_name");
+int userLevel = api.getDataInt("user_level");
 
 %>
 ```
@@ -145,9 +145,9 @@ api.publicRoute(
 if(!api.auth()) return;
 
 // 인증된 사용자 정보 자동 로드
-int userId = api.getInt("user_id");
-String userName = api.get("user_name");
-int userLevel = api.getInt("user_level");
+int userId = api.getDataInt("user_id");
+String userName = api.getData("user_name");
+int userLevel = api.getDataInt("user_level");
 ```
 
 **`api.auth()` 메소드 동작:**

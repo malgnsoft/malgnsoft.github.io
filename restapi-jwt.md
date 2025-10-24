@@ -24,9 +24,9 @@ api.post("/", () -> {
 
     if(info.next() && user.checkPassword(password, info.s("password"))) {
         // RestAPI 객체에 사용자 정보 저장
-        api.put("user_id", info.i("id"));
-        api.put("user_name", info.s("name"));
-        api.put("user_level", info.i("level"));
+        api.setData("user_id", info.i("id"));
+        api.setData("user_name", info.s("name"));
+        api.setData("user_level", info.i("level"));
 
         // JWT 토큰 생성 (60분 유효)
         String token = api.generateToken(60);
@@ -55,9 +55,9 @@ api.post("/", () -> {
 if(!api.auth()) return;
 
 // 인증된 사용자 정보
-int userId = api.getInt("user_id");
-String userName = api.get("user_name");
-int userLevel = api.getInt("user_level");
+int userId = api.getDataInt("user_id");
+String userName = api.getData("user_name");
+int userLevel = api.getDataInt("user_level");
 ```
 
 ### `api.auth()` 메소드 동작
