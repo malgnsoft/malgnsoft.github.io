@@ -33,38 +33,23 @@ REST API에서는 `/api/user`와 같이 확장자 없는 깔끔한 URL을 사용
 
 ### 2. /api/index.jsp 라우터 구현
 
-```jsp
-<%@ page contentType="application/json; charset=utf-8" %><%@ page import="java.util.*, java.io.*, malgnsoft.util.*" %><%
+단순히 확장자만 추가하여 해당 JSP 파일로 포워딩합니다.
 
-// 요청 경로 분석
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%
+
+// 요청 경로에 .jsp 확장자 추가하여 포워딩
 String requestURI = request.getRequestURI();
 String contextPath = request.getContextPath();
-String path = requestURI.substring(contextPath.length() + 5); // "/api/" 제거
+String path = requestURI.substring(contextPath.length());
 
-// 빈 경로 처리
-if(path.isEmpty() || "/".equals(path)) {
-    response.sendError(404, "API endpoint not found");
-    return;
-}
+// /api/user → /api/user.jsp
+String jspPath = path + ".jsp";
 
-// Path 파라미터 분리
-String[] segments = path.split("/");
-String resource = segments[0];
-String id = segments.length > 1 ? segments[1] : null;
-
-// request attribute에 설정 (하위 JSP에서 사용)
-request.setAttribute("resource", resource);
-request.setAttribute("id", id);
-
-// 리소스별 라우팅
-if("user".equals(resource)) {
-    request.getRequestDispatcher("/api/user.jsp").forward(request, response);
-} else if("product".equals(resource)) {
-    request.getRequestDispatcher("/api/product.jsp").forward(request, response);
-} else if("order".equals(resource)) {
-    request.getRequestDispatcher("/api/order.jsp").forward(request, response);
-} else {
-    response.sendError(404, "Unknown resource: " + resource);
+try {
+    request.getRequestDispatcher(jspPath).forward(request, response);
+} catch(Exception e) {
+    response.sendError(404, "API endpoint not found: " + path);
 }
 
 %>
@@ -102,9 +87,6 @@ if(auth.isValid()) {
     userName = auth.getString("user_name");
 }
 
-// Path parameter (index.jsp에서 설정)
-String id = (String)request.getAttribute("id");
-
 %>
 ```
 
@@ -115,19 +97,20 @@ webapp/
 ├── api/
 │   ├── index.jsp          (라우터)
 │   ├── init.jsp           (공통 초기화)
-│   ├── user.jsp           → /api/user, /api/user/123
-│   ├── product.jsp        → /api/product, /api/product/456
-│   └── order.jsp          → /api/order, /api/order/789
+│   ├── user.jsp           → /api/user
+│   ├── product.jsp        → /api/product
+│   └── admin/
+│       └── stats.jsp      → /api/admin/stats
 └── WEB-INF/
     └── web.xml
 ```
 
 ### 5. 동작 방식
 
-- `/api/user` → `index.jsp` → `/api/user.jsp` (includes `init.jsp`)
-- `/api/user/123` → `index.jsp` → `/api/user.jsp` (id="123")
-- `/api/product` → `index.jsp` → `/api/product.jsp` (includes `init.jsp`)
-- `/api/product/456` → `index.jsp` → `/api/product.jsp` (id="456")
+- `/api/user` → `index.jsp` → `/api/user.jsp`
+- `/api/user?id=123` → `index.jsp` → `/api/user.jsp` (f.get("id")로 처리)
+- `/api/product` → `index.jsp` → `/api/product.jsp`
+- `/api/admin/stats` → `index.jsp` → `/api/admin/stats.jsp`
 
 ---
 
@@ -139,11 +122,12 @@ webapp/
 <%@ include file="/api/init.jsp" %><%
 
 // GET /api/user - 목록 조회
-// GET /api/user/123 - 단일 조회
+// GET /api/user?id=123 - 단일 조회
 api.get(() -> {
     UserDao user = new UserDao();
+    String id = f.get("id");
 
-    if(id != null && !id.isEmpty()) {
+    if(!"".equals(id)) {
         // 단일 조회
         DataSet info = user.get(Integer.parseInt(id));
         if(info.next()) {
@@ -175,9 +159,10 @@ api.post(() -> {
     }
 });
 
-// PUT /api/user/123 - 수정
+// PUT /api/user?id=123 - 수정
 api.put(() -> {
-    if(id == null || id.isEmpty()) {
+    String id = f.get("id");
+    if("".equals(id)) {
         api.error(400, "ID는 필수입니다.");
         return;
     }
@@ -193,9 +178,10 @@ api.put(() -> {
     }
 });
 
-// DELETE /api/user/123 - 삭제
+// DELETE /api/user?id=123 - 삭제
 api.delete(() -> {
-    if(id == null || id.isEmpty()) {
+    String id = f.get("id");
+    if("".equals(id)) {
         api.error(400, "ID는 필수입니다.");
         return;
     }
@@ -214,8 +200,8 @@ api.delete(() -> {
 **장점:**
 - `/api/init.jsp`에서 공통 객체 초기화 (m, f, p, auth, j, api)
 - 각 API 파일은 비즈니스 로직만 작성
-- 인증 체크와 Path parameter 처리 자동화
-- 코드 중복 제거
+- 표준 query string 방식으로 파라미터 전달 (`f.get("id")`)
+- 코드가 매우 간결하고 명확함
 
 ---
 
@@ -265,7 +251,8 @@ api.post(() -> {
 
 // DELETE - 사용자 삭제
 api.delete(() -> {
-    if(id == null || id.isEmpty()) {
+    String id = f.get("id");
+    if("".equals(id)) {
         api.error(400, "ID는 필수입니다.");
         return;
     }
@@ -299,7 +286,16 @@ if(userId == 0) {
 }
 ```
 
-### 2. 잘못된 요청 (400 Bad Request)
+### 2. 권한 없음 (403 Forbidden)
+
+```jsp
+if(userLevel < 10) {
+    api.error(403, "관리자만 접근할 수 있습니다.");
+    return;
+}
+```
+
+### 3. 잘못된 요청 (400 Bad Request)
 
 ```jsp
 api.post(() -> {
@@ -314,9 +310,10 @@ api.post(() -> {
 });
 ```
 
-### 3. 지원하는 에러 코드
+### 4. 지원하는 에러 코드
 
 - **401**: Unauthorized (인증 실패)
+- **403**: Forbidden (권한 없음)
 - **400**: Bad Request (잘못된 요청)
 
 ---
@@ -331,8 +328,8 @@ fetch('/api/user')
     .then(response => response.json())
     .then(data => console.log(data));
 
-// GET /api/user/123 - 단일 조회
-fetch('/api/user/123')
+// GET /api/user?id=123 - 단일 조회
+fetch('/api/user?id=123')
     .then(response => response.json())
     .then(data => console.log(data));
 
@@ -347,8 +344,8 @@ fetch('/api/user', {
     .then(response => response.json())
     .then(data => console.log(data));
 
-// PUT /api/user/123 - 수정
-fetch('/api/user/123', {
+// PUT /api/user?id=123 - 수정
+fetch('/api/user?id=123', {
     method: 'PUT',
     headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -358,8 +355,8 @@ fetch('/api/user/123', {
     .then(response => response.json())
     .then(data => console.log(data));
 
-// DELETE /api/user/123 - 삭제
-fetch('/api/user/123', {
+// DELETE /api/user?id=123 - 삭제
+fetch('/api/user?id=123', {
     method: 'DELETE'
 })
     .then(response => response.json())
@@ -396,6 +393,12 @@ Java 8 이상에서만 사용 가능합니다. Lambda 표현식 `() -> { }` 사�
 ### 4. 예외 처리
 
 RestAPI 클래스는 내부적으로 예외를 처리하므로 try-catch가 필요 없습니다.
+
+### 5. 파라미터 전달
+
+Path parameter 대신 표준 query string 사용:
+- ✅ `/api/user?id=123` (권장)
+- ❌ `/api/user/123` (미지원)
 
 ---
 
