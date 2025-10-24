@@ -184,8 +184,7 @@ if(list != null) {
 
 ## 다운로드
 
-- [통합 매뉴얼 (Markdown)](manual-v1.3.md)
-- [매뉴얼 뷰어 (HTML)](view-manual.html)
+- [통합 매뉴얼](manual-v1.3.md) - 모든 문서를 하나의 파일로
 
 ## 링크
 

@@ -6,6 +6,8 @@
 최종 수정일: 2025-10-24
 공식 사이트: https://malgnsoft.github.io
 
+**다운로드**: [📥 Markdown 파일 다운로드](https://raw.githubusercontent.com/malgnsoft/malgnsoft.github.io/master/manual-v1.3.md)
+
 ---
 
 ## 목차
