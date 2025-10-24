@@ -67,11 +67,6 @@ Malgn m = new Malgn(request, response, out);
 Form f = new Form();
 f.setRequest(request);
 
-Page p = new Page();
-p.setRequest(request);
-p.setWriter(out);
-p.setPageContext(pageContext);
-
 Auth auth = new Auth(request, response);
 
 Json j = new Json();
@@ -200,7 +195,7 @@ api.delete(() -> {
 ```
 
 **장점:**
-- `/api/init.jsp`에서 공통 객체 초기화 (m, f, p, auth, j, api)
+- `/api/init.jsp`에서 공통 객체 초기화 (m, f, auth, j, api)
 - 각 API 파일은 비즈니스 로직만 작성
 - 표준 query string 방식으로 파라미터 전달 (`f.get("id")`)
 - 코드가 매우 간결하고 명확함
