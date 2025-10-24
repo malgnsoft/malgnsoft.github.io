@@ -217,10 +217,10 @@ api.delete("/:id", () -> {
 ```
 
 **Base Path 자동 설정:**
-- `api.setBasePath()`를 생략하면 자동으로 JSP 파일 경로에서 설정됩니다
-- 예: `/api/user.jsp` → base path는 `/api/user`
-- 예: `/api/admin/stats.jsp` → base path는 `/api/admin/stats`
-- 명시적으로 설정하려면 `api.setBasePath("/api/user")` 사용
+- `RestAPI` 객체 생성 시 현재 JSP 파일 경로에서 자동 설정됩니다
+- 예: `/api/user.jsp` → basePath는 `/api/user`
+- 예: `/api/admin/stats.jsp` → basePath는 `/api/admin/stats`
+- 다르게 사용하고 싶으면 `api.setBasePath("/api/user")` 호출
 
 **장점:**
 - **라우팅 그룹**: `/api/user` 관련 모든 경로를 user.jsp에서 처리
