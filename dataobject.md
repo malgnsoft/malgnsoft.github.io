@@ -240,11 +240,18 @@ user.item("name", "김철수");
 user.item("email", "kim@example.com");
 user.item("age", 30);
 
-// update 실행 (id = 123인 레코드 수정)
-user.id = "123";
+// update 실행 (get()으로 조회했으므로 user.id가 이미 123으로 설정됨)
 if(user.update()) {
     m.jsAlert("수정되었습니다.");
     m.jsReplace("list.jsp");
+}
+
+// get()을 하지 않고 직접 수정하는 경우
+UserDao user2 = new UserDao();
+user2.id = "123";  // get()을 안했으므로 id 지정 필수
+user2.item("name", "김철수");
+if(user2.update()) {
+    m.p("수정 완료");
 }
 ```
 
