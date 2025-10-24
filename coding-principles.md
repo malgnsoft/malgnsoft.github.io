@@ -281,6 +281,121 @@ if(m.isPost()) {
 - `jsReplace()`: JavaScript alert/confirm 등과 함께 사용, 사용자 확인 후 이동
 - `redirect()`: HTTP 302 리다이렉트, 즉시 이동
 
+### 4-2. AJAX 요청 처리
+
+AJAX를 통해 form을 submit하는 경우 **jsReplace()나 redirect()를 사용하면 안 됩니다**. 반드시 JSON이나 텍스트로 응답해야 합니다.
+
+**❌ 잘못된 예 (AJAX에서 jsReplace 사용):**
+```jsp
+<%
+if(m.isPost()) {
+    UserDao user = new UserDao();
+    user.item("name", f.get("name"));
+
+    if(user.insert()) {
+        m.jsAlert("등록되었습니다.");
+        m.jsReplace("list.jsp");  // ❌ AJAX에서는 작동하지 않음
+    }
+    return;
+}
+%>
+```
+
+**✅ 올바른 예 1: out.print() 사용**
+```jsp
+<%
+if(m.isPost()) {
+    UserDao user = new UserDao();
+    user.item("name", f.get("name"));
+
+    if(user.insert()) {
+        out.print("success");  // 단순 문자열 응답
+    } else {
+        out.print("error");
+    }
+    return;
+}
+%>
+```
+
+**✅ 올바른 예 2: Json.success() / Json.error() 사용**
+```jsp
+<%
+Json j = new Json();
+
+if(m.isPost()) {
+    UserDao user = new UserDao();
+    user.item("name", f.get("name"));
+
+    if(user.insert()) {
+        j.success("등록되었습니다.");  // {"status": "success", "message": "등록되었습니다."}
+    } else {
+        j.error("등록 실패: " + user.getErrMsg());  // {"status": "error", "message": "..."}
+    }
+    return;
+}
+%>
+```
+
+**✅ 올바른 예 3: displayJSON() 사용**
+```jsp
+<%
+if(m.isPost()) {
+    UserDao user = new UserDao();
+    user.item("name", f.get("name"));
+
+    if(user.insert()) {
+        p.setVar("status", "success");
+        p.setVar("message", "등록되었습니다.");
+        p.setVar("id", user.id);
+    } else {
+        p.setVar("status", "error");
+        p.setVar("message", user.getErrMsg());
+    }
+    p.displayJSON();  // JSON 형식으로 출력
+    return;
+}
+%>
+```
+
+**✅ 올바른 예 4: API 응답 (p.setType(2))**
+```jsp
+<%
+// REST API 엔드포인트
+UserDao user = new UserDao();
+user.addSearch("status", 1);
+DataSet list = user.find();
+
+p.setType(2);  // JSON 응답 타입 설정
+p.setLoop("users", list);
+p.display();
+%>
+```
+
+**사용 기준:**
+- **out.print()**: 간단한 성공/실패 여부만 전달할 때
+- **j.success() / j.error()**: 메시지와 함께 표준 JSON 응답
+- **p.displayJSON()**: 여러 데이터를 포함한 JSON 응답
+- **p.setType(2)**: REST API 엔드포인트, 리스트 데이터 응답
+
+**클라이언트 JavaScript 예시:**
+```javascript
+// fetch API 사용
+fetch('/user_register.jsp', {
+    method: 'POST',
+    body: formData
+})
+.then(response => response.json())
+.then(data => {
+    if(data.status === 'success') {
+        alert(data.message);
+        location.href = 'list.jsp';
+    } else {
+        alert(data.message);
+    }
+});
+```
+
 ---
 
 ### 5. Page 메소드 호출 순서 준수
@@ -499,6 +614,16 @@ lm.setListNum(999999);
 DataSet list = lm.getDataSet();  // 2번 쿼리 실행
 ```
 
+### ❌ 7. AJAX 요청에서 jsReplace/redirect 사용
+```jsp
+// 나쁜 예: AJAX에서 페이지 이동 메소드 사용
+if(m.isPost()) {
+    dao.insert();
+    m.jsAlert("완료");
+    m.jsReplace("list.jsp");  // AJAX에서는 작동하지 않음
+}
+```
+
 ---
 
 ## 베스트 프랙티스
@@ -645,6 +770,7 @@ DataSet list = user.find();
 - [ ] try-catch를 사용하지 않았는가?
 - [ ] 외부 라이브러리를 직접 사용하지 않았는가?
 - [ ] if(m.isPost()) 블록에 return이 있는가?
+- [ ] AJAX 요청에서 jsReplace/redirect 대신 JSON을 사용했는가?
 - [ ] Page 메소드를 순서대로 호출했는가?
 - [ ] DataSet 사용 전에 next()를 호출했는가?
 - [ ] 페이징이 필요 없는데 ListManager를 사용하지 않았는가?
