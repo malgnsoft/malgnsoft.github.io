@@ -310,7 +310,7 @@ p.setLoop("notice", list);
 <head>
     <meta charset="UTF-8">
     <title>사이트 제목</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
     <header>

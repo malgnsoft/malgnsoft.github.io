@@ -1,288 +1,125 @@
-# 맑은프레임워크 개발자 매뉴얼
+# 맑은프레임워크 v1.3 통합 매뉴얼
 
-**버전:** 1.3
-**작성일:** 2025년 6월
-**언어:** Java JSP
+**Java JSP 웹 개발 프레임워크**
 
----
-
-## 📖 매뉴얼 소개
-
-이 문서는 맑은프레임워크의 완전한 개발자 가이드입니다.
-프레임워크의 모든 기능과 사용법을 상세하게 설명하며, 실무에서 바로 사용할 수 있는 예제 코드를 포함하고 있습니다.
+버전: 1.3
+최종 수정일: 2025-10-24
+공식 사이트: https://malgnsoft.github.io
 
 ---
 
-## 📑 목차
+## 목차
 
 ### 기본 가이드
-
 1. [프레임워크 소개](#1-프레임워크-소개)
 2. [설치 및 환경설정](#2-설치-및-환경설정)
 3. [시작하기](#3-시작하기)
 
 ### 핵심 기능
-
 4. [맑은템플릿](#4-맑은템플릿)
 5. [데이터베이스 연동](#5-데이터베이스-연동)
 6. [데이터 입력 및 유효성 체크](#6-데이터-입력-및-유효성-체크)
-7. [파일 업로드 및 다운로드](#파일-업로드-및-다운로드)
-8. [목록 및 검색](#목록-및-검색)
-9. [DataSet 활용](#dataset-활용)
+7. [파일 업로드 및 다운로드](#7-파일-업로드-및-다운로드)
+8. [목록 및 검색](#8-목록-및-검색)
+9. [DataSet 활용](#9-dataset-활용)
 
 ### 데이터 처리
-
-10. [JSON 처리](#json-처리)
-11. [XML 처리](#xml-처리)
-12. [Excel 처리](#excel-처리)
+10. [JSON 처리](#10-json-처리)
+11. [XML 처리](#11-xml-처리)
+12. [Excel 처리](#12-excel-처리)
 
 ### 보안 및 인증
-
-13. [암호화](#암호화)
-14. [인증 처리](#인증-처리)
-15. [OAuth 소셜 로그인](#oauth-소셜-로그인)
+13. [암호화](#13-암호화)
+14. [인증 처리](#14-인증-처리)
+15. [OAuth 소셜 로그인](#15-oauth-소셜-로그인)
 
 ### 고급 기능
-
-16. [HTTP 클라이언트](#http-클라이언트)
-17. [이메일 발송](#이메일-발송)
-18. [달력 및 날짜 선택](#달력-및-날짜-선택)
-19. [유틸리티 메소드](#유틸리티-메소드)
-20. [다국어 지원](#다국어-지원)
-21. [OpenAI 통합](#openai-통합)
-22. [파일 전송 및 압축](#파일-전송-및-압축)
-23. [환경설정 및 캐시](#환경설정-및-캐시)
-
----
-
-## 🎯 주요 클래스 빠른 참조
-
-| 클래스 | 변수명 | 설명 |
-|--------|--------|------|
-| **Malgn** | m | 유틸리티 메소드 제공 (날짜, 문자열, 파일 등) |
-| **Form** | f | 폼 데이터 처리 및 유효성 검증 |
-| **Page** | p | 템플릿 처리 및 화면 출력 |
-| **Json** | j | JSON 생성, 파싱, API 응답 |
-| **Auth** | auth | 로그인, 로그아웃, 권한 관리 |
-| **DataObject** | dao | 데이터베이스 기본 연동 (상속 사용) |
-| **DataSet** | - | 데이터 저장 및 처리 |
-| **ListManager** | lm | 목록 및 페이징 처리 |
-| **Gmail** | mail | 이메일 발송 |
-| **MCal** | cal | 달력/날짜 선택 UI |
-| **Http** | - | HTTP 클라이언트 |
-| **OpenAI** | - | ChatGPT API 통합 |
-| **OAuthClient** | oauth | 소셜 로그인 |
-| **AES** | - | 암호화/복호화 |
-| **Message** | msg | 다국어 메시지 관리 |
-| **SimpleFTP** | ftp | FTP 파일 전송 |
-| **Zip** | zip | ZIP 압축 및 해제 |
-| **Cache** | - | 데이터 캐싱 |
-| **Config** | - | 환경설정 관리 |
+16. [HTTP 클라이언트](#16-http-클라이언트)
+17. [이메일 발송](#17-이메일-발송)
+18. [달력 및 날짜 선택](#18-달력-및-날짜-선택)
+19. [유틸리티 메소드](#19-유틸리티-메소드)
+20. [다국어 지원](#20-다국어-지원)
+21. [OpenAI 통합](#21-openai-통합)
+22. [파일 전송 및 압축](#22-파일-전송-및-압축)
+23. [환경설정 및 캐시](#23-환경설정-및-캐시)
 
 ---
 
-## 💡 기본 프로젝트 구조
+## 빠른 참조
 
-```
-/                           - Document Root
-├── css/                    - CSS 파일
-├── js/                     - JavaScript 파일
-├── images/                 - 이미지 파일
-├── fonts/                  - 웹폰트
-├── main/                   - 메인 모듈 (JSP)
-├── admin/                  - 관리자 모듈 (JSP)
-├── data/                   - 업로드 데이터
-│   ├── file/              - 업로드 파일
-│   ├── thumb/             - 썸네일
-│   └── log/               - 로그
-├── html/                   - 템플릿 파일
-│   ├── layout/            - 레이아웃
-│   ├── main/              - 메인 템플릿
-│   └── admin/             - 관리자 템플릿
-└── WEB-INF/                - 설정 및 라이브러리
-    ├── lib/               - JAR 파일
-    ├── classes/           - 컴파일된 클래스
-    └── config/            - 설정 파일
-```
+### 핵심 클래스
 
----
+| 클래스 | 변수명 | 주요 기능 |
+|--------|--------|-----------|
+| Malgn | m | 요청/응답 처리, 디버깅, 유틸리티 |
+| Form | f | 폼 데이터 처리, 유효성 검증 |
+| Page | p | 템플릿 렌더링, 변수 치환 |
+| Json | j | JSON 파싱 및 생성 |
+| Auth | auth | 인증 처리, 세션 관리 |
+| DataObject | - | DAO 베이스 클래스 |
+| DataSet | - | 데이터 컬렉션 |
+| ListManager | - | 페이징 및 검색 |
 
-## ⚠️ 중요 주의사항
+### 빠른 시작
 
-### 1. m.isPost() 사용 시 반드시 return
-
+#### Hello World
 ```jsp
-if(m.isPost() && f.validate()) {
-    // 처리 로직
-    dao.insert(data);
-    m.jsAlert("저장되었습니다.");
-    m.jsReplace("list.jsp");
-    return;  // 반드시 필요!
-}
-```
-
-### 2. 파일 업로드 폼 enctype 필수
-
-```html
-<form method="post" enctype="multipart/form-data">
-    <input type="file" name="file">
-</form>
-```
-
-### 3. 템플릿 변수는 {{}} 사용
-
-```html
-{{name}}          <!-- 올바름 -->
-${name}           <!-- 틀림 -->
-```
-
-### 4. init.jsp 공통 초기화
-
-```jsp
-<%@ page import="java.util.*, java.io.*, malgnsoft.db.*, malgnsoft.util.*" %><%
-Malgn m = new Malgn(request, response, out);
-Form f = new Form(request);
-Page p = new Page(request, response);
-Json j = new Json(request, response);
-Auth auth = new Auth(request, response);
+<%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
+m.p("Hello, World!");
 %>
 ```
 
----
-
-## 🚀 빠른 시작 예제
-
-### Hello World
-
-**JSP (index.jsp):**
+#### 템플릿 렌더링
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 p.setBody("main.index");
-p.setVar("message", "Hello World!");
+p.setVar("title", "환영합니다");
 p.display();
 %>
 ```
 
-**HTML (html/main/index.html):**
-```html
-<html>
-<body>
-    <h1>{{message}}</h1>
-</body>
-</html>
-```
-
-### 데이터베이스 연동
-
-**DAO (UserDao.java):**
-```java
-package dao;
-import malgnsoft.db.*;
-
-public class UserDao extends DataObject {
-    public UserDao() {
-        this.table = "tb_user";
-    }
-}
-```
-
-**JSP (user_list.jsp):**
+#### 데이터베이스 조회
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
-
-UserDao dao = new UserDao();
-DataSet list = dao.findAll("ORDER BY reg_date DESC");
-
-p.setBody("main.user_list");
-p.setLoop("users", list);
+UserDao user = new UserDao();
+DataSet list = user.query("SELECT * FROM tb_user ORDER BY id DESC");
+p.setLoop("list", list);
+p.setBody("user.list");
 p.display();
-
 %>
 ```
 
-**HTML (html/main/user_list.html):**
-```html
-<table>
-    <!--@loop(users)-->
-    <tr>
-        <td>{{users.name}}</td>
-        <td>{{users.email}}</td>
-    </tr>
-    <!--/loop(users)-->
-</table>
-```
-
 ---
 
-## 📚 개발 패턴
+## 중요 참고사항
 
-### 패턴 1: 목록 + 페이징
+### if(m.isPost()) 사용 시 주의
+모든 `if(m.isPost())` 블록은 반드시 `return;`으로 종료해야 합니다:
+
 ```jsp
-ListManager lm = new ListManager();
-lm.setRequest(request);
-lm.setTable("tb_board");
-lm.setListNum(20);
-DataSet list = lm.getDataSet();
-
-p.setLoop("list", list);
-p.setVar("pager", lm.getPaging());
-```
-
-### 패턴 2: 등록/수정 폼 (포스트백)
-```jsp
-if(m.isPost() && f.validate()) {
-    dao.insert(data);
+if(m.isPost()) {
+    // 처리 로직
+    m.jsAlert("저장되었습니다");
     m.jsReplace("list.jsp");
-    return;
+    return;  // 필수!
 }
-// 폼 표시
-p.setBody("main.form");
-p.display();
 ```
 
-### 패턴 3: 파일 업로드
+### 한글 인코딩
+모든 JSP 파일 상단에 charset 지정:
 ```jsp
-File file = f.saveFile("file");
-if(file != null) {
-    data.put("file_name", f.getFileName("file"));
-    data.put("file_path", file.getAbsolutePath());
-}
+<%@ page contentType="text/html; charset=utf-8" %>
 ```
 
-### 패턴 4: API 응답
+### 공백 제거
+init.jsp와 다운로드 처리 JSP는 공백/개행 제거 필수:
 ```jsp
-try {
-    dao.insert(data);
-    j.success("등록되었습니다.", data);
-} catch(Exception e) {
-    j.error("등록 실패");
-}
+<%@ page ... %><%@ include ... %><%
+// 코드
+%>
 ```
 
 ---
-
-## 🔍 AI 개발자를 위한 가이드
-
-이 매뉴얼을 활용하여 맑은프레임워크 기반 웹 애플리케이션을 개발할 때:
-
-1. **전체 컨텍스트 파악**: 이 문서를 먼저 읽고 프레임워크 구조를 이해하세요
-2. **패턴 활용**: 위의 개발 패턴을 참고하여 일관된 코드 작성
-3. **주의사항 준수**: 특히 `m.isPost()` 후 `return` 필수
-4. **예제 참고**: 각 섹션의 전체 예제를 기반으로 개발
-5. **파일 구조**: JSP는 모듈 폴더에, HTML은 html 폴더에 배치
-
----
-
-## 📄 라이선스 및 지원
-
-- **개발사**: 맑은소프트
-- **문의**: support@malgnsoft.com
-- **홈페이지**: https://malgnsoft.com
-
----
-
-<div style="page-break-after: always;"></div>
-
 
 # 1. 프레임워크 소개
 
@@ -515,7 +352,7 @@ http://www.caucho.com/download/resin-4.0.67.zip
 
 **JDK 다운로드**:
 - http://www.oracle.com/technetwork/java/index.html
-- Java SE 6 이상 필요
+- Java SE 8 이상 필요
 
 #### 3. 실행
 
@@ -625,10 +462,11 @@ C:\resin-4.0.67\webapps\Root
 │   ├── file/              - 업로드 파일
 │   ├── tmp/               - 임시 파일
 │   └── log/               - 로그 파일
-├── html/                   - 템플릿 루트
+├── assets/                 - 정적 파일
 │   ├── css/               - CSS 파일
 │   ├── js/                - JavaScript 파일
-│   ├── images/            - 이미지 파일
+│   └── images/            - 이미지 파일
+├── html/                   - 템플릿 루트
 │   ├── layout/            - 레이아웃 템플릿
 │   └── main/              - 모듈 템플릿
 └── WEB-INF/
@@ -645,10 +483,11 @@ mkdir data
 mkdir data\file
 mkdir data\tmp
 mkdir data\log
+mkdir assets
+mkdir assets\css
+mkdir assets\js
+mkdir assets\images
 mkdir html
-mkdir html\css
-mkdir html\js
-mkdir html\images
 mkdir html\layout
 mkdir html\main
 mkdir main
@@ -658,7 +497,8 @@ mkdir main
 
 ```bash
 mkdir -p data/{file,tmp,log}
-mkdir -p html/{css,js,images,layout,main}
+mkdir -p assets/{css,js,images}
+mkdir -p html/{layout,main}
 mkdir main
 ```
 
@@ -1007,11 +847,12 @@ m.p(info);  // DataSet 내용 출력
 ```
 /
 ├── init.jsp                    # 공통 초기화 파일
-├── css/                        # CSS 파일
-│   └── style.css
-├── js/                         # JavaScript 파일
-│   └── lib.validate.js
-├── images/                     # 이미지 파일
+├── assets/                     # 정적 파일
+│   ├── css/                   # CSS 파일
+│   │   └── style.css
+│   ├── js/                    # JavaScript 파일
+│   │   └── lib.validate.js
+│   └── images/                # 이미지 파일
 ├── main/                       # 메인 모듈
 │   ├── index.jsp              # 메인 페이지
 │   ├── user_list.jsp          # 사용자 목록
@@ -1516,7 +1357,7 @@ p.setLoop("notice", list);
 <head>
     <meta charset="UTF-8">
     <title>사이트 제목</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
     <header>

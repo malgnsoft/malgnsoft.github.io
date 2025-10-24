@@ -198,11 +198,12 @@ m.p(info);  // DataSet 내용 출력
 ```
 /
 ├── init.jsp                    # 공통 초기화 파일
-├── css/                        # CSS 파일
-│   └── style.css
-├── js/                         # JavaScript 파일
-│   └── lib.validate.js
-├── images/                     # 이미지 파일
+├── assets/                     # 정적 파일
+│   ├── css/                   # CSS 파일
+│   │   └── style.css
+│   ├── js/                    # JavaScript 파일
+│   │   └── lib.validate.js
+│   └── images/                # 이미지 파일
 ├── main/                       # 메인 모듈
 │   ├── index.jsp              # 메인 페이지
 │   ├── user_list.jsp          # 사용자 목록

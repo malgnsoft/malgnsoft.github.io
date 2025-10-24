@@ -139,10 +139,11 @@ C:\resin-4.0.67\webapps\Root
 │   ├── file/              - 업로드 파일
 │   ├── tmp/               - 임시 파일
 │   └── log/               - 로그 파일
-├── html/                   - 템플릿 루트
+├── assets/                 - 정적 파일
 │   ├── css/               - CSS 파일
 │   ├── js/                - JavaScript 파일
-│   ├── images/            - 이미지 파일
+│   └── images/            - 이미지 파일
+├── html/                   - 템플릿 루트
 │   ├── layout/            - 레이아웃 템플릿
 │   └── main/              - 모듈 템플릿
 └── WEB-INF/
@@ -159,10 +160,11 @@ mkdir data
 mkdir data\file
 mkdir data\tmp
 mkdir data\log
+mkdir assets
+mkdir assets\css
+mkdir assets\js
+mkdir assets\images
 mkdir html
-mkdir html\css
-mkdir html\js
-mkdir html\images
 mkdir html\layout
 mkdir html\main
 mkdir main
@@ -172,7 +174,8 @@ mkdir main
 
 ```bash
 mkdir -p data/{file,tmp,log}
-mkdir -p html/{css,js,images,layout,main}
+mkdir -p assets/{css,js,images}
+mkdir -p html/{layout,main}
 mkdir main
 ```
 
