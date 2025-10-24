@@ -1,25 +1,28 @@
-# 맑은프레임워크 개발자 문서
+# 맑은프레임워크
 
-> 자바 웹개발 프레임워크 - 간결하고 효율적인 웹 애플리케이션 개발
+**Java JSP 웹 개발 프레임워크**
+
+간결하고 효율적인 웹 애플리케이션 개발을 위한 경량 프레임워크입니다.
 
 [![Version](https://img.shields.io/badge/version-1.3-blue.svg)](https://github.com/malgnsoft/malgnsoft.github.io)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Java](https://img.shields.io/badge/java-6%2B-orange.svg)](https://www.oracle.com/java/)
+[![Java](https://img.shields.io/badge/java-8%2B-orange.svg)](https://www.oracle.com/java/)
 
 ---
 
-## 🚀 빠른 시작
+## 빠른 시작
 
 맑은프레임워크를 처음 사용하신다면 다음 순서로 진행하세요:
 
-1. **[프레임워크 소개](introduction.md)** - 맑은프레임워크가 무엇인지 알아보세요
-2. **[설치 및 환경설정](installation.md)** - WAS 설치부터 프레임워크 설정까지
-3. **[시작하기](getting-started.md)** - 첫 번째 페이지 만들기
+1. [프레임워크 소개](introduction.md) - 주요 특징 및 아키텍처
+2. [설치 및 환경설정](installation.md) - WAS 설치 및 데이터베이스 연결
+3. [시작하기](getting-started.md) - Hello World부터 시작하기
 
-## 📚 주요 기능
+## 주요 특징
 
-### 🎨 템플릿 엔진
-프로그램 로직과 화면 출력을 완전히 분리하여 개발 효율을 높입니다.
+### 템플릿 엔진
+프로그램 로직과 화면 출력을 완전히 분리합니다.
+
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 p.setBody("main.index");
@@ -28,8 +31,9 @@ p.display();
 %>
 ```
 
-### 💾 데이터베이스 추상화
-Oracle, MySQL, MSSQL 등 다양한 DBMS를 하나의 인터페이스로 처리합니다.
+### 데이터베이스 추상화
+Oracle, MySQL, MSSQL 등 다양한 DBMS를 통합 인터페이스로 제공합니다.
+
 ```java
 public class UserDao extends DataObject {
     public UserDao() {
@@ -38,34 +42,36 @@ public class UserDao extends DataObject {
 }
 ```
 
-### ✅ 폼 유효성 검증
-서버/클라이언트 양측에서 동작하는 강력한 유효성 검증 기능을 제공합니다.
+### 폼 유효성 검증
+서버/클라이언트 양측 검증을 한 번의 설정으로 구현합니다.
+
 ```jsp
 f.addElement("email", null, "required:'Y', type:'email'");
 f.addElement("age", null, "type:'number', min:1, max:150");
 ```
 
-### 📁 파일 처리
-파일 업로드, 다운로드, 썸네일 생성을 간단하게 처리합니다.
+### 파일 처리
+업로드, 다운로드, 썸네일 생성을 간단하게 처리합니다.
+
 ```jsp
 File file = f.saveFile("file");
 m.download(filePath, fileName);
 ```
 
-## 🎯 핵심 클래스
+## 핵심 클래스
 
 | 클래스 | 변수 | 설명 |
 |--------|------|------|
-| **Malgn** | m | 유틸리티 메소드 (날짜, 문자열, 파일 등) |
-| **Form** | f | 폼 데이터 처리 및 유효성 검증 |
-| **Page** | p | 템플릿 처리 및 화면 출력 |
-| **Json** | j | JSON 생성, 파싱, API 응답 |
-| **Auth** | auth | 로그인, 로그아웃, 권한 관리 |
-| **DataObject** | dao | 데이터베이스 기본 연동 |
-| **DataSet** | - | 데이터 저장 및 처리 |
-| **ListManager** | lm | 목록 및 페이징 처리 |
+| Malgn | m | 요청/응답 처리, 유틸리티 메소드 |
+| Form | f | 폼 데이터 처리 및 유효성 검증 |
+| Page | p | 템플릿 렌더링 및 변수 치환 |
+| Json | j | JSON 생성, 파싱, API 응답 |
+| Auth | auth | 인증 처리 및 세션 관리 |
+| DataObject | - | DAO 베이스 클래스 (CRUD) |
+| DataSet | - | 데이터 컬렉션 |
+| ListManager | lm | 목록 및 페이징 처리 |
 
-## 📖 문서 구성
+## 문서 구성
 
 ### 기본 가이드
 프레임워크를 처음 접하는 개발자를 위한 가이드입니다.
@@ -78,7 +84,8 @@ m.download(filePath, fileName);
 웹 애플리케이션 개발의 핵심 기능들입니다.
 
 - [맑은템플릿](template.md) - 템플릿 엔진 사용법
-- [데이터베이스 연동](database.md) - DAO 패턴, CRUD 작업
+- [데이터베이스 연동](database.md) - 기본 연결 및 쿼리
+- [DataObject 클래스](dataobject.md) - DAO 패턴, CRUD 메소드
 - [데이터 입력 및 유효성 체크](form-validation.md) - Form 클래스 활용
 - [파일 업로드 및 다운로드](file-upload-download.md) - 파일 처리
 - [목록 및 검색](list-search.md) - 페이징, 검색, 정렬
@@ -110,7 +117,7 @@ m.download(filePath, fileName);
 - [파일 전송 및 압축](file-transfer.md) - FTP, ZIP
 - [환경설정 및 캐시](configuration.md) - Config, Cache
 
-## 💡 개발 예제
+## 개발 예제
 
 ### Hello World
 
@@ -171,31 +178,31 @@ try {
 %>
 ```
 
-## 🔗 링크
+## 다운로드
 
-- **GitHub 저장소**: [github.com/malgnsoft](https://github.com/malgnsoft)
-- **개발사**: [맑은소프트](https://malgnsoft.com)
-- **문의**: support@malgnsoft.com
+- [통합 매뉴얼 (Markdown)](manual-v1.3.md)
+- [매뉴얼 뷰어 (HTML)](view-manual.html)
 
-## 📄 다운로드
+## 링크
 
-- [통합 매뉴얼 (Markdown)](manual-v1.3.md) - 전체 문서 하나로
-- [매뉴얼 뷰어](view-manual.html) - 단일 페이지 HTML 뷰어
+- [GitHub](https://github.com/malgnsoft)
+- [맑은소프트](https://malgnsoft.com)
+- 문의: support@malgnsoft.com
 
-## 🤝 기여하기
+## 기여하기
 
-문서 개선 제안이나 오류 수정은 언제나 환영합니다!
+문서 개선 제안 및 오류 수정은 언제나 환영합니다.
 
-1. 이 저장소를 Fork 하세요
-2. 새 브랜치를 만드세요 (`git checkout -b feature/improvement`)
-3. 변경사항을 커밋하세요 (`git commit -am 'Add improvement'`)
-4. 브랜치에 Push 하세요 (`git push origin feature/improvement`)
-5. Pull Request를 생성하세요
+1. Fork this repository
+2. Create a feature branch (`git checkout -b feature/improvement`)
+3. Commit your changes (`git commit -am 'Add improvement'`)
+4. Push to the branch (`git push origin feature/improvement`)
+5. Create a Pull Request
 
-## 📜 라이선스
+## 라이선스
 
-이 문서는 MIT 라이선스 하에 배포됩니다.
+MIT License
 
 ---
 
-**💻 즐거운 개발 되세요!**
+© 2025 Malgn Software. All rights reserved.
