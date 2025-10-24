@@ -140,7 +140,6 @@ JSP 파일에는 HTML 마크업을 작성하지 않습니다.
 UserDao user = new UserDao();
 DataSet list = user.find();
 
-list.first();
 while(list.next()) {
 %>
     <div class="user">
@@ -303,7 +302,7 @@ if(info.next()) {
 UserDao user = new UserDao();
 DataSet list = user.find();
 
-list.first();  // 커서를 처음으로 되돌림
+// first() 없이 바로 while(next()) 사용
 while(list.next()) {
     String name = list.s("name");
     m.p(name);
@@ -311,10 +310,43 @@ while(list.next()) {
 %>
 ```
 
+**✅ first()가 필요한 경우:**
+```jsp
+<%
+UserDao user = new UserDao();
+DataSet list = user.find();
+
+// 첫 번째 순회
+while(list.next()) {
+    m.p(list.s("name"));
+}
+// 커서가 마지막에 위치
+
+// 다시 처음부터 순회하려면 first() 필요
+list.first();
+while(list.next()) {
+    m.p(list.s("email"));
+}
+%>
+```
+
+**주의사항:**
+- `p.setLoop()`는 내부에서 자동으로 `first()` 수행
+- 템플릿에 전달할 DataSet은 first() 불필요
+```jsp
+DataSet list = user.find();
+while(list.next()) {
+    // 로직 처리로 커서가 끝까지 이동
+}
+p.setLoop("list", list);  // 자동으로 first() 수행됨
+p.display();
+```
+
 **이유:**
 - 커서가 -1에서 시작하므로 next()로 첫 레코드로 이동 필요
 - 단일 레코드: next()가 데이터 존재 여부 체크
-- 여러 레코드: first() + while(next()) 패턴으로 순회
+- 여러 레코드: while(next())로 순회 (first() 불필요)
+- first()는 커서를 재사용할 때만 필요
 
 ---
 
