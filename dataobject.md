@@ -183,7 +183,7 @@ user.item("score", 98.5f);             // float
 user.item("reg_date", new Date());     // Date
 ```
 
-### item() - Hashtable로 일괄 설정
+### insert() - Hashtable로 일괄 입력
 
 ```jsp
 UserDao user = new UserDao();
@@ -194,30 +194,13 @@ data.put("name", f.get("name"));
 data.put("email", f.get("email"));
 data.put("age", f.get("age"));
 
-// 일괄 설정
-user.item(data);
-
-// 특정 필드 제외
-user.item(data, "status,admin_flag");  // status, admin_flag는 제외
-
-if(user.insert()) {
+// Hashtable 데이터로 바로 insert
+if(user.insert(data)) {
     m.p("등록 성공");
-}
-```
 
-### insert() - 삽입 후 ID 반환
-
-```jsp
-UserDao user = new UserDao();
-
-user.item("name", "홍길동");
-user.item("email", "hong@example.com");
-
-// insert 후 자동 생성된 ID 반환
-int newId = user.insert(true);
-
-if(newId > 0) {
-    m.p("등록 성공, ID: " + newId);
+    // 자동 생성된 ID 가져오기
+    int newId = user.getInsertId();
+    m.p("생성된 ID: " + newId);
 }
 ```
 
