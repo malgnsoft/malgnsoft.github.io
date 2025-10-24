@@ -258,7 +258,67 @@ p.display();                    // Layout이 설정되지 않음
 
 ---
 
-### 6. 페이징이 필요 없으면 ListManager 사용 금지
+### 6. DataSet 사용 전 반드시 next() 호출
+
+`find()` 또는 `query()`로 리턴된 DataSet을 사용하려면 **반드시 `next()`를 호출**해야 합니다.
+
+**내부 동작 원리:**
+- DataSet은 내부적으로 커서(cursor)를 가지고 있음
+- 초기 커서 위치는 `-1` (데이터 이전)
+- `next()`를 호출하면 커서가 다음 레코드로 이동
+- 레코드가 하나인 경우, `next()`는 데이터 존재 여부를 체크하는 역할
+
+**❌ 잘못된 예:**
+```jsp
+<%
+UserDao user = new UserDao();
+DataSet info = user.get(123);
+
+// next()를 호출하지 않음!
+String name = info.s("name");  // 에러 또는 빈 값
+%>
+```
+
+**✅ 올바른 예 (단일 레코드):**
+```jsp
+<%
+UserDao user = new UserDao();
+DataSet info = user.get(123);
+
+if(info.next()) {
+    // 레코드가 존재함
+    String name = info.s("name");
+    String email = info.s("email");
+    m.p("이름: " + name);
+} else {
+    // 레코드가 없음
+    m.p("사용자를 찾을 수 없습니다.");
+}
+%>
+```
+
+**✅ 올바른 예 (여러 레코드):**
+```jsp
+<%
+UserDao user = new UserDao();
+DataSet list = user.find();
+
+list.first();  // 커서를 처음으로 되돌림
+while(list.next()) {
+    String name = list.s("name");
+    m.p(name);
+}
+%>
+```
+
+**이유:**
+- 커서가 -1에서 시작하므로 next()로 첫 레코드로 이동 필요
+- 단일 레코드: next()가 데이터 존재 여부 체크
+- 여러 레코드: first() + while(next()) 패턴으로 순회
+
+---
+
+### 7. 페이징이 필요 없으면 ListManager 사용 금지
 
 ListManager는 **페이징 처리를 위해 쿼리를 2번 실행**합니다.
 
@@ -343,7 +403,15 @@ if(m.isPost()) {
 p.display();  // POST 처리 후에도 실행됨
 ```
 
-### ❌ 5. 불필요한 ListManager 사용
+### ❌ 5. DataSet에서 next() 호출 누락
+```jsp
+// 나쁜 예: next()를 호출하지 않음
+UserDao user = new UserDao();
+DataSet info = user.get(123);
+String name = info.s("name");  // 에러 또는 빈 값
+```
+
+### ❌ 6. 불필요한 ListManager 사용
 ```jsp
 // 나쁜 예: Excel 다운로드인데 ListManager 사용
 ListManager lm = new ListManager();
@@ -450,6 +518,7 @@ DataSet list = user.find();
 - [ ] 외부 라이브러리를 직접 사용하지 않았는가?
 - [ ] if(m.isPost()) 블록에 return이 있는가?
 - [ ] Page 메소드를 순서대로 호출했는가?
+- [ ] DataSet 사용 전에 next()를 호출했는가?
 - [ ] 페이징이 필요 없는데 ListManager를 사용하지 않았는가?
 - [ ] 반복문에서 dao.clear()를 호출했는가?
 
