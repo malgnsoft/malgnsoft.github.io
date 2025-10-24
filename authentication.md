@@ -1,4 +1,4 @@
-# 11. 인증 처리
+# 인증 처리
 
 [← 목차로 돌아가기](README.md)
 
@@ -6,12 +6,80 @@
 
 ## 인증 시스템 개요
 
-MalgnFramework는 세션 및 쿠키 기반의 간단한 인증 시스템을 제공합니다.
+맑은프레임워크는 **세션 및 쿠키 기반**의 강력한 인증 시스템을 제공합니다.
+
+### 핵심 개념
+
+**Auth 클래스는 init.jsp에서 주로 사용됩니다:**
+
+1. **객체 생성 후 `isValid()` 호출**: 인증 데이터 검증
+2. **검증 성공 시**: 전역 변수(userId, userName 등) 설정
+3. **세부 페이지에서**: `userId == 0` 또는 `userId == null`로 로그인 상태 확인
 
 ### 주요 클래스
 
-- **Auth 클래스**: 인증 정보 저장/조회
+- **Auth 클래스**: 인증 정보 저장/조회/검증
 - **Malgn 클래스 (m)**: 세션/쿠키 관리 메소드
+
+---
+
+## init.jsp에서 인증 처리 패턴
+
+**init.jsp에서 Auth 객체를 생성하고 전역 변수를 설정하는 것이 핵심입니다:**
+
+```jsp
+<%@ page contentType="text/html; charset=utf-8" %>
+<%@ page import="malgnsoft.*" %>
+<%@ page import="malgnsoft.db.*" %>
+<%@ page import="malgnsoft.util.*" %>
+<%
+
+Malgn m = new Malgn(request, response);
+Form f = new Form(request);
+Page p = new Page(request, response);
+Json j = new Json(request, response);
+
+// Auth 객체 생성
+Auth auth = new Auth(request, response);
+
+// 전역 변수 초기화
+int userId = 0;
+String userName = null;
+int userLevel = 0;
+
+// 인증 데이터 검증
+if(auth.isValid()) {
+    // 인증 성공: 사이트 전체에서 사용할 변수 설정
+    userId = auth.getInt("user_id");
+    userName = auth.getString("user_name");
+    userLevel = auth.getInt("user_level");
+}
+
+// 템플릿에서 사용할 수 있도록 설정
+p.setVar("userId", userId);
+p.setVar("userName", userName);
+p.setVar("userLevel", userLevel);
+
+%>
+```
+
+**세부 페이지에서 로그인 체크:**
+
+```jsp
+<%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+// userId가 0이면 로그인 안된 상태
+if(userId == 0) {
+    m.jsAlert("로그인이 필요합니다.");
+    m.jsReplace("/main/login.jsp");
+    return;
+}
+
+// 로그인된 사용자 처리
+m.p("환영합니다, " + userName + "님!");
+
+%>
+```
 
 ---
 
@@ -19,10 +87,9 @@ MalgnFramework는 세션 및 쿠키 기반의 간단한 인증 시스템을 제�
 
 ### 기본 개념
 
-Auth 클래스는 로그인 사용자 정보를 세션에 저장하고 관리합니다.
+Auth 클래스는 로그인 사용자 정보를 **암호화하여** 세션 또는 쿠키에 저장합니다.
 
 ```jsp
-// init.jsp에서 자동 생성됨
 Auth auth = new Auth(request, response);
 ```
 
@@ -30,13 +97,42 @@ Auth auth = new Auth(request, response);
 
 | 메소드 | 설명 |
 |--------|------|
+| isValid() | 인증 데이터 검증 (init.jsp에서 사용) |
 | put(key, value) | 인증 정보 추가 |
-| save() | 세션에 저장 |
-| get(key) | 값 가져오기 |
+| save() | 세션/쿠키에 저장 |
 | getInt(key) | 정수 값 가져오기 |
 | getString(key) | 문자열 값 가져오기 |
-| clear() | 인증 정보 삭제 (로그아웃) |
-| isLogin() | 로그인 여부 확인 |
+| delete() | 인증 정보 삭제 (로그아웃) |
+| loginForm() | 로그인 페이지로 리다이렉트 |
+
+### Auth 설정 옵션
+
+Auth 클래스는 다양한 설정을 지원합니다:
+
+| 설정 메소드 | 기본값 | 설명 |
+|------------|--------|------|
+| setKeyName(String) | "AUTHID" | 세션/쿠키 키 이름 |
+| setLoginURL(String) | "../member/login.jsp" | 로그인 페이지 URL |
+| setPath(String) | "/" | 쿠키 경로 |
+| setDomain(String) | null | 쿠키 도메인 (.example.com) |
+| setSecure(boolean) | false | HTTPS에서만 쿠키 전송 |
+| setHttpOnly(boolean) | false | JavaScript에서 쿠키 접근 차단 |
+| setSameSite(String) | null | SameSite 속성 (Strict/Lax/None) |
+| setValidTime(int) | -1 | 인증 유효 시간 (초), -1이면 무제한 |
+| setMaxAge(int) | -1 | 쿠키 유효 기간 (초), -1이면 브라우저 종료 시 삭제 |
+
+**설정 예시:**
+
+```jsp
+Auth auth = new Auth(request, response);
+auth.setKeyName("MY_AUTH");
+auth.setLoginURL("/member/login.jsp");
+auth.setSecure(true);  // HTTPS 전용
+auth.setHttpOnly(true);  // XSS 방지
+auth.setSameSite("Strict");  // CSRF 방지
+auth.setValidTime(3600);  // 1시간 후 재인증 필요
+auth.setMaxAge(86400);  // 쿠키 24시간 유지
+```
 
 ---
 
@@ -112,7 +208,7 @@ p.display();
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
 // 인증 정보 삭제
-auth.clear();
+auth.delete();
 
 m.jsAlert("로그아웃되었습니다.");
 m.jsReplace("/main/login.jsp");
@@ -129,17 +225,14 @@ m.jsReplace("/main/login.jsp");
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-// 로그인 체크
-if(!auth.isLogin()) {
+// 로그인 체크 (userId는 init.jsp에서 설정됨)
+if(userId == 0) {
     m.jsAlert("로그인이 필요합니다.");
     m.jsReplace("/main/login.jsp");
     return;
 }
 
-// 로그인한 사용자 정보
-int userId = auth.getInt("user_id");
-String userName = auth.getString("user_name");
-
+// 로그인한 사용자 정보 사용
 m.p("로그인 사용자: " + userName + " (ID: " + userId + ")");
 
 %>
@@ -151,14 +244,13 @@ m.p("로그인 사용자: " + userName + " (ID: " + userId + ")");
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
 // 로그인 체크
-if(!auth.isLogin()) {
+if(userId == 0) {
     m.jsAlert("로그인이 필요합니다.");
     m.jsReplace("/main/login.jsp");
     return;
 }
 
-// 관리자 권한 체크
-int userLevel = auth.getInt("user_level");
+// 관리자 권한 체크 (userLevel은 init.jsp에서 설정됨)
 if(userLevel < 10) {
     m.jsAlert("관리자만 접근할 수 있습니다.");
     m.jsBack();
@@ -306,26 +398,56 @@ p.display();
 </form>
 ```
 
-### 2. 자동 로그인 기능
+### 2. 자동 로그인 기능 (init.jsp에서 처리)
+
+**init.jsp에 자동 로그인 로직 추가:**
 
 ```jsp
-<%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
+<%@ page contentType="text/html; charset=utf-8" %>
+<%@ page import="malgnsoft.*" %>
+<%@ page import="malgnsoft.db.*" %>
+<%@ page import="malgnsoft.util.*" %>
+<%
 
-// 자동 로그인 체크
-String autoLoginToken = m.getCookie("auto_login_token");
-if(autoLoginToken != null && !auth.isLogin()) {
+Malgn m = new Malgn(request, response);
+Form f = new Form(request);
+Page p = new Page(request, response);
+Json j = new Json(request, response);
+Auth auth = new Auth(request, response);
 
-    // 토큰으로 사용자 찾기
-    UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE auto_login_token = ?", autoLoginToken);
+int userId = 0;
+String userName = null;
 
-    if(user.next()) {
-        // 자동 로그인 처리
-        auth.put("user_id", user.getInt("id"));
-        auth.put("user_name", user.getString("name"));
-        auth.save();
+// 인증 검증
+if(auth.isValid()) {
+    userId = auth.getInt("user_id");
+    userName = auth.getString("user_name");
+} else {
+    // 자동 로그인 체크
+    String autoLoginToken = m.getCookie("auto_login_token");
+    if(autoLoginToken != null) {
+        UserDao dao = new UserDao();
+        DataSet user = dao.query("WHERE auto_login_token = ?", new Object[]{autoLoginToken});
+
+        if(user.next()) {
+            // 자동 로그인 처리
+            auth.put("user_id", user.getInt("id"));
+            auth.put("user_name", user.getString("name"));
+            auth.save();
+
+            userId = user.getInt("id");
+            userName = user.getString("name");
+        }
     }
 }
+
+p.setVar("userId", userId);
+p.setVar("userName", userName);
+
+%>
+```
+
+**로그인 페이지에서 자동 로그인 토큰 저장:
 
 // 로그인 폼 처리
 if(m.isPost() && f.validate()) {
@@ -416,7 +538,7 @@ int userId = auth.getInt("user_id");
 String userName = auth.getString("user_name");
 
 // 템플릿에서 사용할 수 있도록 설정
-p.setVar("isLogin", auth.isLogin());
+p.setVar("isLogin", userId == 0);
 p.setVar("userId", userId);
 p.setVar("userName", userName);
 
