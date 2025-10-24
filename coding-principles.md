@@ -539,6 +539,54 @@ UserDao user = new UserDao();
 DataSet list = user.find();
 ```
 
+### ✅ 5. 디버깅 활용
+
+맑은프레임워크의 대부분의 클래스는 `setDebug()` 메소드를 지원합니다.
+
+**개발 중 화면 디버깅:**
+```jsp
+<%
+UserDao user = new UserDao();
+user.setDebug(out);  // 디버그 정보를 화면에 출력
+
+user.addSearch("name", "홍길동", "LIKE");
+user.setOrderBy("id DESC");
+DataSet list = user.find();
+// 실행된 SQL 쿼리, 파라미터, 실행 시간이 화면에 출력됨
+%>
+```
+
+**운영 중 로그파일 디버깅:**
+```jsp
+<%
+UserDao user = new UserDao();
+user.setDebug();  // 디버그 정보를 로그파일에 기록
+
+user.addSearch("status", 1);
+DataSet list = user.find();
+// /logs/error.log에 SQL 쿼리와 실행 정보가 기록됨
+%>
+```
+
+**지원하는 클래스:**
+- `DataObject` (모든 DAO)
+- `ListManager`
+- `ExcelX`
+- `Http`
+- `Xml`
+- 기타 대부분의 유틸리티 클래스
+
+**디버그 출력 예시:**
+```
+[DEBUG] SQL: SELECT * FROM tb_user WHERE name LIKE ? ORDER BY id DESC
+[DEBUG] Params: [%홍길동%]
+[DEBUG] Execution Time: 15ms
+```
+
+**사용 기준:**
+- **setDebug(out)**: 개발 환경에서 즉시 확인, 로그 파일 확인 불필요
+- **setDebug()**: 운영 환경에서 실시간 디버깅, 화면에 정보 노출 방지
+
 ---
 
 ## 체크리스트
