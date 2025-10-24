@@ -425,7 +425,64 @@ fetch('/user_register.jsp', {
 
 ---
 
-### 5. Page 메소드 호출 순서 준수
+### 5. GET/POST 파라미터 처리 구분 (보안)
+
+**보안상의 이유로 GET과 POST 파라미터는 다른 메소드를 사용해야 합니다.**
+
+**GET 파라미터: m.rs(), m.ri() 사용 (XSS 필터 자동 적용)**
+```jsp
+<%
+// GET으로 전달된 파라미터 (쿼리스트링)
+String keyword = m.rs("keyword");  // XSS 필터 적용됨
+int page = m.ri("page");           // 정수 변환
+int id = m.ri("id");
+
+// 검색 조건에 사용
+UserDao user = new UserDao();
+user.addSearch("name", keyword, "LIKE");
+DataSet list = user.find();
+%>
+```
+
+**POST 파라미터: f.get() 사용 (원본 데이터)**
+```jsp
+<%
+if(m.isPost()) {
+    UserDao user = new UserDao();
+
+    // POST로 전달된 데이터 (Form 데이터)
+    user.item("name", f.get("name"));      // 원본 데이터 그대로 저장
+    user.item("content", f.get("content")); // HTML 에디터 내용 등
+
+    if(user.insert()) {
+        m.jsReplace("list.jsp");
+    }
+    return;
+}
+%>
+```
+
+**이유:**
+- **m.rs()**: GET 파라미터는 URL에 노출되므로 XSS 공격 위험이 있음. 자동 필터링 필요
+- **f.get()**: POST 데이터는 DB에 저장할 원본 데이터이므로 필터링하지 않음 (HTML 에디터 내용 등)
+- 출력 시에는 별도로 필터링하여 XSS 방어
+
+**출력 시 XSS 방어:**
+```jsp
+// 템플릿에서 출력 시 자동 escape
+{{user.content}}  // 자동으로 HTML escape됨
+
+// JSP에서 직접 출력 시
+<%= m.escape(content) %>  // HTML escape
+```
+
+**사용 기준:**
+- **GET (m.rs, m.ri)**: 검색 키워드, 페이지 번호, ID 조회, 필터 조건
+- **POST (f.get)**: 게시글 내용, 사용자 입력 데이터, 파일 업로드
+
+---
+
+### 6. Page 메소드 호출 순서 준수
 
 Page 객체의 메소드는 정해진 순서대로 호출해야 합니다.
 
@@ -447,7 +504,7 @@ p.display();                    // Layout이 설정되지 않음
 
 ---
 
-### 6. DataSet 사용 전 반드시 next() 호출
+### 7. DataSet 사용 전 반드시 next() 호출
 
 `find()` 또는 `query()`로 리턴된 DataSet을 사용하려면 **반드시 `next()`를 호출**해야 합니다.
 
@@ -540,7 +597,7 @@ p.display();
 
 ---
 
-### 7. 페이징이 필요 없으면 ListManager 사용 금지
+### 8. 페이징이 필요 없으면 ListManager 사용 금지
 
 ListManager는 **페이징 처리를 위해 쿼리를 2번 실행**합니다.
 
@@ -651,6 +708,19 @@ if(m.isPost()) {
 }
 ```
 
+### ❌ 8. GET/POST 파라미터 처리 혼용
+```jsp
+// 나쁜 예: GET 파라미터를 f.get()으로 받음 (XSS 필터 없음)
+String keyword = f.get("keyword");  // XSS 공격 위험!
+user.addSearch("name", keyword, "LIKE");
+
+// 나쁜 예: POST 데이터를 m.rs()로 받음 (필터링되어 원본 손실)
+if(m.isPost()) {
+    String content = m.rs("content");  // HTML 에디터 내용이 손상됨
+    user.item("content", content);
+}
+```
+
 ---
 
 ## 베스트 프랙티스
@@ -681,26 +751,35 @@ p.display();
 %>
 ```
 
-### ✅ 2. 조건부 검색
+### ✅ 2. GET/POST 파라미터 올바른 처리
 
 ```jsp
 <%
 UserDao user = new UserDao();
 
+// GET 파라미터: m.rs(), m.ri() 사용 (XSS 필터 적용)
+String keyword = m.rs("keyword");  // 검색어
+int page = m.ri("page");           // 페이지 번호
+int id = m.ri("id");               // 조회 ID
+
 // 검색어가 있을 때만 조건 추가
-String keyword = f.get("keyword");
 if(!"".equals(keyword)) {
     user.addSearch("name,email", keyword, "LIKE");
 }
 
-// 상태값이 있을 때만 조건 추가
-int status = f.getInt("status", -1);
-if(status >= 0) {
-    user.addSearch("status", status);
-}
-
 user.setOrderBy("id DESC");
 DataSet list = user.find();
+
+// POST 처리: f.get() 사용 (원본 데이터)
+if(m.isPost()) {
+    user.item("name", f.get("name"));
+    user.item("content", f.get("content"));  // HTML 에디터 내용
+
+    if(user.insert()) {
+        m.jsReplace("list.jsp");
+    }
+    return;
+}
 %>
 ```
 
@@ -797,6 +876,7 @@ DataSet list = user.find();
 - [ ] try-catch를 사용하지 않았는가?
 - [ ] 외부 라이브러리를 직접 사용하지 않았는가?
 - [ ] if(m.isPost()) 블록에 return이 있는가?
+- [ ] GET 파라미터는 m.rs()/m.ri()를, POST 데이터는 f.get()을 사용했는가?
 - [ ] AJAX 요청에서 jsReplace/redirect 대신 JSON을 사용했는가?
 - [ ] Page 메소드를 순서대로 호출했는가?
 - [ ] DataSet 사용 전에 next()를 호출했는가?

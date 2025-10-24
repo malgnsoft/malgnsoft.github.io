@@ -400,6 +400,23 @@ Path parameter 대신 표준 query string 사용:
 - ✅ `/api/user?id=123` (권장)
 - ❌ `/api/user/123` (미지원)
 
+### 6. GET 파라미터 보안 (선택사항)
+
+API에서도 GET 파라미터에 XSS 필터를 적용하려면 `m.rs()`/`m.ri()` 사용을 권장:
+
+```jsp
+api.get(() -> {
+    int id = m.ri("id");  // XSS 필터 적용
+    String keyword = m.rs("keyword");  // XSS 필터 적용
+
+    UserDao user = new UserDao();
+    if(id > 0) {
+        DataSet info = user.get(id);
+        // ...
+    }
+});
+```
+
 ---
 
 ## 관련 문서
