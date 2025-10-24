@@ -29,7 +29,7 @@ http://www.caucho.com/download/resin-4.0.67.zip
 
 **JDK 다운로드**:
 - http://www.oracle.com/technetwork/java/index.html
-- Java SE 6 이상 필요
+- Java SE 8 이상 필요
 
 #### 3. 실행
 
