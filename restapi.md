@@ -131,6 +131,30 @@ api.get("/", () -> {
     j.print();
 });
 
+// GET /api/user/list - 페이징 목록 (고정 경로)
+api.get("/list", () -> {
+    int page = m.ri("page", 1);
+    int size = m.ri("size", 20);
+
+    UserDao user = new UserDao();
+    DataSet list = user.findWithPaging(page, size);
+    int total = user.getTotal();
+
+    j.add("users", list);
+    j.add("total", total);
+    j.add("page", page);
+    j.add("size", size);
+    j.print();
+});
+
+// GET /api/user/active - 활성 사용자만 (고정 경로)
+api.get("/active", () -> {
+    UserDao user = new UserDao();
+    DataSet list = user.findByStatus("active");
+    j.add("users", list);
+    j.print();
+});
+
 // GET /api/user/:id - 단일 조회 (path parameter)
 api.get("/:id", () -> {
     int id = api.getParamInt("id");  // path parameter에서 id 추출
@@ -324,6 +348,16 @@ fetch('/api/user')
     .then(response => response.json())
     .then(data => console.log(data));
 
+// GET /api/user/list - 페이징 목록 (고정 경로)
+fetch('/api/user/list?page=1&size=20')
+    .then(response => response.json())
+    .then(data => console.log(data));
+
+// GET /api/user/active - 활성 사용자 (고정 경로)
+fetch('/api/user/active')
+    .then(response => response.json())
+    .then(data => console.log(data));
+
 // GET /api/user/123 - 단일 조회 (path parameter)
 fetch('/api/user/123')
     .then(response => response.json())
@@ -446,25 +480,50 @@ api.get(() -> {
 ### 지원 패턴
 
 ```jsp
-// 단일 parameter
+// 1. 고정 경로 (fixed path)
+api.get("/list", () -> {
+    // /api/user/list
+});
+
+api.get("/active", () -> {
+    // /api/user/active
+});
+
+api.get("/search", () -> {
+    String keyword = m.rs("keyword");
+    // /api/user/search?keyword=홍길동
+});
+
+// 2. 단일 parameter
 api.get("/:id", () -> {
     int id = api.getParamInt("id");
     // /api/user/123 → id=123
 });
 
-// 복수 parameter
+// 3. 복수 parameter
 api.get("/:category/:id", () -> {
     String category = api.getParam("category");
     int id = api.getParamInt("id");
     // /api/product/food/123 → category=food, id=123
 });
 
-// 혼합 사용
+// 4. 혼합 사용 (고정 경로 + parameter)
 api.get("/:id/comments", () -> {
     int id = api.getParamInt("id");
     // /api/post/123/comments → id=123
 });
+
+api.get("/:id/orders", () -> {
+    int id = api.getParamInt("id");
+    // /api/user/123/orders → id=123
+});
 ```
+
+**매칭 우선순위:**
+1. 고정 경로 먼저 매칭 (예: `/list`, `/active`)
+2. Path parameter 패턴 매칭 (예: `/:id`)
+
+따라서 `/api/user/list`는 `/:id`보다 `/list`에 먼저 매칭됩니다.
 
 ### Parameter 추출 메소드
 
