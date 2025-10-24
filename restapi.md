@@ -78,19 +78,12 @@ Json j = new Json();
 
 RestAPI api = new RestAPI(request, response);
 
-// 인증 체크 (세션 기반)
+// JWT 토큰 인증
 int userId = 0;
 String userName = null;
 int userLevel = 0;
 
-if(auth.isValid()) {
-    userId = auth.getInt("user_id");
-    userName = auth.getString("user_name");
-    userLevel = auth.getInt("user_level");
-}
-
-// JWT 토큰 인증 (Authorization 헤더 체크)
-if(userId == 0 && auth.isValidToken()) {
+if(auth.isValidToken()) {
     userId = auth.getInt("user_id");
     userName = auth.getString("user_name");
     userLevel = auth.getInt("user_level");
@@ -476,8 +469,8 @@ api.post(() -> {
 `/api/init.jsp`에서 자동으로 JWT 토큰을 검증합니다:
 
 ```jsp
-// JWT 토큰 인증 (Authorization 헤더 체크)
-if(userId == 0 && auth.isValidToken()) {
+// JWT 토큰 인증
+if(auth.isValidToken()) {
     userId = auth.getInt("user_id");
     userName = auth.getString("user_name");
     userLevel = auth.getInt("user_level");
@@ -502,7 +495,7 @@ if(token != null && !"".equals(token)) {
 }
 
 // JWT 토큰 인증
-if(userId == 0 && auth.isValidToken()) {
+if(auth.isValidToken()) {
     userId = auth.getInt("user_id");
     userName = auth.getString("user_name");
     userLevel = auth.getInt("user_level");
@@ -598,36 +591,7 @@ api.get(() -> {
 %>
 ```
 
-### 5. JWT vs 세션 비교
-
-| 구분 | 세션 기반 (Cookie) | JWT 토큰 |
-|------|-------------------|----------|
-| 저장 위치 | 서버 세션 | 클라이언트 (로컬스토리지) |
-| 상태 | Stateful | Stateless |
-| 확장성 | 서버 증설 시 세션 공유 필요 | 서버 증설 용이 |
-| 인증 방법 | `auth.isValid()` | `auth.isValidToken()` |
-| 토큰 생성 | `auth.save()` | `auth.generateToken(분)` |
-| 사용 예 | 웹 브라우저 | 모바일 앱, SPA |
-| 만료 관리 | 서버에서 자동 갱신 | 클라이언트에서 재발급 요청 |
-
-**init.jsp에서 두 방식 모두 지원:**
-```jsp
-// 세션 인증 먼저 확인
-if(auth.isValid()) {
-    userId = auth.getInt("user_id");
-    userName = auth.getString("user_name");
-    userLevel = auth.getInt("user_level");
-}
-
-// 세션이 없으면 JWT 토큰 확인
-if(userId == 0 && auth.isValidToken()) {
-    userId = auth.getInt("user_id");
-    userName = auth.getString("user_name");
-    userLevel = auth.getInt("user_level");
-}
-```
-
-### 6. 보안 고려사항
+### 5. 보안 고려사항
 
 1. **HTTPS 필수**: JWT 토큰은 반드시 HTTPS를 통해 전송해야 합니다.
 2. **토큰 만료 시간**: 보안을 위해 짧은 만료 시간(30~60분)을 권장합니다.
