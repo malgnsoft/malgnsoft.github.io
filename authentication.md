@@ -28,16 +28,17 @@
 **init.jsp에서 Auth 객체를 생성하고 전역 변수를 설정하는 것이 핵심입니다:**
 
 ```jsp
-<%@ page contentType="text/html; charset=utf-8" %>
-<%@ page import="malgnsoft.*" %>
-<%@ page import="malgnsoft.db.*" %>
-<%@ page import="malgnsoft.util.*" %>
-<%
+<%@ page contentType="text/html; charset=utf-8" %><%@ page import="java.util.*, java.io.*, malgnsoft.db.*, malgnsoft.util.*" %><%
 
-Malgn m = new Malgn(request, response);
-Form f = new Form(request);
-Page p = new Page(request, response);
-Json j = new Json(request, response);
+Malgn m = new Malgn(request, response, out);
+
+Form f = new Form();
+f.setRequest(request);
+
+Page p = new Page();
+p.setRequest(request);
+p.setWriter(out);
+p.setPageContext(pageContext);
 
 // Auth 객체 생성
 Auth auth = new Auth(request, response);
@@ -403,16 +404,18 @@ p.display();
 **init.jsp에 자동 로그인 로직 추가:**
 
 ```jsp
-<%@ page contentType="text/html; charset=utf-8" %>
-<%@ page import="malgnsoft.*" %>
-<%@ page import="malgnsoft.db.*" %>
-<%@ page import="malgnsoft.util.*" %>
-<%
+<%@ page contentType="text/html; charset=utf-8" %><%@ page import="java.util.*, java.io.*, malgnsoft.db.*, malgnsoft.util.*" %><%
 
-Malgn m = new Malgn(request, response);
-Form f = new Form(request);
-Page p = new Page(request, response);
-Json j = new Json(request, response);
+Malgn m = new Malgn(request, response, out);
+
+Form f = new Form();
+f.setRequest(request);
+
+Page p = new Page();
+p.setRequest(request);
+p.setWriter(out);
+p.setPageContext(pageContext);
+
 Auth auth = new Auth(request, response);
 
 int userId = 0;
@@ -525,20 +528,31 @@ if(m.isPost() && f.validate()) {
 ### 4. init.jsp에 전역 인증 변수 설정
 
 ```jsp
-<%@ page contentType="text/html; charset=utf-8" %><%@ page import="malgnsoft.*" %><%@ page import="malgnsoft.db.*" %><%@ page import="malgnsoft.util.*" %><%
+<%@ page contentType="text/html; charset=utf-8" %><%@ page import="java.util.*, java.io.*, malgnsoft.db.*, malgnsoft.util.*" %><%
 
-Malgn m = new Malgn(request, response);
-Form f = new Form(request);
-Page p = new Page(request, response);
-Json j = new Json(request, response);
+Malgn m = new Malgn(request, response, out);
+
+Form f = new Form();
+f.setRequest(request);
+
+Page p = new Page();
+p.setRequest(request);
+p.setWriter(out);
+p.setPageContext(pageContext);
+
 Auth auth = new Auth(request, response);
 
 // 전역 변수로 사용자 ID 설정
-int userId = auth.getInt("user_id");
-String userName = auth.getString("user_name");
+int userId = 0;
+String userName = null;
+
+if(auth.isValid()) {
+    userId = auth.getInt("user_id");
+    userName = auth.getString("user_name");
+}
 
 // 템플릿에서 사용할 수 있도록 설정
-p.setVar("isLogin", userId == 0);
+p.setVar("isLogin", userId != 0);
 p.setVar("userId", userId);
 p.setVar("userName", userName);
 
