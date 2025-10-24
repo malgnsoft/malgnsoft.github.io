@@ -372,11 +372,38 @@ p.display();
 %>
 ```
 
+**✅ 올바른 예 5: RestAPI 클래스 사용 (권장)**
+```jsp
+<%
+Json j = new Json();
+RestAPI api = new RestAPI(request, response);
+
+api.get(() -> {
+    UserDao user = new UserDao();
+    DataSet list = user.find();
+    j.add("users", list);
+    j.print();
+});
+
+api.post(() -> {
+    UserDao user = new UserDao();
+    user.item("name", f.get("name"));
+
+    if(user.insert()) {
+        j.success("등록되었습니다.", user.id);
+    } else {
+        j.error(user.getErrMsg());
+    }
+});
+%>
+```
+
 **사용 기준:**
 - **out.print()**: 간단한 성공/실패 여부만 전달할 때
 - **j.success() / j.error()**: 메시지와 함께 표준 JSON 응답
 - **p.displayJSON()**: 여러 데이터를 포함한 JSON 응답
 - **p.setType(2)**: REST API 엔드포인트, 리스트 데이터 응답
+- **RestAPI 클래스**: RESTful API 개발 시 권장 (GET/POST/PUT/DELETE 분기)
 
 **클라이언트 JavaScript 예시:**
 ```javascript
