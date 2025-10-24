@@ -32,6 +32,7 @@
 **REST API 개발**
 
 - [REST API 개발](restapi.md)
+- [고급 라우팅](restapi-advanced.md)
 - [JWT 인증](restapi-jwt.md)
 - [CORS 설정](restapi-cors.md)
 - [응답 표준](restapi-response.md)
