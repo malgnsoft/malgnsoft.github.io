@@ -31,10 +31,10 @@ api.post("/", () -> {
         // JWT 토큰 생성 (60분 유효)
         String token = api.generateToken(60);
 
-        j.add("token", token);
-        j.add("user_id", info.i("id"));
-        j.add("user_name", info.s("name"));
-        j.add("user_level", info.i("level"));
+        j.put("token", token);
+        j.put("user_id", info.i("id"));
+        j.put("user_name", info.s("name"));
+        j.put("user_level", info.i("level"));
         j.print();
     } else {
         j.error("INVALID_CREDENTIALS", "이메일 또는 비밀번호가 일치하지 않습니다.");
@@ -139,8 +139,8 @@ api.get("/", () -> {
     StatsDao stats = new StatsDao();
     DataSet data = stats.getMonthlyStats();
 
-    j.add("stats", data);
-    j.add("requested_by", userName);  // JWT 토큰에서 추출된 userName 사용
+    j.put("stats", data);
+    j.put("requested_by", userName);  // JWT 토큰에서 추출된 userName 사용
     j.print();
 });
 

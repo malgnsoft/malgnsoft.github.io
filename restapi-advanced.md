@@ -219,13 +219,13 @@ api.get("/:id", () -> {
     DataSet info = user.get(id);
 
     if(info.next()) {
-        j.add("user", info);
+        j.put("user", info);
 
         // includeOrders가 true면 주문 목록도 포함
         if(includeOrders) {
             OrderDao order = new OrderDao();
             DataSet orders = order.findByUserId(id);
-            j.add("orders", orders);
+            j.put("orders", orders);
         }
 
         j.print();
@@ -265,10 +265,10 @@ api.get("/", () -> {
     DataSet list = product.find(keyword, page, size);
     int total = product.getTotal();
 
-    j.add("products", list);
-    j.add("total", total);
-    j.add("page", page);
-    j.add("size", size);
+    j.put("products", list);
+    j.put("total", total);
+    j.put("page", page);
+    j.put("size", size);
     j.print();
 });
 
@@ -279,8 +279,8 @@ api.get("/:category", () -> {
     ProductDao product = new ProductDao();
     DataSet list = product.findByCategory(category);
 
-    j.add("products", list);
-    j.add("category", category);
+    j.put("products", list);
+    j.put("category", category);
     j.print();
 });
 
@@ -455,8 +455,8 @@ api.get("/:id/comments", () -> {
     CommentDao comment = new CommentDao();
     DataSet list = comment.findByPostId(postId);
 
-    j.add("comments", list);
-    j.add("post_id", postId);
+    j.put("comments", list);
+    j.put("post_id", postId);
     j.print();
 });
 

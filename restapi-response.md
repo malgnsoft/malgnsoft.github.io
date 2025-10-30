@@ -4,6 +4,55 @@
 
 ---
 
+## 응답 방식
+
+### 1. 표준 출력 방식 (권장)
+
+`j.success()` / `j.error()` 메소드를 사용하여 일관된 응답 형식을 제공합니다.
+
+```jsp
+// 성공 응답
+j.success("조회되었습니다.", data);
+
+// 에러 응답
+j.error("NOT_FOUND", "사용자를 찾을 수 없습니다.");
+```
+
+**장점:**
+- ✅ 일관된 응답 형식 (`success`, `message`, `data`/`details` 필드)
+- ✅ 클라이언트에서 처리하기 쉬움
+- ✅ 에러 코드 표준화
+
+**권장 사용:**
+- REST API 개발 시 기본적으로 사용
+- 표준화된 에러/성공 응답이 필요한 경우
+
+---
+
+### 2. 커스텀 출력 방식
+
+`j.put()` + `j.print()` 메소드로 자유로운 형식의 응답을 생성합니다.
+
+```jsp
+// 커스텀 응답
+j.put("users", list);
+j.put("total", total);
+j.put("page", page);
+j.print();
+```
+
+**장점:**
+- ✅ 자유로운 응답 구조
+- ✅ 복잡한 페이징 응답 등에 유용
+- ✅ 레거시 시스템 호환
+
+**사용 예시:**
+- 복잡한 페이징 응답 (pagination, meta 구조)
+- 커서 기반 무한 스크롤
+- 특수한 응답 형식이 필요한 경우
+
+---
+
 ## 에러 응답 표준
 
 ### 1. 기본 에러 응답
@@ -283,8 +332,8 @@ api.get("/", () -> {
     int total = user.getTotal();
 
     // 페이징 응답
-    j.add("data", list);  // 실제 데이터
-    j.add("pagination", new JSONObject()
+    j.put("data", list);  // 실제 데이터
+    j.put("pagination", new JSONObject()
         .put("page", page)
         .put("size", size)
         .put("total", total)
@@ -325,13 +374,13 @@ api.get("/", () -> {
     DataSet list = user.search(keyword, page, size);
     int total = user.getTotal();
 
-    j.add("users", list);
-    j.add("total", total);
-    j.add("page", page);
-    j.add("size", size);
-    j.add("totalPages", (int) Math.ceil((double) total / size));
-    j.add("hasNext", page < Math.ceil((double) total / size));
-    j.add("hasPrev", page > 1);
+    j.put("users", list);
+    j.put("total", total);
+    j.put("page", page);
+    j.put("size", size);
+    j.put("totalPages", (int) Math.ceil((double) total / size));
+    j.put("hasNext", page < Math.ceil((double) total / size));
+    j.put("hasPrev", page > 1);
     j.print();
 });
 ```
@@ -366,9 +415,9 @@ api.get("/", () -> {
         nextCursor = list.i("id");
     }
 
-    j.add("data", list);
-    j.add("cursor", nextCursor);
-    j.add("hasMore", list.size() == size);  // size만큼 가져왔으면 더 있을 가능성
+    j.put("data", list);
+    j.put("cursor", nextCursor);
+    j.put("hasMore", list.size() == size);  // size만큼 가져왔으면 더 있을 가능성
     j.print();
 });
 ```
@@ -409,8 +458,8 @@ function loadMore() {
 ### 4. 메타데이터 포함 응답
 
 ```jsp
-j.add("data", list);
-j.add("meta", new JSONObject()
+j.put("data", list);
+j.put("meta", new JSONObject()
     .put("total", total)
     .put("page", page)
     .put("size", size)

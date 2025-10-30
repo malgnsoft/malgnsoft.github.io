@@ -350,7 +350,7 @@ api.setBasePath("/api/user");
 api.get("/", () -> {
     UserDao user = new UserDao();
     DataSet list = user.find();
-    j.add("users", list);
+    j.put("users", list);
     j.print();
 });
 
@@ -363,10 +363,10 @@ api.get("/list", () -> {
     DataSet list = user.findWithPaging(page, size);
     int total = user.getTotal();
 
-    j.add("users", list);
-    j.add("total", total);
-    j.add("page", page);
-    j.add("size", size);
+    j.put("users", list);
+    j.put("total", total);
+    j.put("page", page);
+    j.put("size", size);
     j.print();
 });
 
@@ -374,7 +374,7 @@ api.get("/list", () -> {
 api.get("/active", () -> {
     UserDao user = new UserDao();
     DataSet list = user.findByStatus("active");
-    j.add("users", list);
+    j.put("users", list);
     j.print();
 });
 
@@ -386,9 +386,9 @@ api.get("/:id", () -> {
     DataSet info = user.get(id);
 
     if(info.next()) {
-        j.add("id", info.i("id"));
-        j.add("name", info.s("name"));
-        j.add("email", info.s("email"));
+        j.put("id", info.i("id"));
+        j.put("name", info.s("name"));
+        j.put("email", info.s("email"));
         j.print();
     } else {
         j.error("사용자를 찾을 수 없습니다.");
@@ -501,7 +501,7 @@ if(userLevel < 10) {
 api.get("/", () -> {
     UserDao user = new UserDao();
     DataSet list = user.find();
-    j.add("users", list);
+    j.put("users", list);
     j.print();
 });
 
@@ -513,7 +513,7 @@ api.get("/:id", () -> {
     DataSet info = user.get(id);
 
     if(info.next()) {
-        j.add("user", info);
+        j.put("user", info);
         j.print();
     } else {
         j.error("사용자를 찾을 수 없습니다.");
@@ -755,7 +755,7 @@ api.get("/", () -> {
 
     UserDao user = new UserDao();
     DataSet list = user.search(keyword, page);
-    j.add("users", list);
+    j.put("users", list);
     j.print();
 });
 ```
