@@ -27,6 +27,10 @@
 5. [파일 첨부](#파일-첨부)
 6. [HTML 이메일](#html-이메일)
 7. [여러 수신자](#여러-수신자)
+   - [여러 명에게 발송](#1-여러-명에게-발송)
+   - [DB에서 조회하여 발송](#2-db에서-조회하여-발송)
+   - [개별 발송 (개인화)](#3-개별-발송-개인화)
+   - [대량 발송 (백그라운드 스레드)](#4-대량-발송-백그라운드-스레드)
 8. [환경설정](#환경설정)
 
 ---
@@ -477,6 +481,174 @@ while(users.next()) {
 m.p("총 " + sentCount + "명에게 개별 이메일을 발송했습니다.");
 
 %>
+```
+
+### 4. 대량 발송 (백그라운드 스레드)
+
+대량의 이메일을 발송할 때는 `m.mailer()` 메소드를 사용하여 백그라운드 스레드로 처리할 수 있습니다.
+
+#### 기본 사용법
+
+```jsp
+<%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+// 백그라운드 스레드로 이메일 발송 (논블로킹)
+m.mailer("user@example.com", "제목", "내용");
+
+// 즉시 다음 코드 실행 (이메일 발송 완료를 기다리지 않음)
+m.p("이메일이 발송 대기열에 추가되었습니다.");
+
+%>
+```
+
+#### 파일 첨부와 함께 사용
+
+```jsp
+<%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+String filePath = Config.getDataDir() + "/file/document.pdf";
+
+// 백그라운드로 파일 첨부 이메일 발송
+m.mailer("user@example.com", "파일 첨부", "첨부 파일을 확인하세요.", filePath);
+
+m.p("파일 첨부 이메일이 발송 대기열에 추가되었습니다.");
+
+%>
+```
+
+#### 템플릿과 함께 대량 발송
+
+```jsp
+<%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+UserDao dao = new UserDao();
+DataSet users = dao.find("email_agree = 'Y'");
+
+int queuedCount = 0;
+
+while(users.next()) {
+    String email = users.s("email");
+    String name = users.s("name");
+
+    // 템플릿으로 개인화된 HTML 생성
+    p.setBody("mail.promotion");
+    p.setVar("name", name);
+    p.setVar("user_id", users.s("id"));
+    String htmlBody = p.fetch();
+
+    // 백그라운드로 발송 (즉시 반환)
+    m.mailer(email, name + "님께 특별 할인", htmlBody);
+    queuedCount++;
+}
+
+m.p(queuedCount + "건의 이메일이 발송 대기열에 추가되었습니다.");
+
+%>
+```
+
+#### m.mail() vs m.mailer() 비교
+
+| 메소드 | 처리 방식 | 속도 | 사용 시기 |
+|--------|----------|------|-----------|
+| `m.mail()` | 동기 (블로킹) | 느림 (발송 완료까지 대기) | 1~10건 정도의 소량 발송<br>발송 성공 여부를 즉시 확인해야 할 때 |
+| `m.mailer()` | 비동기 (논블로킹) | 빠름 (즉시 반환) | 수십~수백 건의 대량 발송<br>발송 완료를 기다릴 필요 없을 때<br>사용자 대기 시간을 줄여야 할 때 |
+
+**예시:**
+
+```jsp
+// 동기 발송 - 발송이 완료될 때까지 대기 (약 2~3초)
+m.mail("user@example.com", "제목", "내용");
+m.p("이메일이 발송되었습니다.");  // 실제 발송 완료 후 출력
+
+// 비동기 발송 - 즉시 반환 (약 0.01초)
+m.mailer("user@example.com", "제목", "내용");
+m.p("이메일이 발송 대기열에 추가되었습니다.");  // 즉시 출력
+```
+
+#### MailThread 동작 원리
+
+`m.mailer()`는 내부적으로 `MailThread` 클래스를 사용하여 백그라운드에서 이메일을 발송합니다:
+
+1. **스레드 풀 관리**: 최대 50개의 동시 발송 스레드 지원
+2. **자동 큐잉**: 50개 스레드가 모두 사용 중이면 대기 (100ms씩 최대 50회 재시도)
+3. **폴백 처리**: 50회 재시도 후에도 스레드를 확보하지 못하면 자동으로 `m.mail()`로 동기 발송
+4. **자동 정리**: 발송 완료 후 스레드 카운트 자동 감소
+
+```jsp
+// 내부 동작 예시
+Malgn.mailThreadNum = 0;  // 현재 실행 중인 메일 스레드 수
+
+// 첫 번째 발송
+m.mailer("user1@example.com", "제목1", "내용1");  // mailThreadNum = 1
+
+// 두 번째 발송
+m.mailer("user2@example.com", "제목2", "내용2");  // mailThreadNum = 2
+
+// ... (계속 발송)
+
+// 51번째 발송 시 (스레드 풀이 가득 찬 경우)
+m.mailer("user51@example.com", "제목51", "내용51");  // 100ms 대기 후 재시도
+```
+
+#### 주의사항
+
+1. **SMTP 서버 제한**: Gmail 등은 일일 발송 제한이 있습니다 (Gmail: 500건/일)
+2. **발송 결과 확인 불가**: 비동기 발송이므로 발송 성공/실패를 즉시 확인할 수 없습니다
+3. **스레드 제한**: 동시에 50개 이상의 발송 요청 시 대기 또는 동기 발송으로 폴백됩니다
+4. **서버 재시작**: 서버 재시작 시 대기열의 이메일은 손실될 수 있습니다
+
+#### 대량 발송 권장 방법
+
+```jsp
+<%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+UserDao dao = new UserDao();
+DataSet users = dao.find("email_agree = 'Y'");
+
+int totalCount = 0;
+int batchSize = 100;  // 100건씩 배치 처리
+
+while(users.next()) {
+    String email = users.s("email");
+    String name = users.s("name");
+
+    p.setBody("mail.newsletter");
+    p.setVar("name", name);
+    String htmlBody = p.fetch();
+
+    // 백그라운드로 발송
+    m.mailer(email, "뉴스레터", htmlBody);
+    totalCount++;
+
+    // 100건마다 5초 대기 (SMTP 서버 부하 방지)
+    if(totalCount % batchSize == 0) {
+        Thread.sleep(5000);
+        m.p(totalCount + "건 발송 대기열 추가 완료... 5초 대기");
+    }
+}
+
+m.p("총 " + totalCount + "건의 이메일이 발송 대기열에 추가되었습니다.");
+
+%>
+```
+
+#### config.xml 설정
+
+대량 발송 시 타임아웃 설정을 조정할 수 있습니다:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <!-- 메일 서버 설정 -->
+    <mailHost>smtp.gmail.com</mailHost>
+    <mailPort>587</mailPort>
+    <mailFrom>your-email@gmail.com</mailFrom>
+    <mailUser>your-email@gmail.com</mailUser>
+    <mailPass>your-app-password</mailPass>
+
+    <!-- 메일 스레드 수 (선택 사항, 기본값: 0) -->
+    <mailThreadNum>0</mailThreadNum>
+</config>
 ```
 
 ---
