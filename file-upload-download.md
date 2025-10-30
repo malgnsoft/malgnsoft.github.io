@@ -77,7 +77,7 @@ if(m.isPost() && f.validate()) {
     <p>파일 : <input type="file" name="file"></p>
     <p><input type="submit" value="업로드"></p>
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 **HTML 폼 주의사항**:
@@ -474,7 +474,7 @@ if(m.isPost() && f.validate()) {
     <p>이미지 : <input type="file" name="photo" accept="image/*"></p>
     <p><input type="submit" value="업로드"></p>
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 ### 2. 다양한 크기의 썸네일 생성

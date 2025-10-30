@@ -2880,7 +2880,7 @@ if(m.isPost() && f.validate()) {
     <input type="text" name="email">
     <input type="submit" value="전송">
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 ### 2. addElement() 파라미터
@@ -3289,7 +3289,7 @@ String phone = f.glue("-", "phone1", "phone2", "phone3");
 <form name="form1" method="post">
     <!-- 폼 필드들 -->
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 **주의사항**:
@@ -3426,7 +3426,7 @@ if(m.isPost() && f.validate()) {
     <p>파일 : <input type="file" name="file"></p>
     <p><input type="submit" value="업로드"></p>
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 **HTML 폼 주의사항**:
@@ -3823,7 +3823,7 @@ if(m.isPost() && f.validate()) {
     <p>이미지 : <input type="file" name="photo" accept="image/*"></p>
     <p><input type="submit" value="업로드"></p>
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 ### 2. 다양한 크기의 썸네일 생성
@@ -9068,7 +9068,7 @@ if(m.isPost() && f.validate()) {
     <p>내용 : <textarea name="message" rows="10"></textarea></p>
     <p><input type="submit" value="발송"></p>
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 ---
@@ -9234,7 +9234,7 @@ if(m.isPost() && f.validate()) {
     <p>첨부 파일 : <input type="file" name="file"></p>
     <p><input type="submit" value="발송"></p>
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 ---
@@ -9582,7 +9582,7 @@ if(m.isPost() && f.validate()) {
         </div>
         <button type="submit">문의하기</button>
     </form>
-    <%= f.getScript() %>
+    {{form_script}}
 </body>
 </html>
 ```

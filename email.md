@@ -117,7 +117,7 @@ if(m.isPost() && f.validate()) {
     <p>내용 : <textarea name="message" rows="10"></textarea></p>
     <p><input type="submit" value="발송"></p>
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 ---
@@ -283,7 +283,7 @@ if(m.isPost() && f.validate()) {
     <p>첨부 파일 : <input type="file" name="file"></p>
     <p><input type="submit" value="발송"></p>
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 ---
@@ -631,7 +631,7 @@ if(m.isPost() && f.validate()) {
         </div>
         <button type="submit">문의하기</button>
     </form>
-    <%= f.getScript() %>
+    {{form_script}}
 </body>
 </html>
 ```

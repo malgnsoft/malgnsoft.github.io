@@ -43,7 +43,7 @@ if(m.isPost() && f.validate()) {
     <input type="text" name="email">
     <input type="submit" value="전송">
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 ### 2. addElement() 파라미터
@@ -452,7 +452,7 @@ String phone = f.glue("-", "phone1", "phone2", "phone3");
 <form name="form1" method="post">
     <!-- 폼 필드들 -->
 </form>
-<%= f.getScript() %>
+{{form_script}}
 ```
 
 **주의사항**:
