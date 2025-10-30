@@ -1,14 +1,32 @@
 # OpenAI 통합
 
+[← 목차로 돌아가기](README.md)
+
+---
+
+## 개요
+
 맑은프레임워크의 OpenAI 클래스는 OpenAI API(ChatGPT)를 쉽게 통합하여 AI 기능을 웹 애플리케이션에 추가할 수 있게 합니다.
+
+### 주요 특징
+
+- **JSON 문자열 기반 API**: 클라이언트에서 전체 대화 내역 전달
+- **자동 히스토리 관리**: 서버 메모리 기반 대화 관리
+- **스트림 지원**: 실시간 응답 출력
+- **포맷 검증**: messages 배열 자동 검증
+- **유연한 구조**: REST API와 세션 기반 모두 지원
+
+---
 
 ## 목차
 
-- [기본 설정](#기본-설정)
-- [텍스트 생성](#텍스트-생성)
-- [대화형 챗봇](#대화형-챗봇)
-- [시스템 프롬프트](#시스템-프롬프트)
-- [고급 설정](#고급-설정)
+1. [기본 설정](#기본-설정)
+2. [클라이언트 제어 방식](#클라이언트-제어-방식)
+3. [서버 자동 관리 방식](#서버-자동-관리-방식)
+4. [스트림 방식](#스트림-방식)
+5. [히스토리 관리](#히스토리-관리)
+6. [고급 설정](#고급-설정)
+7. [실제 활용 예제](#실제-활용-예제)
 
 ---
 
@@ -17,292 +35,487 @@
 ### OpenAI 객체 생성
 
 ```jsp
-OpenAI model = new OpenAI();
-
-// API 키 설정 (필수)
-model.apiKey("sk-your-api-key-here");
-
-// 모델 선택 (기본값: gpt-3.5-turbo)
-model.modelName("gpt-3.5-turbo");
-// 또는 더 강력한 모델
-model.modelName("gpt-4o-mini");
-model.modelName("gpt-4");
-```
-
-### 디버그 모드
-
-```jsp
-OpenAI model = new OpenAI();
-model.setDebug(out);  // HTTP 요청/응답 로그 출력
-model.setDebug();     // 로그 파일로 출력
-```
-
----
-
-## 텍스트 생성
-
-### 간단한 질문-응답
-
-```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-OpenAI model = new OpenAI();
-model.apiKey("sk-your-api-key-here");
-model.modelName("gpt-3.5-turbo");
+OpenAI ai = new OpenAI();
 
-// 질문하고 응답 받기
-String answer = model.generate("대한민국의 수도는 어디인가?");
-m.p(answer);
-// "대한민국의 수도는 서울입니다."
+// API 키 설정 (필수)
+ai.apiKey("sk-your-api-key-here");
+
+// 모델 선택 (기본값: gpt-4o-mini)
+ai.modelName("gpt-4o-mini");
+
+// 또는 다른 모델
+ai.modelName("gpt-4");
+ai.modelName("gpt-3.5-turbo");
 
 %>
 ```
 
-### 구조화된 응답
+### 환경설정 파일 사용
 
-JSON 형식으로 응답을 받을 수 있습니다:
-
-```jsp
-OpenAI model = new OpenAI();
-model.apiKey("sk-your-api-key-here");
-
-String response = model.generate(
-    "서울의 인구는 몇명인가?\n\n"
-    + "output-format:{\"data\":\"xxx\"}"
-);
-
-m.p(response);
-// {"data":"약 970만명"}
-
-// JSON 파싱
-Json j = new Json(response);
-String population = j.getString("//data");
+**config.xml**:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <openaiApiKey>sk-your-api-key-here</openaiApiKey>
+</config>
 ```
 
-### 복잡한 데이터 생성
-
+**사용:**
 ```jsp
-OpenAI model = new OpenAI();
-model.apiKey("sk-your-api-key-here");
-model.modelName("gpt-4o-mini");
-
-m.startTimer();
-
-String response = model.generate(
-    "AI와 관련된 문제 10개만 만들어줘. 보기는 4개로 하고, 정답과 해설도 작성해줘. 한글로 해줘.\n\n"
-    + "output-format:[{\"question\":\"xxx\", \"choice1\":\"-\", \"choice2\":\"-\", \"choice3\":\"-\", \"choice4\":\"-\", \"answer\":\"1\", \"description\":\"-\"}]"
-);
-
-m.p(response);
-m.p("소요 시간: " + m.stopTimer() + "ms");
-
-// JSON 파싱하여 데이터베이스에 저장
-Json j = new Json(response);
-DataSet questions = j.getDataSet("//");
-QuizDao dao = new QuizDao();
-
-while(questions.next()) {
-    DataMap data = new DataMap();
-    data.put("question", questions.s("question"));
-    data.put("choice1", questions.s("choice1"));
-    data.put("choice2", questions.s("choice2"));
-    data.put("choice3", questions.s("choice3"));
-    data.put("choice4", questions.s("choice4"));
-    data.put("answer", questions.s("answer"));
-    data.put("description", questions.s("description"));
-    dao.insert(data);
-}
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
 ```
 
 ---
 
-## 대화형 챗봇
+## 클라이언트 제어 방식
 
-### 대화 기록 유지
+클라이언트에서 전체 messages 배열을 JSON 문자열로 전달하는 현대적인 방식입니다. REST API에 적합합니다.
 
-`chat()` 메소드를 사용하면 대화 컨텍스트가 자동으로 유지됩니다:
+### 1. 기본 사용법
 
 ```jsp
-<%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-// 세션에서 OpenAI 객체 가져오기 (또는 새로 생성)
-OpenAI model = (OpenAI)session.getAttribute("chatModel");
-if(model == null) {
-    model = new OpenAI();
-    model.apiKey("sk-your-api-key-here");
-    model.modelName("gpt-4o-mini");
-    session.setAttribute("chatModel", model);
+// 클라이언트에서 messages JSON 받기
+String messagesJson = m.rs("messages");
+
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+ai.modelName("gpt-4o-mini");
+
+// AI 호출
+String response = ai.chat(messagesJson);
+
+// 에러 체크
+if(ai.errMsg != null) {
+    j.error(ai.errMsg);
+} else {
+    j.success(response);
+}
+
+%>
+```
+
+### 2. 클라이언트 예제 (JavaScript)
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>AI Chat</title>
+</head>
+<body>
+    <div id="chat"></div>
+    <input type="text" id="message" placeholder="메시지를 입력하세요">
+    <button onclick="sendMessage()">전송</button>
+
+    <script>
+    let messages = [];
+
+    async function sendMessage() {
+        const userMessage = document.getElementById('message').value;
+
+        // 사용자 메시지 추가
+        messages.push({
+            role: "user",
+            content: userMessage
+        });
+
+        // 서버로 전송
+        const response = await fetch('/api/chat.jsp', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'messages=' + encodeURIComponent(JSON.stringify(messages))
+        });
+
+        const result = await response.json();
+
+        if(result.success) {
+            // AI 응답 추가
+            messages.push({
+                role: "assistant",
+                content: result.data
+            });
+
+            // 화면에 표시
+            displayMessage('user', userMessage);
+            displayMessage('assistant', result.data);
+        }
+
+        document.getElementById('message').value = '';
+    }
+
+    function displayMessage(role, content) {
+        const chatDiv = document.getElementById('chat');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = role;
+        msgDiv.textContent = content;
+        chatDiv.appendChild(msgDiv);
+    }
+    </script>
+</body>
+</html>
+```
+
+### 3. 시스템 프롬프트 포함
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+String messagesJson = m.rs("messages");
+
+// messages에 system 메시지가 없으면 추가
+JSONArray messages = new JSONArray(messagesJson);
+if(messages.length() == 0 || !messages.getJSONObject(0).getString("role").equals("system")) {
+    JSONArray newMessages = new JSONArray();
+    newMessages.put(new JSONObject()
+        .put("role", "system")
+        .put("content", "당신은 친절한 AI 도우미입니다.")
+    );
+    for(int i = 0; i < messages.length(); i++) {
+        newMessages.put(messages.getJSONObject(i));
+    }
+    messagesJson = newMessages.toString();
+}
+
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+String response = ai.chat(messagesJson);
+
+j.success(response);
+
+%>
+```
+
+---
+
+## 서버 자동 관리 방식
+
+서버 메모리(세션)에 대화 히스토리를 자동으로 저장하고 관리하는 간편한 방식입니다.
+
+### 1. 세션 기반 챗봇
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+// 세션에서 OpenAI 객체 가져오기
+OpenAI ai = (OpenAI)session.getAttribute("chatAI");
+if(ai == null) {
+    ai = new OpenAI();
+    ai.apiKey(Config.get("openaiApiKey"));
+    ai.modelName("gpt-4o-mini");
+    session.setAttribute("chatAI", ai);
 }
 
 // 사용자 메시지
-String userMessage = m.rs("message");
-if(!userMessage.isEmpty()) {
-    String response = model.chat(userMessage);
+String message = m.rs("message");
 
-    j.put("message", response);
-    j.print(out);
+// 자동으로 history에 추가되고 AI 호출
+String response = ai.chatMemory(message);
+
+if(ai.errMsg != null) {
+    j.error(ai.errMsg);
+} else {
+    j.success(response);
 }
 
 %>
 ```
 
-### 대화 예제
+### 2. 대화 히스토리 초기화
 
 ```jsp
-OpenAI model = new OpenAI();
-model.apiKey("sk-your-api-key-here");
-model.modelName("gpt-4o-mini");
+// 세션에서 제거하여 대화 초기화
+session.removeAttribute("chatAI");
 
-// 첫 번째 메시지
-String r1 = model.chat("내 이름은 임꺽정이야");
-m.p(r1);
-// "안녕하세요, 임꺽정님! 무엇을 도와드릴까요?"
-
-// 두 번째 메시지 - 이전 대화 기억
-String r2 = model.chat("내가 혹시 누군지 아니? 내 나이 37세");
-m.p(r2);
-// "네, 임꺽정님이시죠. 37세시라고 말씀하셨습니다."
-
-// 세 번째 메시지 - 계속 대화 컨텍스트 유지
-String r3 = model.chat("나이도 알아?");
-m.p(r3);
-// "네, 37세라고 하셨습니다."
+// 또는 히스토리만 초기화
+OpenAI ai = (OpenAI)session.getAttribute("chatAI");
+if(ai != null) {
+    ai.setHistory(null);
+}
 ```
 
-### 수동으로 대화 기록 추가
+### 3. 시스템 프롬프트와 함께 사용
 
 ```jsp
-OpenAI model = new OpenAI();
-model.apiKey("sk-your-api-key-here");
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-// 이전 대화 수동 추가
-model.addChat("안녕하세요", "안녕하세요! 무엇을 도와드릴까요?");
-model.addChat("날씨 좋네요", "네, 좋은 날씨입니다!");
+OpenAI ai = (OpenAI)session.getAttribute("chatAI");
+if(ai == null) {
+    ai = new OpenAI();
+    ai.apiKey(Config.get("openaiApiKey"));
+    ai.modelName("gpt-4o-mini");
 
-// 새로운 메시지 (이전 컨텍스트 포함)
-String response = model.chat("지금 몇 시야?");
+    // 시스템 메시지 설정 (첫 메시지에만 포함)
+    JSONArray history = new JSONArray();
+    history.put(new JSONObject()
+        .put("role", "system")
+        .put("content", "당신은 맑은프레임워크 전문가입니다. JSP와 Java에 대해 답변하세요.")
+    );
+    ai.setHistory(history.toString());
+
+    session.setAttribute("chatAI", ai);
+}
+
+String message = m.rs("message");
+String response = ai.chatMemory(message);
+
+j.success(response);
+
+%>
 ```
 
 ---
 
-## 시스템 프롬프트
+## 스트림 방식
 
-### 시스템 메시지 설정
+실시간으로 AI 응답을 받아 출력하는 방식입니다. 긴 응답을 받을 때 유용합니다.
 
-시스템 메시지로 AI의 역할과 행동을 정의할 수 있습니다:
+### 1. 기본 스트림
 
 ```jsp
-OpenAI model = new OpenAI();
-model.apiKey("sk-your-api-key-here");
-model.modelName("gpt-4o-mini");
+<%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-// AI의 페르소나 설정
-model.system("당신은 친절한 고객 서비스 담당자입니다. 항상 공손하고 도움이 되는 답변을 제공하세요.");
+String messagesJson = m.rs("messages");
 
-String response = model.generate("제품이 불량인 것 같아요");
-// "죄송합니다. 불편을 드려 죄송합니다. 어떤 문제가 있으신지 자세히 말씀해주시겠어요? 최대한 빠르게 해결해드리겠습니다."
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+
+// 실시간으로 out에 출력하면서 fullResponse에도 저장
+String fullResponse = ai.streamChat(messagesJson, out);
+
+%>
 ```
 
-### 전문가 시스템
+### 2. 서버 자동 관리 + 스트림
 
 ```jsp
-// 프로그래밍 전문가
-model.system("당신은 숙련된 Java 프로그래머입니다. 코드 리뷰와 최적화 제안을 제공하세요.");
+<%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-String codeReview = model.generate(
-    "다음 코드를 리뷰해주세요:\n\n"
-    + "for(int i=0; i<list.size(); i++) {\n"
-    + "    System.out.println(list.get(i));\n"
-    + "}"
-);
+OpenAI ai = (OpenAI)session.getAttribute("chatAI");
+if(ai == null) {
+    ai = new OpenAI();
+    ai.apiKey(Config.get("openaiApiKey"));
+    session.setAttribute("chatAI", ai);
+}
 
-// 의료 정보 제공자
-model.system("당신은 의료 정보를 제공하는 AI입니다. 정확하고 근거 있는 정보만 제공하며, 진단은 하지 마세요.");
+String message = m.rs("message");
 
-// 언어 튜터
-model.system("당신은 영어 선생님입니다. 학생의 영어 문장을 교정하고 더 나은 표현을 제안하세요.");
+// 실시간으로 출력하면서 history에도 자동 저장
+String response = ai.streamMemory(message, out);
 
-// 창의적 작가
-model.system("당신은 창의적인 소설가입니다. 흥미진진하고 상상력 넘치는 이야기를 만들어주세요.");
+%>
 ```
 
-### 응답 스타일 제어
+### 3. SSE (Server-Sent Events) 방식
 
 ```jsp
-// 장황하게 답변
-model.system("아주 장황하게 대답해줘. 가능한 한 많은 세부 정보를 포함하세요.");
-String detailed = model.generate("서울의 인구는 몇명인가?");
+<%@ page contentType="text/event-stream; charset=utf-8" %><%
+    response.setHeader("Cache-Control", "no-cache");
+    response.setHeader("Connection", "keep-alive");
+%><%@ include file="/init.jsp" %><%
 
-// 간결하게 답변
-model.system("아주 간결하게 핵심만 대답해줘. 한 문장으로만 답하세요.");
-String brief = model.generate("서울의 인구는 몇명인가?");
+String messagesJson = m.rs("messages");
 
-// 특정 형식으로 답변
-model.system("모든 답변을 JSON 형식으로만 제공하세요.");
-String jsonResponse = model.generate("대한민국의 수도와 인구를 알려줘");
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+
+// 커스텀 Writer로 SSE 포맷 출력
+Writer sseWriter = new Writer() {
+    public void write(char[] cbuf, int off, int len) throws IOException {
+        String chunk = new String(cbuf, off, len);
+        out.write("data: " + chunk + "\n\n");
+        out.flush();
+    }
+    public void flush() throws IOException { out.flush(); }
+    public void close() throws IOException {}
+};
+
+String fullResponse = ai.streamChat(messagesJson, sseWriter);
+
+out.write("data: [DONE]\n\n");
+out.flush();
+
+%>
+```
+
+---
+
+## 히스토리 관리
+
+대화 히스토리를 DB에 저장하고 불러오는 방법입니다.
+
+### 1. DB에 히스토리 저장
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+int userId = m.getInt("user_id");
+String message = m.rs("message");
+
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+
+// DB에서 히스토리 로드
+ChatHistoryDao dao = new ChatHistoryDao();
+DataSet ds = dao.find("user_id = ?", userId);
+if(ds.next()) {
+    String historyJson = ds.s("history");
+    ai.setHistory(historyJson);
+}
+
+// 메시지 추가 및 AI 호출
+String response = ai.chatMemory(message);
+
+// DB에 히스토리 저장
+String updatedHistory = ai.getHistory();
+if(ds.getRow() > 0) {
+    dao.update("history = ?", updatedHistory, "user_id = ?", userId);
+} else {
+    DataMap data = new DataMap();
+    data.put("user_id", userId);
+    data.put("history", updatedHistory);
+    data.put("reg_date", m.time());
+    dao.insert(data);
+}
+
+j.success(response);
+
+%>
+```
+
+### 2. 히스토리 조회
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+int userId = m.getInt("user_id");
+
+ChatHistoryDao dao = new ChatHistoryDao();
+DataSet ds = dao.find("user_id = ?", userId);
+
+if(ds.next()) {
+    String historyJson = ds.s("history");
+    JSONArray history = new JSONArray(historyJson);
+
+    // JSON으로 반환
+    j.success(history.toString());
+} else {
+    j.success("[]");
+}
+
+%>
+```
+
+### 3. 히스토리 초기화
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+int userId = m.getInt("user_id");
+
+ChatHistoryDao dao = new ChatHistoryDao();
+dao.delete("user_id = ?", userId);
+
+j.success("대화 히스토리가 초기화되었습니다");
+
+%>
 ```
 
 ---
 
 ## 고급 설정
 
-### Temperature 조절
+### 1. Temperature 조절
 
 Temperature는 응답의 무작위성을 제어합니다 (0.0 ~ 2.0):
 
 ```jsp
-OpenAI model = new OpenAI();
-model.apiKey("sk-your-api-key-here");
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
 
 // 낮은 temperature (0.0 ~ 0.3): 일관되고 예측 가능한 응답
-model.temperature(0.2);
-String factual = model.generate("물의 끓는점은?");
+ai.temperature(0.2);
+String factual = ai.chat("[{\"role\":\"user\",\"content\":\"물의 끓는점은?\"}]");
 // "100°C입니다" (매번 동일한 답변)
 
 // 중간 temperature (0.7): 균형잡힌 응답 (기본값)
-model.temperature(0.7);
+ai.temperature(0.7);
 
 // 높은 temperature (1.0 ~ 2.0): 창의적이고 다양한 응답
-model.temperature(1.5);
-String creative = model.generate("우주에 대한 시를 써줘");
+ai.temperature(1.5);
+String creative = ai.chat("[{\"role\":\"user\",\"content\":\"우주에 대한 시를 써줘\"}]");
 // 매번 다른 창의적인 시
 ```
 
-### 사용 예시
+### 2. 디버그 모드
 
 ```jsp
-// 팩트 기반 Q&A (낮은 temperature)
-model.temperature(0.1);
-String fact = model.generate("2 + 2 = ?");
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
 
-// 창작 콘텐츠 (높은 temperature)
-model.temperature(1.2);
-String story = model.generate("우주 해적에 대한 짧은 이야기를 써줘");
+// HTTP 요청/응답을 out으로 출력
+ai.setDebug(out);
 
-// 일반 대화 (중간 temperature)
-model.temperature(0.7);
-String chat = model.generate("오늘 기분이 어때?");
+// 또는 로그 파일로 출력
+ai.setDebug();
+
+String response = ai.chat(messagesJson);
+
+// 에러 메시지 확인
+if(ai.errMsg != null) {
+    m.p("Error: " + ai.errMsg);
+}
+```
+
+### 3. 모델별 특징
+
+```jsp
+// gpt-3.5-turbo: 빠르고 저렴, 일반 작업에 적합
+ai.modelName("gpt-3.5-turbo");
+
+// gpt-4o-mini: 균형잡힌 성능, 대부분의 작업에 권장 (기본값)
+ai.modelName("gpt-4o-mini");
+
+// gpt-4: 가장 강력, 복잡한 추론 작업에 적합 (비쌈)
+ai.modelName("gpt-4");
+
+// gpt-4-turbo: gpt-4보다 빠르고 저렴
+ai.modelName("gpt-4-turbo");
 ```
 
 ---
 
 ## 실제 활용 예제
 
-### 1. 자동 요약 기능
+### 1. 문서 요약 API
 
 ```jsp
 <%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
 String content = m.rs("content");
 
-OpenAI model = new OpenAI();
-model.apiKey("sk-your-api-key-here");
-model.modelName("gpt-3.5-turbo");
-model.system("당신은 전문 요약가입니다. 핵심 내용만 3-5문장으로 요약하세요.");
+JSONArray messages = new JSONArray();
+messages.put(new JSONObject()
+    .put("role", "system")
+    .put("content", "당신은 전문 요약가입니다. 핵심 내용만 3-5문장으로 요약하세요.")
+);
+messages.put(new JSONObject()
+    .put("role", "user")
+    .put("content", "다음 글을 요약해주세요:\n\n" + content)
+);
 
-String summary = model.generate("다음 글을 요약해주세요:\n\n" + content);
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+ai.temperature(0.3); // 일관된 요약
 
-j.success("요약 완료", new DataMap().put("summary", summary));
+String summary = ai.chat(messages.toString());
+
+j.success(new DataMap().put("summary", summary));
 
 %>
 ```
@@ -310,106 +523,248 @@ j.success("요약 완료", new DataMap().put("summary", summary));
 ### 2. 감정 분석
 
 ```jsp
-OpenAI model = new OpenAI();
-model.apiKey("sk-your-api-key-here");
-model.system("사용자 리뷰의 감정을 분석하세요. positive, negative, neutral 중 하나로만 답하세요.");
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-String review = "이 제품 정말 최고예요! 강력 추천합니다.";
-String sentiment = model.generate(review);
-// "positive"
+String review = m.rs("review");
+
+JSONArray messages = new JSONArray();
+messages.put(new JSONObject()
+    .put("role", "system")
+    .put("content", "사용자 리뷰의 감정을 분석하세요. positive, negative, neutral 중 하나로만 답하세요.")
+);
+messages.put(new JSONObject()
+    .put("role", "user")
+    .put("content", review)
+);
+
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+ai.temperature(0.1); // 일관된 분류
+
+String sentiment = ai.chat(messages.toString());
+
+j.success(new DataMap()
+    .put("review", review)
+    .put("sentiment", sentiment.trim())
+);
+
+%>
 ```
 
-### 3. 콘텐츠 생성기
+### 3. JSON 데이터 생성
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+JSONArray messages = new JSONArray();
+messages.put(new JSONObject()
+    .put("role", "system")
+    .put("content", "모든 응답을 JSON 배열 형식으로만 제공하세요.")
+);
+messages.put(new JSONObject()
+    .put("role", "user")
+    .put("content",
+        "AI 관련 객관식 문제 5개를 만들어주세요.\n\n" +
+        "output-format: [{\"question\":\"질문\", \"choices\":[\"1\",\"2\",\"3\",\"4\"], \"answer\":1, \"explanation\":\"설명\"}]"
+    )
+);
+
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+ai.temperature(0.8);
+
+String response = ai.chat(messages.toString());
+
+// JSON 파싱하여 DB에 저장
+try {
+    JSONArray questions = new JSONArray(response);
+    QuizDao dao = new QuizDao();
+
+    for(int i = 0; i < questions.length(); i++) {
+        JSONObject q = questions.getJSONObject(i);
+        DataMap data = new DataMap();
+        data.put("question", q.getString("question"));
+        data.put("choices", q.getJSONArray("choices").toString());
+        data.put("answer", q.getInt("answer"));
+        data.put("explanation", q.getString("explanation"));
+        dao.insert(data);
+    }
+
+    j.success(questions.length() + "개의 문제가 생성되었습니다");
+
+} catch(Exception e) {
+    j.error("JSON 파싱 오류: " + e.getMessage());
+}
+
+%>
+```
+
+### 4. 번역 서비스
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+String text = m.rs("text");
+String sourceLang = m.rs("source", "한국어");
+String targetLang = m.rs("target", "영어");
+
+JSONArray messages = new JSONArray();
+messages.put(new JSONObject()
+    .put("role", "system")
+    .put("content", "당신은 전문 번역가입니다. " + sourceLang + "를 " + targetLang + "로 정확하게 번역하세요.")
+);
+messages.put(new JSONObject()
+    .put("role", "user")
+    .put("content", text)
+);
+
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+ai.temperature(0.3);
+
+String translation = ai.chat(messages.toString());
+
+j.success(new DataMap()
+    .put("original", text)
+    .put("translation", translation)
+);
+
+%>
+```
+
+### 5. 코드 리뷰
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+String code = m.rs("code");
+String language = m.rs("language", "Java");
+
+JSONArray messages = new JSONArray();
+messages.put(new JSONObject()
+    .put("role", "system")
+    .put("content",
+        "당신은 숙련된 " + language + " 프로그래머입니다. " +
+        "코드를 분석하고 개선 사항을 제안하세요. " +
+        "다음 형식으로 답변하세요:\n" +
+        "1. 문제점\n2. 개선 제안\n3. 개선된 코드"
+    )
+);
+messages.put(new JSONObject()
+    .put("role", "user")
+    .put("content", "다음 코드를 리뷰해주세요:\n\n```" + language + "\n" + code + "\n```")
+);
+
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+ai.modelName("gpt-4o-mini");
+ai.temperature(0.5);
+
+String review = ai.chat(messages.toString());
+
+j.success(new DataMap().put("review", review));
+
+%>
+```
+
+### 6. 콘텐츠 생성기
 
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
 String topic = m.rs("topic");
 String tone = m.rs("tone", "전문적");
+String length = m.rs("length", "500자");
 
-OpenAI model = new OpenAI();
-model.apiKey("sk-your-api-key-here");
-model.modelName("gpt-4o-mini");
-model.system("당신은 블로그 작가입니다. " + tone + "인 톤으로 글을 작성하세요.");
-
-String article = model.generate(
-    topic + "에 대한 블로그 글을 작성해주세요. 500자 내외로 작성하세요."
+JSONArray messages = new JSONArray();
+messages.put(new JSONObject()
+    .put("role", "system")
+    .put("content", "당신은 블로그 작가입니다. " + tone + "인 톤으로 글을 작성하세요.")
+);
+messages.put(new JSONObject()
+    .put("role", "user")
+    .put("content", topic + "에 대한 블로그 글을 " + length + " 내외로 작성해주세요.")
 );
 
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+ai.modelName("gpt-4o-mini");
+ai.temperature(0.8);
+
+String article = ai.chat(messages.toString());
+
 p.setBody("blog.article");
+p.setVar("topic", topic);
 p.setVar("content", article);
 p.display();
 
 %>
 ```
 
-### 4. 챗봇 서비스
-
-```jsp
-<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
-
-// 세션에서 대화 모델 가져오기
-OpenAI model = (OpenAI)session.getAttribute("chatbot");
-if(model == null) {
-    model = new OpenAI();
-    model.apiKey("sk-your-api-key-here");
-    model.modelName("gpt-4o-mini");
-    model.system(
-        "당신은 맑은프레임워크 기술 지원 챗봇입니다. " +
-        "사용자의 기술적 질문에 정확하고 친절하게 답변하세요. " +
-        "모르는 것은 솔직하게 모른다고 말하세요."
-    );
-    session.setAttribute("chatbot", model);
-}
-
-String userMsg = m.rs("message");
-String botResponse = model.chat(userMsg);
-
-j.success(new DataMap().put("response", botResponse));
-
-%>
-```
-
-### 5. 번역 서비스
-
-```jsp
-OpenAI model = new OpenAI();
-model.apiKey("sk-your-api-key-here");
-model.system("당신은 전문 번역가입니다. 한국어를 영어로 정확하게 번역하세요.");
-
-String korean = "안녕하세요. 만나서 반갑습니다.";
-String english = model.generate(korean);
-// "Hello. Nice to meet you."
-```
-
 ---
 
 ## 에러 처리
 
+### 1. 기본 에러 처리
+
 ```jsp
-OpenAI model = new OpenAI();
-model.apiKey("sk-your-api-key-here");
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
 
+String response = ai.chat(messagesJson);
+
+// 에러 체크
+if(ai.errMsg != null) {
+    m.p("Error: " + ai.errMsg);
+    Malgn.errorLog("OpenAI API 에러: " + ai.errMsg);
+} else if(response.isEmpty()) {
+    m.p("빈 응답이 반환되었습니다");
+} else {
+    m.p(response);
+}
+```
+
+### 2. 검증 에러 처리
+
+```jsp
+String messagesJson = m.rs("messages");
+
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+
+String response = ai.chat(messagesJson);
+
+if(ai.errMsg != null) {
+    if(ai.errMsg.contains("Invalid message format")) {
+        j.error("메시지 형식이 올바르지 않습니다");
+    } else if(ai.errMsg.contains("Invalid role")) {
+        j.error("role 필드가 올바르지 않습니다");
+    } else {
+        j.error("API 오류: " + ai.errMsg);
+    }
+} else {
+    j.success(response);
+}
+```
+
+### 3. Try-Catch 패턴
+
+```jsp
 try {
-    String response = model.generate("질문");
+    OpenAI ai = new OpenAI();
+    ai.apiKey(Config.get("openaiApiKey"));
 
-    if(response.isEmpty()) {
-        // 응답이 비어있음
-        m.jsError("AI 응답을 받지 못했습니다");
-        return;
+    String response = ai.chat(messagesJson);
+
+    if(ai.errMsg != null) {
+        throw new Exception(ai.errMsg);
     }
 
-    m.p(response);
+    j.success(response);
 
 } catch(Exception e) {
-    // API 에러
     Malgn.errorLog("OpenAI API 에러", e);
-    m.jsError("AI 서비스 오류가 발생했습니다");
-}
-
-// 에러 메시지 확인
-if(model.errMsg != null) {
-    m.p("Error: " + model.errMsg);
+    j.error("AI 서비스 오류: " + e.getMessage());
 }
 ```
 
@@ -421,59 +776,111 @@ if(model.errMsg != null) {
 
 ```jsp
 // 간단한 작업: gpt-3.5-turbo (저렴, 빠름)
-model.modelName("gpt-3.5-turbo");
+ai.modelName("gpt-3.5-turbo");
+// 예: 단순 질문 답변, 키워드 추출
 
-// 복잡한 작업: gpt-4o-mini (균형)
-model.modelName("gpt-4o-mini");
+// 일반 작업: gpt-4o-mini (균형) - 권장
+ai.modelName("gpt-4o-mini");
+// 예: 대부분의 챗봇, 요약, 번역
 
-// 고급 작업: gpt-4 (비쌈, 정확)
-model.modelName("gpt-4");
+// 복잡한 작업: gpt-4 (비쌈, 정확)
+ai.modelName("gpt-4");
+// 예: 복잡한 추론, 코드 생성, 전문 지식
 ```
 
 ### 2. 프롬프트 최적화
 
 ```jsp
 // 비효율적: 장황한 프롬프트
-String bad = model.generate(
-    "안녕하세요. 저는 학생입니다. 제가 궁금한게 있는데요, " +
-    "혹시 물의 끓는점이 몇 도인지 알려주실 수 있나요? " +
-    "가능하면 자세히 설명해주세요."
-);
+String bad = "[{\"role\":\"user\",\"content\":\"안녕하세요. 저는 학생입니다. 제가 궁금한게 있는데요, 혹시 물의 끓는점이 몇 도인지 알려주실 수 있나요?\"}]";
 
 // 효율적: 간결한 프롬프트
-String good = model.generate("물의 끓는점은?");
+String good = "[{\"role\":\"user\",\"content\":\"물의 끓는점은?\"}]";
 ```
 
-### 3. 캐싱 활용
+### 3. 응답 길이 제한
 
 ```jsp
-// 자주 묻는 질문은 캐싱
+JSONArray messages = new JSONArray();
+messages.put(new JSONObject()
+    .put("role", "system")
+    .put("content", "답변은 50자 이내로 간결하게 작성하세요.")
+);
+messages.put(new JSONObject()
+    .put("role", "user")
+    .put("content", "AI란 무엇인가요?")
+);
+```
+
+### 4. 캐싱 활용
+
+```jsp
 Cache cache = new Cache();
-String question = "맑은프레임워크란?";
-String answer = cache.getString("faq_" + Malgn.md5(question));
+String cacheKey = "ai_faq_" + Malgn.md5(question);
+String answer = cache.getString(cacheKey);
 
 if(answer == null) {
     // 캐시에 없으면 AI에게 질문
-    answer = model.generate(question);
-    cache.save("faq_" + Malgn.md5(question), answer);
+    OpenAI ai = new OpenAI();
+    ai.apiKey(Config.get("openaiApiKey"));
+    answer = ai.chat(messagesJson);
+
+    // 캐시에 저장 (1시간)
+    cache.save(cacheKey, answer, 3600);
 }
 
-m.p(answer);
+j.success(answer);
 ```
 
 ---
 
 ## 주의사항
 
-1. **API 키 보안**: API 키를 소스코드에 직접 넣지 말고 환경설정 파일 사용
-   ```jsp
-   model.apiKey(Config.get("openai.apiKey"));
-   ```
+### 1. API 키 보안
 
-2. **비용 관리**: OpenAI API는 사용량에 따라 과금됩니다
-3. **응답 시간**: AI 응답은 수 초가 걸릴 수 있으므로 로딩 UI 필요
-4. **콘텐츠 필터링**: 생성된 콘텐츠는 검토가 필요할 수 있음
-5. **개인정보**: 민감한 개인정보를 AI에 전송하지 않도록 주의
+```jsp
+// ❌ 나쁜 예: 소스코드에 직접 입력
+ai.apiKey("sk-your-api-key-here");
+
+// ✅ 좋은 예: 환경설정 파일 사용
+ai.apiKey(Config.get("openaiApiKey"));
+```
+
+### 2. 비용 관리
+
+- OpenAI API는 사용량에 따라 과금됩니다
+- 모델별 가격이 다릅니다 (gpt-4 > gpt-4o-mini > gpt-3.5-turbo)
+- 토큰 수가 많을수록 비용이 높아집니다
+
+### 3. 응답 시간
+
+```jsp
+// AI 응답은 수 초가 걸릴 수 있으므로 로딩 UI 필요
+// 긴 응답은 스트림 방식 사용 권장
+String response = ai.streamChat(messagesJson, out);
+```
+
+### 4. 콘텐츠 검증
+
+```jsp
+// 생성된 콘텐츠는 항상 검토 필요
+String content = ai.chat(messagesJson);
+
+// 부적절한 내용 필터링
+if(content.contains("부적절한단어")) {
+    content = "적절하지 않은 응답이 생성되었습니다";
+}
+```
+
+### 5. 개인정보 보호
+
+```jsp
+// ❌ 나쁜 예: 민감한 정보 포함
+String msg = "[{\"role\":\"user\",\"content\":\"내 주민번호는 123456-1234567이야\"}]";
+
+// ✅ 좋은 예: 민감한 정보 제거 후 전송
+String sanitized = message.replaceAll("\\d{6}-\\d{7}", "[주민번호]");
+```
 
 ---
 
@@ -482,3 +889,7 @@ m.p(answer);
 - [HTTP 클라이언트](http-client.md) - OpenAI가 내부적으로 사용
 - [JSON 처리](json.md) - AI 응답 파싱
 - [환경설정 및 캐시](configuration.md) - API 키 관리 및 응답 캐싱
+
+---
+
+[← 목차로 돌아가기](README.md)
