@@ -85,6 +85,7 @@ mail.send("recipient@example.com", "제목입니다", "본문 내용입니다.")
 
 ### 3. 전체 예제
 
+**send_email.jsp**:
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
@@ -110,7 +111,15 @@ if(m.isPost() && f.validate()) {
     return;
 }
 
+p.setBody("mail.send_form");
+p.setVar("form_script", f.getScript());
+p.display();
+
 %>
+```
+
+**html/mail/send_form.html**:
+```html
 <form name="form1" method="post">
     <p>받는 사람 : <input type="text" name="email"></p>
     <p>제목 : <input type="text" name="subject"></p>
@@ -244,6 +253,7 @@ m.p("여러 파일과 함께 발송되었습니다.");
 
 ### 3. 업로드된 파일 첨부
 
+**send_email_with_file.jsp**:
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
@@ -275,7 +285,15 @@ if(m.isPost() && f.validate()) {
     return;
 }
 
+p.setBody("mail.send_form_with_file");
+p.setVar("form_script", f.getScript());
+p.display();
+
 %>
+```
+
+**html/mail/send_form_with_file.html**:
+```html
 <form name="form1" method="post" enctype="multipart/form-data">
     <p>받는 사람 : <input type="text" name="email"></p>
     <p>제목 : <input type="text" name="subject"></p>
@@ -591,7 +609,15 @@ if(m.isPost() && f.validate()) {
     return;
 }
 
+p.setBody("mail.contact_form");
+p.setVar("form_script", f.getScript());
+p.display();
+
 %>
+```
+
+**html/mail/contact_form.html**:
+```html
 <!DOCTYPE html>
 <html>
 <head>
