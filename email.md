@@ -345,14 +345,13 @@ DataSet user = dao.find("id = ?", userId);
 
 if(user.next()) {
 
-    // 템플릿 로드
-    Page emailTemplate = new Page(request, response, session, application);
-    emailTemplate.setBody("mail.welcome");
-    emailTemplate.setVar("name", user.s("name"));
-    emailTemplate.setVar("email", user.s("email"));
-    emailTemplate.setVar("site_url", Config.getSiteUrl());
+    // init.jsp의 Page 객체(p) 활용
+    p.setBody("mail.welcome");
+    p.setVar("name", user.s("name"));
+    p.setVar("email", user.s("email"));
+    p.setVar("site_url", Config.getSiteUrl());
 
-    String htmlBody = emailTemplate.fetch();
+    String htmlBody = p.fetch();
 
     // 이메일 발송
     Gmail mail = new Gmail();
