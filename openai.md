@@ -195,20 +195,22 @@ j.success(response);
 
 ## 서버 자동 관리 방식
 
-서버 메모리(세션)에 대화 히스토리를 자동으로 저장하고 관리하는 간편한 방식입니다.
+세션에 대화 히스토리를 JSON 문자열로 저장하고 관리하는 간편한 방식입니다.
 
-### 1. 세션 기반 챗봇
+### 1. 세션 기반 챗봇 (권장)
 
 ```jsp
 <%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-// 세션에서 OpenAI 객체 가져오기
-OpenAI ai = (OpenAI)session.getAttribute("chatAI");
-if(ai == null) {
-    ai = new OpenAI();
-    ai.apiKey(Config.get("openaiApiKey"));
-    ai.modelName("gpt-4o-mini");
-    session.setAttribute("chatAI", ai);
+// OpenAI 객체 생성 (매번 새로 생성)
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+ai.modelName("gpt-4o-mini");
+
+// 세션에서 히스토리 로드
+String historyJson = (String)session.getAttribute("chatHistory");
+if(historyJson != null) {
+    ai.setHistory(historyJson);
 }
 
 // 사용자 메시지
@@ -216,6 +218,9 @@ String message = m.rs("message");
 
 // 자동으로 history에 추가되고 AI 호출
 String response = ai.chatMemory(message);
+
+// 세션에 히스토리 저장
+session.setAttribute("chatHistory", ai.getHistory());
 
 if(ai.errMsg != null) {
     j.error(ai.errMsg);
@@ -226,45 +231,56 @@ if(ai.errMsg != null) {
 %>
 ```
 
-### 2. 대화 히스토리 초기화
-
-```jsp
-// 세션에서 제거하여 대화 초기화
-session.removeAttribute("chatAI");
-
-// 또는 히스토리만 초기화
-OpenAI ai = (OpenAI)session.getAttribute("chatAI");
-if(ai != null) {
-    ai.setHistory(null);
-}
-```
-
-### 3. 시스템 프롬프트와 함께 사용
+### 2. 시스템 프롬프트와 함께 사용
 
 ```jsp
 <%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-OpenAI ai = (OpenAI)session.getAttribute("chatAI");
-if(ai == null) {
-    ai = new OpenAI();
-    ai.apiKey(Config.get("openaiApiKey"));
-    ai.modelName("gpt-4o-mini");
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+ai.modelName("gpt-4o-mini");
 
-    // 시스템 메시지 설정 (첫 메시지에만 포함)
-    JSONArray history = new JSONArray();
-    history.put(new JSONObject()
-        .put("role", "system")
-        .put("content", "당신은 맑은프레임워크 전문가입니다. JSP와 Java에 대해 답변하세요.")
-    );
-    ai.setHistory(history.toString());
-
-    session.setAttribute("chatAI", ai);
+// 세션에서 히스토리 로드
+String historyJson = (String)session.getAttribute("chatHistory");
+if(historyJson != null) {
+    ai.setHistory(historyJson);
+} else {
+    // 첫 대화일 경우 시스템 메시지 설정
+    ai.system("당신은 맑은프레임워크 전문가입니다. JSP와 Java에 대해 답변하세요.");
 }
 
 String message = m.rs("message");
 String response = ai.chatMemory(message);
 
+// 세션에 히스토리 저장
+session.setAttribute("chatHistory", ai.getHistory());
+
 j.success(response);
+
+%>
+```
+
+### 3. 대화 히스토리 초기화
+
+```jsp
+// 세션에서 히스토리 제거
+session.removeAttribute("chatHistory");
+
+j.success("대화가 초기화되었습니다");
+```
+
+### 4. 히스토리 조회
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+String historyJson = (String)session.getAttribute("chatHistory");
+
+if(historyJson != null) {
+    j.success(historyJson);
+} else {
+    j.success("[]");
+}
 
 %>
 ```
@@ -296,17 +312,22 @@ String fullResponse = ai.streamChat(messagesJson, out);
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-OpenAI ai = (OpenAI)session.getAttribute("chatAI");
-if(ai == null) {
-    ai = new OpenAI();
-    ai.apiKey(Config.get("openaiApiKey"));
-    session.setAttribute("chatAI", ai);
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+
+// 세션에서 히스토리 로드
+String historyJson = (String)session.getAttribute("chatHistory");
+if(historyJson != null) {
+    ai.setHistory(historyJson);
 }
 
 String message = m.rs("message");
 
 // 실시간으로 출력하면서 history에도 자동 저장
 String response = ai.streamMemory(message, out);
+
+// 세션에 히스토리 저장
+session.setAttribute("chatHistory", ai.getHistory());
 
 %>
 ```
@@ -472,7 +493,73 @@ if(ai.errMsg != null) {
 }
 ```
 
-### 3. 모델별 특징
+### 3. 시스템 메시지 설정
+
+`system()` 메소드로 히스토리의 첫 번째에 시스템 메시지를 추가하거나 교체할 수 있습니다:
+
+```jsp
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+
+// 세션에서 히스토리 로드
+String historyJson = (String)session.getAttribute("chatHistory");
+if(historyJson != null) {
+    ai.setHistory(historyJson);
+}
+
+// 시스템 메시지 설정 (이미 있으면 교체, 없으면 추가)
+ai.system("당신은 친절한 AI 도우미입니다.");
+
+String response = ai.chatMemory(message);
+session.setAttribute("chatHistory", ai.getHistory());
+```
+
+**동적 시스템 메시지:**
+
+```jsp
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+
+String historyJson = (String)session.getAttribute("chatHistory");
+if(historyJson != null) {
+    ai.setHistory(historyJson);
+}
+
+// 모드에 따라 시스템 메시지 변경
+String mode = m.rs("mode", "normal");
+if(mode.equals("formal")) {
+    ai.system("당신은 전문적이고 공손한 비즈니스 어시스턴트입니다.");
+} else if(mode.equals("casual")) {
+    ai.system("당신은 친근하고 편안한 친구같은 어시스턴트입니다.");
+} else {
+    ai.system("당신은 도움이 되는 AI 어시스턴트입니다.");
+}
+
+String response = ai.chatMemory(message);
+session.setAttribute("chatHistory", ai.getHistory());
+```
+
+### 4. 최대 토큰 수 설정
+
+응답의 최대 토큰 수를 제한할 수 있습니다 (기본값: 1000):
+
+```jsp
+OpenAI ai = new OpenAI();
+ai.apiKey(Config.get("openaiApiKey"));
+
+// 짧은 응답 (비용 절약)
+ai.maxToken(100);
+
+// 긴 응답
+ai.maxToken(2000);
+
+// 매우 긴 응답 (최대 4096)
+ai.maxToken(4096);
+
+String response = ai.chat(messagesJson);
+```
+
+### 5. 모델별 특징
 
 ```jsp
 // gpt-3.5-turbo: 빠르고 저렴, 일반 작업에 적합
