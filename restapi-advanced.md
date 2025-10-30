@@ -228,7 +228,7 @@ api.get("/:id", () -> {
             j.put("orders", orders);
         }
 
-        j.print();
+        j.success();
     } else {
         j.error("NOT_FOUND", "사용자를 찾을 수 없습니다.");
     }
@@ -269,7 +269,7 @@ api.get("/", () -> {
     j.put("total", total);
     j.put("page", page);
     j.put("size", size);
-    j.print();
+    j.success();
 });
 
 // GET /api/product/:category - 카테고리별 목록
@@ -281,7 +281,7 @@ api.get("/:category", () -> {
 
     j.put("products", list);
     j.put("category", category);
-    j.print();
+    j.success();
 });
 
 // GET /api/product/:category/:id - 특정 상품 조회
@@ -457,7 +457,7 @@ api.get("/:id/comments", () -> {
 
     j.put("comments", list);
     j.put("post_id", postId);
-    j.print();
+    j.success();
 });
 
 // POST /api/post/:id/comments - 댓글 작성

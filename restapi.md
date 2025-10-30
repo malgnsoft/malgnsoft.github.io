@@ -353,7 +353,7 @@ api.get("/", () -> {
     UserDao user = new UserDao();
     DataSet list = user.find();
     j.put("users", list);
-    j.print();
+    j.success();
 });
 
 // GET /api/user/list - 페이징 목록 (고정 경로)
@@ -369,7 +369,7 @@ api.get("/list", () -> {
     j.put("total", total);
     j.put("page", page);
     j.put("size", size);
-    j.print();
+    j.success();
 });
 
 // GET /api/user/active - 활성 사용자만 (고정 경로)
@@ -377,7 +377,7 @@ api.get("/active", () -> {
     UserDao user = new UserDao();
     DataSet list = user.findByStatus("active");
     j.put("users", list);
-    j.print();
+    j.success();
 });
 
 // GET /api/user/:id - 단일 조회 (path parameter)
@@ -388,12 +388,9 @@ api.get("/:id", () -> {
     DataSet info = user.get(id);
 
     if(info.next()) {
-        j.put("id", info.i("id"));
-        j.put("name", info.s("name"));
-        j.put("email", info.s("email"));
-        j.print();
+        j.success(info);
     } else {
-        j.error("사용자를 찾을 수 없습니다.");
+        j.error("NOT_FOUND", "사용자를 찾을 수 없습니다.");
     }
 });
 
@@ -404,9 +401,10 @@ api.post("/", () -> {
     user.item("email", f.get("email"));
 
     if(user.insert()) {
-        j.success("등록되었습니다.", user.id);
+        j.put("id", user.id);
+        j.success("등록되었습니다.");
     } else {
-        j.error(user.getErrMsg());
+        j.error("DATABASE_ERROR", user.getErrMsg());
     }
 });
 
@@ -422,7 +420,7 @@ api.put("/:id", () -> {
     if(user.update()) {
         j.success("수정되었습니다.");
     } else {
-        j.error(user.getErrMsg());
+        j.error("DATABASE_ERROR", user.getErrMsg());
     }
 });
 
@@ -443,7 +441,7 @@ api.patch("/:id", () -> {
     if(user.update()) {
         j.success("수정되었습니다.");
     } else {
-        j.error(user.getErrMsg());
+        j.error("DATABASE_ERROR", user.getErrMsg());
     }
 });
 
@@ -455,7 +453,7 @@ api.delete("/:id", () -> {
     if(user.delete(id)) {
         j.success("삭제되었습니다.");
     } else {
-        j.error(user.getErrMsg());
+        j.error("DATABASE_ERROR", user.getErrMsg());
     }
 });
 
@@ -504,7 +502,7 @@ api.get("/", () -> {
     UserDao user = new UserDao();
     DataSet list = user.find();
     j.put("users", list);
-    j.print();
+    j.success();
 });
 
 // GET /api/admin/user/:id - 특정 사용자 조회
@@ -515,10 +513,9 @@ api.get("/:id", () -> {
     DataSet info = user.get(id);
 
     if(info.next()) {
-        j.put("user", info);
-        j.print();
+        j.success(info);
     } else {
-        j.error("사용자를 찾을 수 없습니다.");
+        j.error("NOT_FOUND", "사용자를 찾을 수 없습니다.");
     }
 });
 
@@ -530,9 +527,10 @@ api.post("/", () -> {
     user.item("created_by", userId);  // init.jsp에서 설정된 userId 사용
 
     if(user.insert()) {
-        j.success("등록되었습니다.", user.id);
+        j.put("id", user.id);
+        j.success("등록되었습니다.");
     } else {
-        j.error(user.getErrMsg());
+        j.error("DATABASE_ERROR", user.getErrMsg());
     }
 });
 
@@ -548,7 +546,7 @@ api.put("/:id", () -> {
     if(user.update()) {
         j.success("수정되었습니다.");
     } else {
-        j.error(user.getErrMsg());
+        j.error("DATABASE_ERROR", user.getErrMsg());
     }
 });
 
@@ -560,7 +558,7 @@ api.delete("/:id", () -> {
     if(user.delete(id)) {
         j.success("삭제되었습니다.");
     } else {
-        j.error(user.getErrMsg());
+        j.error("DATABASE_ERROR", user.getErrMsg());
     }
 });
 
@@ -758,7 +756,7 @@ api.get("/", () -> {
     UserDao user = new UserDao();
     DataSet list = user.search(keyword, page);
     j.put("users", list);
-    j.print();
+    j.success();
 });
 ```
 

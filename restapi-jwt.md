@@ -35,7 +35,7 @@ api.post("/", () -> {
         j.put("user_id", info.i("id"));
         j.put("user_name", info.s("name"));
         j.put("user_level", info.i("level"));
-        j.print();
+        j.success("로그인되었습니다.");
     } else {
         j.error("INVALID_CREDENTIALS", "이메일 또는 비밀번호가 일치하지 않습니다.");
     }
@@ -141,7 +141,7 @@ api.get("/", () -> {
 
     j.put("stats", data);
     j.put("requested_by", userName);  // JWT 토큰에서 추출된 userName 사용
-    j.print();
+    j.success();
 });
 
 %>
