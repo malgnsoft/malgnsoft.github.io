@@ -11,7 +11,7 @@
 **간단한 에러 메시지:**
 ```jsp
 api.get("/:id", () -> {
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     UserDao user = new UserDao();
     DataSet info = user.get(id);
@@ -41,7 +41,7 @@ api.get("/:id", () -> {
 **에러 코드와 메시지:**
 ```jsp
 api.get("/:id", () -> {
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     UserDao user = new UserDao();
     DataSet info = user.get(id);

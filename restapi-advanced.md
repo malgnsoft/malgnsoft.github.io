@@ -15,7 +15,7 @@ Path Parameter를 사용하면 URL 경로에서 값을 추출할 수 있습니�
 
 // GET /api/user/:id - 단일 조회
 api.get("/:id", () -> {
-    int id = api.getParamInt("id");  // /api/user/123 → id=123
+    int id = api.paramInt("id");  // /api/user/123 → id=123
 
     UserDao user = new UserDao();
     DataSet info = user.get(id);
@@ -70,7 +70,7 @@ api.get("/search", () -> {
 ```jsp
 // GET /api/user/:id
 api.get("/:id", () -> {
-    int id = api.getParamInt("id");  // /api/user/123 → id=123
+    int id = api.paramInt("id");  // /api/user/123 → id=123
 
     UserDao user = new UserDao();
     DataSet info = user.get(id);
@@ -90,8 +90,8 @@ api.get("/:id", () -> {
 ```jsp
 // GET /api/product/:category/:id
 api.get("/:category/:id", () -> {
-    String category = api.getParam("category");
-    int id = api.getParamInt("id");
+    String category = api.param("category");
+    int id = api.paramInt("id");
 
     // /api/product/food/123 → category=food, id=123
 
@@ -113,7 +113,7 @@ api.get("/:category/:id", () -> {
 ```jsp
 // GET /api/post/:id/comments
 api.get("/:id/comments", () -> {
-    int postId = api.getParamInt("id");
+    int postId = api.paramInt("id");
 
     CommentDao comment = new CommentDao();
     DataSet list = comment.findByPostId(postId);
@@ -122,7 +122,7 @@ api.get("/:id/comments", () -> {
 
 // GET /api/user/:id/orders
 api.get("/:id/orders", () -> {
-    int userId = api.getParamInt("id");
+    int userId = api.paramInt("id");
 
     OrderDao order = new OrderDao();
     DataSet list = order.findByUserId(userId);
@@ -131,8 +131,8 @@ api.get("/:id/orders", () -> {
 
 // GET /api/user/:id/orders/:orderId
 api.get("/:id/orders/:orderId", () -> {
-    int userId = api.getParamInt("id");
-    int orderId = api.getParamInt("orderId");
+    int userId = api.paramInt("id");
+    int orderId = api.paramInt("orderId");
 
     OrderDao order = new OrderDao();
     DataSet info = order.getByUserAndOrder(userId, orderId);
@@ -181,18 +181,18 @@ api.get("/:id", () -> {
 
 | 메소드 | 반환 타입 | 설명 | 예시 |
 |--------|----------|------|------|
-| `api.getParam(name)` | String | 문자열로 반환 | `String category = api.getParam("category");` |
-| `api.getParamInt(name)` | int | 정수로 변환 (실패시 0) | `int id = api.getParamInt("id");` |
+| `api.param(name)` | String | 문자열로 반환 | `String category = api.param("category");` |
+| `api.paramInt(name)` | int | 정수로 변환 (실패시 0) | `int id = api.paramInt("id");` |
 
 ### 사용 예시
 
 ```jsp
 api.get("/:category/:id", () -> {
     // 문자열 parameter
-    String category = api.getParam("category");
+    String category = api.param("category");
 
     // 정수 parameter
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     // /api/product/electronics/123
     // category = "electronics"
@@ -210,7 +210,7 @@ Path parameter와 query string을 동시에 사용할 수 있습니다:
 // GET /api/user/123?includeOrders=true
 api.get("/:id", () -> {
     // Path parameter
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     // Query string
     boolean includeOrders = m.rb("includeOrders");
@@ -274,7 +274,7 @@ api.get("/", () -> {
 
 // GET /api/product/:category - 카테고리별 목록
 api.get("/:category", () -> {
-    String category = api.getParam("category");
+    String category = api.param("category");
 
     ProductDao product = new ProductDao();
     DataSet list = product.findByCategory(category);
@@ -286,8 +286,8 @@ api.get("/:category", () -> {
 
 // GET /api/product/:category/:id - 특정 상품 조회
 api.get("/:category/:id", () -> {
-    String category = api.getParam("category");
-    int id = api.getParamInt("id");
+    String category = api.param("category");
+    int id = api.paramInt("id");
 
     ProductDao product = new ProductDao();
     DataSet info = product.get(id);
@@ -316,7 +316,7 @@ api.post("/", () -> {
 
 // PUT /api/product/:id - 상품 수정
 api.put("/:id", () -> {
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     ProductDao product = new ProductDao();
     product.get(id);
@@ -334,7 +334,7 @@ api.put("/:id", () -> {
 
 // PATCH /api/product/:id - 부분 수정
 api.patch("/:id", () -> {
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     ProductDao product = new ProductDao();
     product.get(id);
@@ -358,7 +358,7 @@ api.patch("/:id", () -> {
 
 // DELETE /api/product/:id - 상품 삭제
 api.delete("/:id", () -> {
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     ProductDao product = new ProductDao();
     if(product.delete(id)) {
@@ -450,7 +450,7 @@ api.setBasePath("/api/post");
 
 // GET /api/post/:id/comments - 게시글의 댓글 목록
 api.get("/:id/comments", () -> {
-    int postId = api.getParamInt("id");
+    int postId = api.paramInt("id");
 
     CommentDao comment = new CommentDao();
     DataSet list = comment.findByPostId(postId);
@@ -462,7 +462,7 @@ api.get("/:id/comments", () -> {
 
 // POST /api/post/:id/comments - 댓글 작성
 api.post("/:id/comments", () -> {
-    int postId = api.getParamInt("id");
+    int postId = api.paramInt("id");
     String content = f.get("content");
 
     CommentDao comment = new CommentDao();
@@ -479,8 +479,8 @@ api.post("/:id/comments", () -> {
 
 // GET /api/post/:id/comments/:commentId - 특정 댓글 조회
 api.get("/:id/comments/:commentId", () -> {
-    int postId = api.getParamInt("id");
-    int commentId = api.getParamInt("commentId");
+    int postId = api.paramInt("id");
+    int commentId = api.paramInt("commentId");
 
     CommentDao comment = new CommentDao();
     DataSet info = comment.get(commentId);
@@ -494,8 +494,8 @@ api.get("/:id/comments/:commentId", () -> {
 
 // DELETE /api/post/:id/comments/:commentId - 댓글 삭제
 api.delete("/:id/comments/:commentId", () -> {
-    int postId = api.getParamInt("id");
-    int commentId = api.getParamInt("commentId");
+    int postId = api.paramInt("id");
+    int commentId = api.paramInt("commentId");
 
     CommentDao comment = new CommentDao();
     DataSet info = comment.get(commentId);

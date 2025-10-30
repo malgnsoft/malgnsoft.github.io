@@ -380,7 +380,7 @@ api.get("/active", () -> {
 
 // GET /api/user/:id - 단일 조회 (path parameter)
 api.get("/:id", () -> {
-    int id = api.getParamInt("id");  // path parameter에서 id 추출
+    int id = api.paramInt("id");  // path parameter에서 id 추출
 
     UserDao user = new UserDao();
     DataSet info = user.get(id);
@@ -410,7 +410,7 @@ api.post("/", () -> {
 
 // PUT /api/user/:id - 수정 (path parameter)
 api.put("/:id", () -> {
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     UserDao user = new UserDao();
     user.get(id);
@@ -426,7 +426,7 @@ api.put("/:id", () -> {
 
 // PATCH /api/user/:id - 부분 수정 (path parameter)
 api.patch("/:id", () -> {
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     UserDao user = new UserDao();
     user.get(id);
@@ -447,7 +447,7 @@ api.patch("/:id", () -> {
 
 // DELETE /api/user/:id - 삭제 (path parameter)
 api.delete("/:id", () -> {
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     UserDao user = new UserDao();
     if(user.delete(id)) {
@@ -507,7 +507,7 @@ api.get("/", () -> {
 
 // GET /api/admin/user/:id - 특정 사용자 조회
 api.get("/:id", () -> {
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     UserDao user = new UserDao();
     DataSet info = user.get(id);
@@ -536,7 +536,7 @@ api.post("/", () -> {
 
 // PUT /api/admin/user/:id - 사용자 수정
 api.put("/:id", () -> {
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     UserDao user = new UserDao();
     user.get(id);
@@ -552,7 +552,7 @@ api.put("/:id", () -> {
 
 // DELETE /api/admin/user/:id - 사용자 삭제
 api.delete("/:id", () -> {
-    int id = api.getParamInt("id");
+    int id = api.paramInt("id");
 
     UserDao user = new UserDao();
     if(user.delete(id)) {
@@ -723,14 +723,14 @@ RestAPI 클래스는 내부적으로 예외를 처리하므로 try-catch가 필�
 ```jsp
 // /:id 패턴
 api.get("/:id", () -> {
-    int id = api.getParamInt("id");  // /api/user/123 → id=123
+    int id = api.paramInt("id");  // /api/user/123 → id=123
     // ...
 });
 
 // 복수 parameter
 api.get("/:category/:id", () -> {
-    String category = api.getParam("category");  // /api/product/food/123
-    int id = api.getParamInt("id");
+    String category = api.param("category");  // /api/product/food/123
+    int id = api.paramInt("id");
     // ...
 });
 ```
