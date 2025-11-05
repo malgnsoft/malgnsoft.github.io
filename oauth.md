@@ -158,13 +158,12 @@ DataSet user = dao.query("WHERE email = ?", email);
 
 if(!user.next()) {
     // 신규 회원 가입
-    DataMap newUser = new DataMap();
-    newUser.put("email", email);
-    newUser.put("name", name);
-    newUser.put("oauth_provider", "google");
-    newUser.put("oauth_id", id);
-    newUser.put("reg_date", Malgn.time());
-    dao.insert(newUser);
+    dao.item("email", email);
+    dao.item("name", name);
+    dao.item("oauth_provider", "google");
+    dao.item("oauth_id", id);
+    dao.item("reg_date", Malgn.time());
+    dao.insert();
 
     user = dao.query("WHERE email = ?", email);
     user.next();
@@ -426,14 +425,14 @@ DataSet user = dao.query("WHERE oauth_provider = ? AND oauth_id = ?", vendor, oa
 
 if(!user.next()) {
     // 신규 회원 가입
-    DataMap newUser = new DataMap();
-    newUser.put("email", email);
-    newUser.put("name", name);
-    newUser.put("oauth_provider", vendor);
-    newUser.put("oauth_id", oauthId);
-    newUser.put("reg_date", Malgn.time());
+    dao.item("email", email);
+    dao.item("name", name);
+    dao.item("oauth_provider", vendor);
+    dao.item("oauth_id", oauthId);
+    dao.item("reg_date", Malgn.time());
 
-    int userId = dao.insert(newUser);
+    dao.insert();
+    int userId = dao.getInsertId();
 
     // 세션 로그인
     auth.login(userId, name);
@@ -547,10 +546,9 @@ if(profile == null) {
 ```jsp
 // 사용자의 OAuth 정보 제거
 UserDao dao = new UserDao();
-DataMap updates = new DataMap();
-updates.put("oauth_provider", null);
-updates.put("oauth_id", null);
-dao.update("id = ?", updates, userId);
+dao.item("oauth_provider", null);
+dao.item("oauth_id", null);
+dao.update("id = ?", new Object[] { userId });
 ```
 
 ### 계정 연동
@@ -561,10 +559,9 @@ if(auth.isLogin()) {
     HashMap<String, Object> profile = oauth.getProfile(code);
 
     UserDao dao = new UserDao();
-    DataMap updates = new DataMap();
-    updates.put("oauth_provider", vendor);
-    updates.put("oauth_id", profile.get("id"));
-    dao.update("id = ?", updates, auth.id());
+    dao.item("oauth_provider", vendor);
+    dao.item("oauth_id", profile.get("id"));
+    dao.update("id = ?", new Object[] { auth.id() });
 
     m.jsAlert("계정이 연동되었습니다");
     m.jsReplace("/mypage");

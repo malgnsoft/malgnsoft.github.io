@@ -1695,15 +1695,13 @@ UserDao dao = new UserDao();
 DataSet users = dao.query("SELECT * FROM tb_user WHERE status = 1");
 
 // 쓰기 작업 - Master DB(jndi) 사용
-DataMap user = new DataMap();
-user.put("name", "홍길동");
-user.put("email", "hong@example.com");
-dao.insert(user);
+dao.item("name", "홍길동");
+dao.item("email", "hong@example.com");
+dao.insert();
 
 // 수정 작업 - Master DB(jndi) 사용
-DataMap updateData = new DataMap();
-updateData.put("status", 1);
-dao.update("id = 123", updateData);
+dao.item("status", 1);
+dao.update("id = 123");
 
 %>
 ```
@@ -1805,12 +1803,11 @@ DataSet users = userDao.query("SELECT * FROM tb_user WHERE status = 1");
 LogDao logDao = new LogDao();
 logDao.setJndi("jdbc/log_db");  // 로그 전용 DB 지정
 
-DataMap log = new DataMap();
-log.put("user_id", userId);
-log.put("action", "login");
-log.put("ip_address", m.getRemoteAddr());
-log.put("reg_date", m.time("yyyyMMddHHmmss"));
-logDao.insert(log);
+logDao.item("user_id", userId);
+logDao.item("action", "login");
+logDao.item("ip_address", m.getRemoteAddr());
+logDao.item("reg_date", m.time("yyyyMMddHHmmss"));
+logDao.insert();
 
 // 통계 데이터베이스에서 조회
 StatsDao statsDao = new StatsDao();
@@ -1861,20 +1858,18 @@ DataSet user = userDao.find("id = ?", userId);
 
 if(user.next()) {
     // 사용자 정보 업데이트
-    DataMap updateData = new DataMap();
-    updateData.put("last_login", m.time("yyyyMMddHHmmss"));
-    userDao.update("id = ?", updateData, userId);
+    userDao.item("last_login", m.time("yyyyMMddHHmmss"));
+    userDao.update("id = ?", new Object[] { userId });
 
     // 로그 DB - 접속 이력 저장
     AccessLogDao logDao = new AccessLogDao();
     logDao.setJndi("jdbc/log_db");
 
-    DataMap accessLog = new DataMap();
-    accessLog.put("user_id", userId);
-    accessLog.put("login_time", m.time("yyyyMMddHHmmss"));
-    accessLog.put("ip_address", m.getRemoteAddr());
-    accessLog.put("user_agent", request.getHeader("User-Agent"));
-    logDao.insert(accessLog);
+    logDao.item("user_id", userId);
+    logDao.item("login_time", m.time("yyyyMMddHHmmss"));
+    logDao.item("ip_address", m.getRemoteAddr());
+    logDao.item("user_agent", request.getHeader("User-Agent"));
+    logDao.insert();
 }
 
 %>
@@ -3594,13 +3589,12 @@ if(m.isPost() && f.validate()) {
 
         // DB에 파일 정보 저장
         FileDao dao = new FileDao();
-        DataMap data = new DataMap();
-        data.put("title", f.get("title"));
-        data.put("file_name", fileName);
-        data.put("file_path", filePath);
-        data.put("file_size", fileSize);
-        data.put("reg_date", m.time());
-        dao.insert(data);
+        dao.item("title", f.get("title"));
+        dao.item("file_name", fileName);
+        dao.item("file_path", filePath);
+        dao.item("file_size", fileSize);
+        dao.item("reg_date", m.time());
+        dao.insert();
 
         m.jsAlert("업로드 완료");
         m.jsReplace("list.jsp");
@@ -3786,11 +3780,11 @@ if(m.isPost() && f.validate()) {
         m.p("저장 파일명: " + newFileName);
 
         // DB에 두 파일명 모두 저장
-        DataMap data = new DataMap();
-        data.put("original_name", originalName);
-        data.put("saved_name", newFileName);
-        data.put("file_path", savePath);
-        // ...
+        FileDao dao = new FileDao();
+        dao.item("original_name", originalName);
+        dao.item("saved_name", newFileName);
+        dao.item("file_path", savePath);
+        dao.insert();
     }
     return;
 }
@@ -3993,13 +3987,12 @@ if(m.isPost() && f.validate()) {
 
         // DB 저장
         ImageDao dao = new ImageDao();
-        DataMap data = new DataMap();
-        data.put("title", f.get("title"));
-        data.put("image_path", filePath);
-        data.put("thumb_path", thumbFullPath);
-        data.put("file_size", file.length());
-        data.put("reg_date", m.time());
-        dao.insert(data);
+        dao.item("title", f.get("title"));
+        dao.item("image_path", filePath);
+        dao.item("thumb_path", thumbFullPath);
+        dao.item("file_size", file.length());
+        dao.item("reg_date", m.time());
+        dao.insert();
 
         m.jsAlert("이미지 업로드 완료");
         m.jsReplace("list.jsp");
@@ -4249,17 +4242,17 @@ if(m.isPost() && f.validate()) {
         long fileSize = file.length();
 
         FileDao dao = new FileDao();
-        DataMap data = new DataMap();
-        data.put("user_id", auth.getUserId());
-        data.put("title", f.get("title"));
-        data.put("content", f.get("content"));
-        data.put("file_name", fileName);
-        data.put("file_path", filePath);
-        data.put("file_size", fileSize);
-        data.put("download_count", 0);
-        data.put("reg_date", m.time());
+        dao.item("user_id", auth.getUserId());
+        dao.item("title", f.get("title"));
+        dao.item("content", f.get("content"));
+        dao.item("file_name", fileName);
+        dao.item("file_path", filePath);
+        dao.item("file_size", fileSize);
+        dao.item("download_count", 0);
+        dao.item("reg_date", m.time());
 
-        int newId = dao.insert(data);
+        dao.insert();
+        int newId = dao.getInsertId();
 
         m.jsAlert("업로드 완료");
         m.jsReplace("view.jsp?id=" + newId);
@@ -6966,14 +6959,12 @@ if(m.isPost() && f.validate()) {
     // 비밀번호 해시화
     String hashedPassword = Malgn.sha256(plainPassword);
 
-    DataMap user = new DataMap();
-    user.put("user_id", userId);
-    user.put("password", hashedPassword);
-    user.put("name", f.get("name"));
-    user.put("reg_date", m.time());
-
     UserDao dao = new UserDao();
-    dao.insert(user);
+    dao.item("user_id", userId);
+    dao.item("password", hashedPassword);
+    dao.item("name", f.get("name"));
+    dao.item("reg_date", m.time());
+    dao.insert();
 
     m.jsAlert("회원가입이 완료되었습니다");
     m.jsReplace("/login.jsp");
@@ -7184,14 +7175,12 @@ if(m.isPost() && f.validate()) {
     String phone = f.get("phone");
     String encryptedPhone = aes.encrypt(phone);
 
-    DataMap user = new DataMap();
-    user.put("name", f.get("name"));
-    user.put("ssn", encryptedSsn);
-    user.put("phone", encryptedPhone);
-    user.put("email", f.get("email"));
-
     UserDao dao = new UserDao();
-    dao.insert(user);
+    dao.item("name", f.get("name"));
+    dao.item("ssn", encryptedSsn);
+    dao.item("phone", encryptedPhone);
+    dao.item("email", f.get("email"));
+    dao.insert();
 
     m.jsAlert("저장되었습니다");
     m.jsReplace("list.jsp");
@@ -7951,9 +7940,8 @@ if(m.isPost() && f.validate()) {
             String token = Malgn.uuid();
 
             // DB에 토큰 저장
-            DataMap data = new DataMap();
-            data.put("auto_login_token", token);
-            dao.update("id = ?", data, user.getInt("id"));
+            dao.item("auto_login_token", token);
+            dao.update("id = ?", new Object[] { user.getInt("id") });
 
             // 쿠키에 저장 (30일)
             m.setCookie("auto_login_token", token, 60 * 60 * 24 * 30);
@@ -7983,10 +7971,9 @@ if(m.isPost() && f.validate()) {
         int userId = user.getInt("id");
 
         // 마지막 로그인 시간 업데이트
-        DataMap data = new DataMap();
-        data.put("last_login", m.time());
-        data.put("login_count", user.getInt("login_count") + 1);
-        dao.update("id = ?", data, userId);
+        dao.item("last_login", m.time());
+        dao.item("login_count", user.getInt("login_count") + 1);
+        dao.update("id = ?", new Object[] { userId });
 
         // 인증 정보 저장
         auth.put("user_id", userId);
@@ -8095,13 +8082,11 @@ j.success("인증 성공", result);
 String plainPassword = f.get("passwd");
 String hashedPassword = Malgn.sha256(plainPassword);
 
-DataMap user = new DataMap();
-user.put("user_id", f.get("id"));
-user.put("passwd", hashedPassword);
-user.put("name", f.get("name"));
-
 UserDao dao = new UserDao();
-dao.insert(user);
+dao.item("user_id", f.get("id"));
+dao.item("passwd", hashedPassword);
+dao.item("name", f.get("name"));
+dao.insert();
 ```
 
 #### 다양한 해시 알고리즘
@@ -8375,13 +8360,12 @@ DataSet user = dao.query("WHERE email = ?", email);
 
 if(!user.next()) {
     // 신규 회원 가입
-    DataMap newUser = new DataMap();
-    newUser.put("email", email);
-    newUser.put("name", name);
-    newUser.put("oauth_provider", "google");
-    newUser.put("oauth_id", id);
-    newUser.put("reg_date", Malgn.time());
-    dao.insert(newUser);
+    dao.item("email", email);
+    dao.item("name", name);
+    dao.item("oauth_provider", "google");
+    dao.item("oauth_id", id);
+    dao.item("reg_date", Malgn.time());
+    dao.insert();
 
     user = dao.query("WHERE email = ?", email);
     user.next();
@@ -8643,14 +8627,14 @@ DataSet user = dao.query("WHERE oauth_provider = ? AND oauth_id = ?", vendor, oa
 
 if(!user.next()) {
     // 신규 회원 가입
-    DataMap newUser = new DataMap();
-    newUser.put("email", email);
-    newUser.put("name", name);
-    newUser.put("oauth_provider", vendor);
-    newUser.put("oauth_id", oauthId);
-    newUser.put("reg_date", Malgn.time());
+    dao.item("email", email);
+    dao.item("name", name);
+    dao.item("oauth_provider", vendor);
+    dao.item("oauth_id", oauthId);
+    dao.item("reg_date", Malgn.time());
 
-    int userId = dao.insert(newUser);
+    dao.insert();
+    int userId = dao.getInsertId();
 
     // 세션 로그인
     auth.login(userId, name);
@@ -8764,10 +8748,9 @@ if(profile == null) {
 ```jsp
 // 사용자의 OAuth 정보 제거
 UserDao dao = new UserDao();
-DataMap updates = new DataMap();
-updates.put("oauth_provider", null);
-updates.put("oauth_id", null);
-dao.update("id = ?", updates, userId);
+dao.item("oauth_provider", null);
+dao.item("oauth_id", null);
+dao.update("id = ?", new Object[] { userId });
 ```
 
 #### 계정 연동
@@ -8778,10 +8761,9 @@ if(auth.isLogin()) {
     HashMap<String, Object> profile = oauth.getProfile(code);
 
     UserDao dao = new UserDao();
-    DataMap updates = new DataMap();
-    updates.put("oauth_provider", vendor);
-    updates.put("oauth_id", profile.get("id"));
-    dao.update("id = ?", updates, auth.id());
+    dao.item("oauth_provider", vendor);
+    dao.item("oauth_id", profile.get("id"));
+    dao.update("id = ?", new Object[] { auth.id() });
 
     m.jsAlert("계정이 연동되었습니다");
     m.jsReplace("/mypage");
@@ -16849,10 +16831,9 @@ api.delete("/:id/comments/:commentId", () -> {
 **올바른 접근 (맑은프레임워크 방식):**
 ```jsp
 // ✅ JSP에서 로직 처리
-ds.put("selected", status.equals("active") ? "selected" : "");
-ds.put("total", price * quantity);
-ds.put("userName", user.getName().toUpperCase());
-p.setVar("user", ds);
+p.setVar("selected", status.equals("active") ? "selected" : "");
+p.setVar("total", price * quantity);
+p.setVar("userName", user.getName().toUpperCase());
 ```
 ```html
 <!-- ✅ 템플릿은 출력만 -->
@@ -16979,11 +16960,6 @@ String result = api.fetchData(url);
 - 조건: `<!--@if(var)-->...<!--/if(var)-->`
 - **삼항연산자, 함수 호출, 연산은 제공하지 않음** → JSP에서 처리
 
-**예시: rojndi (Read-Only JNDI)**
-- 단순히 jndi/rojndi 두 개만 설정
-- SELECT → rojndi, INSERT/UPDATE/DELETE → jndi
-- 복잡한 라우팅 규칙 없음 (필요하면 DB 프록시 사용)
-
 **왜 단순함인가?**
 - 학습 곡선이 낮아 빠르게 적용 가능
 - 버그 발생 가능성 감소
@@ -17019,8 +16995,7 @@ JSP 파일에서는 맑은프레임워크가 제공하는 클래스만 사용해
 // 핵심 클래스
 Malgn m = new Malgn(request, response);
 Page p = new Page(request, response);
-FormData f = new FormData(request);
-FormValidator fv = new FormValidator(request);
+Form f = new Form(request);
 
 // 데이터 처리
 UserDao user = new UserDao();
@@ -17103,7 +17078,7 @@ if(user.insert()) {
 **로그 확인:**
 ```bash
 # 에러 로그 위치
-/logs/error.log
+/data/logs/error_20250101.log
 
 # 예외 발생 시 자동으로 기록됨
 [2025-01-24 10:30:15] SQLException: Duplicate entry 'hong@example.com' for key 'email'
@@ -17140,7 +17115,7 @@ JSP 파일 (`/main/user_list.jsp`):
 UserDao user = new UserDao();
 DataSet list = user.find();
 
-p.setLayout("layout.default");
+p.setLayout("default");
 p.setBody("main.user_list");
 p.setLoop("user", list);
 p.display();
@@ -17436,7 +17411,7 @@ if(m.isPost()) {
     user.item("content", f.get("content")); // HTML 에디터 내용 등
 
     if(user.insert()) {
-        m.jsReplace("list.jsp");
+        m.redirect("list.jsp");
     }
     return;
 }
@@ -17725,7 +17700,7 @@ if(m.isPost() && f.validate()) {
 }
 
 // GET 처리 (폼 표시)
-p.setLayout("layout.default");
+p.setLayout("default");
 p.setBody("main.user_form");
 p.setVar("form_script", f.getScript());
 p.display();

@@ -217,15 +217,13 @@ UserDao dao = new UserDao();
 DataSet users = dao.query("SELECT * FROM tb_user WHERE status = 1");
 
 // 쓰기 작업 - Master DB(jndi) 사용
-DataMap user = new DataMap();
-user.put("name", "홍길동");
-user.put("email", "hong@example.com");
-dao.insert(user);
+dao.item("name", "홍길동");
+dao.item("email", "hong@example.com");
+dao.insert();
 
 // 수정 작업 - Master DB(jndi) 사용
-DataMap updateData = new DataMap();
-updateData.put("status", 1);
-dao.update("id = 123", updateData);
+dao.item("status", 1);
+dao.update("id = 123");
 
 %>
 ```
@@ -327,12 +325,11 @@ DataSet users = userDao.query("SELECT * FROM tb_user WHERE status = 1");
 LogDao logDao = new LogDao();
 logDao.setJndi("jdbc/log_db");  // 로그 전용 DB 지정
 
-DataMap log = new DataMap();
-log.put("user_id", userId);
-log.put("action", "login");
-log.put("ip_address", m.getRemoteAddr());
-log.put("reg_date", m.time("yyyyMMddHHmmss"));
-logDao.insert(log);
+logDao.item("user_id", userId);
+logDao.item("action", "login");
+logDao.item("ip_address", m.getRemoteAddr());
+logDao.item("reg_date", m.time("yyyyMMddHHmmss"));
+logDao.insert();
 
 // 통계 데이터베이스에서 조회
 StatsDao statsDao = new StatsDao();
@@ -383,20 +380,18 @@ DataSet user = userDao.find("id = ?", userId);
 
 if(user.next()) {
     // 사용자 정보 업데이트
-    DataMap updateData = new DataMap();
-    updateData.put("last_login", m.time("yyyyMMddHHmmss"));
-    userDao.update("id = ?", updateData, userId);
+    userDao.item("last_login", m.time("yyyyMMddHHmmss"));
+    userDao.update("id = ?", new Object[] { userId });
 
     // 로그 DB - 접속 이력 저장
     AccessLogDao logDao = new AccessLogDao();
     logDao.setJndi("jdbc/log_db");
 
-    DataMap accessLog = new DataMap();
-    accessLog.put("user_id", userId);
-    accessLog.put("login_time", m.time("yyyyMMddHHmmss"));
-    accessLog.put("ip_address", m.getRemoteAddr());
-    accessLog.put("user_agent", request.getHeader("User-Agent"));
-    logDao.insert(accessLog);
+    logDao.item("user_id", userId);
+    logDao.item("login_time", m.time("yyyyMMddHHmmss"));
+    logDao.item("ip_address", m.getRemoteAddr());
+    logDao.item("user_agent", request.getHeader("User-Agent"));
+    logDao.insert();
 }
 
 %>

@@ -55,13 +55,12 @@ if(m.isPost() && f.validate()) {
 
         // DB에 파일 정보 저장
         FileDao dao = new FileDao();
-        DataMap data = new DataMap();
-        data.put("title", f.get("title"));
-        data.put("file_name", fileName);
-        data.put("file_path", filePath);
-        data.put("file_size", fileSize);
-        data.put("reg_date", m.time());
-        dao.insert(data);
+        dao.item("title", f.get("title"));
+        dao.item("file_name", fileName);
+        dao.item("file_path", filePath);
+        dao.item("file_size", fileSize);
+        dao.item("reg_date", m.time());
+        dao.insert();
 
         m.jsAlert("업로드 완료");
         m.jsReplace("list.jsp");
@@ -247,11 +246,11 @@ if(m.isPost() && f.validate()) {
         m.p("저장 파일명: " + newFileName);
 
         // DB에 두 파일명 모두 저장
-        DataMap data = new DataMap();
-        data.put("original_name", originalName);
-        data.put("saved_name", newFileName);
-        data.put("file_path", savePath);
-        // ...
+        FileDao dao = new FileDao();
+        dao.item("original_name", originalName);
+        dao.item("saved_name", newFileName);
+        dao.item("file_path", savePath);
+        dao.insert();
     }
     return;
 }
@@ -454,13 +453,12 @@ if(m.isPost() && f.validate()) {
 
         // DB 저장
         ImageDao dao = new ImageDao();
-        DataMap data = new DataMap();
-        data.put("title", f.get("title"));
-        data.put("image_path", filePath);
-        data.put("thumb_path", thumbFullPath);
-        data.put("file_size", file.length());
-        data.put("reg_date", m.time());
-        dao.insert(data);
+        dao.item("title", f.get("title"));
+        dao.item("image_path", filePath);
+        dao.item("thumb_path", thumbFullPath);
+        dao.item("file_size", file.length());
+        dao.item("reg_date", m.time());
+        dao.insert();
 
         m.jsAlert("이미지 업로드 완료");
         m.jsReplace("list.jsp");
@@ -710,17 +708,17 @@ if(m.isPost() && f.validate()) {
         long fileSize = file.length();
 
         FileDao dao = new FileDao();
-        DataMap data = new DataMap();
-        data.put("user_id", auth.getUserId());
-        data.put("title", f.get("title"));
-        data.put("content", f.get("content"));
-        data.put("file_name", fileName);
-        data.put("file_path", filePath);
-        data.put("file_size", fileSize);
-        data.put("download_count", 0);
-        data.put("reg_date", m.time());
+        dao.item("user_id", auth.getUserId());
+        dao.item("title", f.get("title"));
+        dao.item("content", f.get("content"));
+        dao.item("file_name", fileName);
+        dao.item("file_path", filePath);
+        dao.item("file_size", fileSize);
+        dao.item("download_count", 0);
+        dao.item("reg_date", m.time());
 
-        int newId = dao.insert(data);
+        dao.insert();
+        int newId = dao.getInsertId();
 
         m.jsAlert("업로드 완료");
         m.jsReplace("view.jsp?id=" + newId);

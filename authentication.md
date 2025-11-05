@@ -472,9 +472,8 @@ if(m.isPost() && f.validate()) {
             String token = Malgn.uuid();
 
             // DB에 토큰 저장
-            DataMap data = new DataMap();
-            data.put("auto_login_token", token);
-            dao.update("id = ?", data, user.getInt("id"));
+            dao.item("auto_login_token", token);
+            dao.update("id = ?", new Object[] { user.getInt("id") });
 
             // 쿠키에 저장 (30일)
             m.setCookie("auto_login_token", token, 60 * 60 * 24 * 30);
@@ -504,10 +503,9 @@ if(m.isPost() && f.validate()) {
         int userId = user.getInt("id");
 
         // 마지막 로그인 시간 업데이트
-        DataMap data = new DataMap();
-        data.put("last_login", m.time());
-        data.put("login_count", user.getInt("login_count") + 1);
-        dao.update("id = ?", data, userId);
+        dao.item("last_login", m.time());
+        dao.item("login_count", user.getInt("login_count") + 1);
+        dao.update("id = ?", new Object[] { userId });
 
         // 인증 정보 저장
         auth.put("user_id", userId);
@@ -616,13 +614,11 @@ j.success("인증 성공", result);
 String plainPassword = f.get("passwd");
 String hashedPassword = Malgn.sha256(plainPassword);
 
-DataMap user = new DataMap();
-user.put("user_id", f.get("id"));
-user.put("passwd", hashedPassword);
-user.put("name", f.get("name"));
-
 UserDao dao = new UserDao();
-dao.insert(user);
+dao.item("user_id", f.get("id"));
+dao.item("passwd", hashedPassword);
+dao.item("name", f.get("name"));
+dao.insert();
 ```
 
 ### 다양한 해시 알고리즘

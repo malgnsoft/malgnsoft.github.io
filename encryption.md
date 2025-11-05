@@ -81,14 +81,12 @@ if(m.isPost() && f.validate()) {
     // 비밀번호 해시화
     String hashedPassword = Malgn.sha256(plainPassword);
 
-    DataMap user = new DataMap();
-    user.put("user_id", userId);
-    user.put("password", hashedPassword);
-    user.put("name", f.get("name"));
-    user.put("reg_date", m.time());
-
     UserDao dao = new UserDao();
-    dao.insert(user);
+    dao.item("user_id", userId);
+    dao.item("password", hashedPassword);
+    dao.item("name", f.get("name"));
+    dao.item("reg_date", m.time());
+    dao.insert();
 
     m.jsAlert("회원가입이 완료되었습니다");
     m.jsReplace("/login.jsp");
@@ -299,14 +297,12 @@ if(m.isPost() && f.validate()) {
     String phone = f.get("phone");
     String encryptedPhone = aes.encrypt(phone);
 
-    DataMap user = new DataMap();
-    user.put("name", f.get("name"));
-    user.put("ssn", encryptedSsn);
-    user.put("phone", encryptedPhone);
-    user.put("email", f.get("email"));
-
     UserDao dao = new UserDao();
-    dao.insert(user);
+    dao.item("name", f.get("name"));
+    dao.item("ssn", encryptedSsn);
+    dao.item("phone", encryptedPhone);
+    dao.item("email", f.get("email"));
+    dao.insert();
 
     m.jsAlert("저장되었습니다");
     m.jsReplace("list.jsp");
