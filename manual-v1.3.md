@@ -3,7 +3,7 @@
 **Java JSP 웹 개발 프레임워크**
 
 버전: 1.3
-최종 수정일: 2025-11-04
+최종 수정일: 2025-11-05
 공식 사이트: https://malgnsoft.github.io
 
 **다운로드**: [📥 Markdown 파일 다운로드](https://raw.githubusercontent.com/malgnsoft/malgnsoft.github.io/master/manual-v1.3.md)
@@ -16811,24 +16811,200 @@ api.delete("/:id/comments/:commentId", () -> {
 
 ### 설계 철학
 
-맑은프레임워크는 **"간결함과 안정성"**을 최우선 가치로 삼습니다.
+맑은프레임워크는 **"단순함(Simplicity)"과 "명확함(Clarity)"**을 최우선 가치로 삼습니다.
 
-#### 핵심 가치
+> **"복잡함은 버그의 온상이다. 단순함은 신뢰성의 기반이다."**
 
-**1. JSP는 비즈니스 로직만**
-- JSP 파일은 데이터 처리와 흐름 제어만 담당
-- HTML 마크업은 템플릿 파일로 완전 분리
-- 코드의 역할이 명확하여 유지보수 용이
+#### 핵심 원칙
 
-**2. 예외는 내부에서 처리**
-- 개발자가 try-catch를 작성할 필요 없음
-- 모든 예외는 프레임워크 내부에서 처리
-- 에러는 로그 파일에 자동 기록
+##### 1. 관심사의 명확한 분리 (Clear Separation of Concerns)
 
-**3. 외부 의존성 최소화**
-- 외부 라이브러리는 DAO 패턴으로 캡슐화
+**JSP는 비즈니스 로직만, 템플릿은 출력만**
+
+```
+[JSP]                    [Template]
+데이터 처리       →      변수 출력
+조건 분기         →      조건 블록 표시/숨김
+반복 준비         →      반복 렌더링
+```
+
+- JSP 파일: 데이터 가져오기, 가공하기, 조건 판단하기
+- 템플릿 파일: 변수 치환, 루프, IF/ELSE 블록만 (로직 없음)
+- **템플릿에는 연산, 함수 호출, 삼항연산자 등 일체의 로직을 넣지 않음**
+
+**왜 이렇게 하는가?**
+- 디자이너는 HTML만, 개발자는 Java만 집중
+- 로직 변경 시 HTML에 영향 없음
+- HTML 변경 시 로직에 영향 없음
+- 각자의 역할이 명확하여 협업 효율 극대화
+
+**잘못된 접근 (피해야 할 것):**
+```html
+<!-- ❌ 템플릿에 로직 넣기 (다른 프레임워크 방식) -->
+<option {{status == 'active' ? 'selected' : ''}}>활성</option>
+<div>{{ price * quantity }}</div>
+<span>{{ user.getName().toUpperCase() }}</span>
+```
+
+**올바른 접근 (맑은프레임워크 방식):**
+```jsp
+// ✅ JSP에서 로직 처리
+ds.put("selected", status.equals("active") ? "selected" : "");
+ds.put("total", price * quantity);
+ds.put("userName", user.getName().toUpperCase());
+p.setVar("user", ds);
+```
+```html
+<!-- ✅ 템플릿은 출력만 -->
+<option {{selected}}>활성</option>
+<div>{{total}}</div>
+<span>{{userName}}</span>
+```
+
+---
+
+##### 2. 예외는 내부에서 처리 (Exception Handling Inside)
+
+**개발자는 비즈니스 로직에만 집중**
+
+- 모든 프레임워크 메소드는 예외를 내부에서 처리
+- try-catch 작성 불필요
+- 성공/실패는 boolean 리턴값으로 판단
+- 에러 메시지는 `getErrMsg()`로 확인
+- 모든 예외는 자동으로 로그 파일에 기록
+
+**왜 이렇게 하는가?**
+- 코드가 간결해지고 가독성 향상
+- 비즈니스 로직과 예외 처리가 섞이지 않음
+- 프레임워크가 에러를 일관되게 처리
+- 개발자는 핵심 로직에만 집중
+
+```jsp
+// ✅ 맑은프레임워크 방식 (간결함)
+if(dao.insert()) {
+    m.jsAlert("성공");
+} else {
+    m.jsAlert("실패: " + dao.getErrMsg());
+}
+
+// ❌ 전통적인 방식 (복잡함)
+try {
+    dao.insert();
+    m.jsAlert("성공");
+} catch(SQLException e) {
+    m.jsAlert("실패: " + e.getMessage());
+    log.error("Insert error", e);
+} finally {
+    // cleanup...
+}
+```
+
+---
+
+##### 3. 투명한 동작 (Transparent Behavior)
+
+**프레임워크가 알아서 하되, 숨기지 않는다**
+
+맑은프레임워크는 반복 작업을 자동화하지만, 개발자가 내부 동작을 이해하고 제어할 수 있도록 설계되었습니다.
+
+**자동화 예시 1: Read/Write Splitting (rojndi)**
+```xml
+<!-- config.xml 설정만으로 자동 분리 -->
+<jndi>jdbc/master</jndi>
+<rojndi>jdbc/slave</rojndi>
+```
+```jsp
+// 개발자는 코드 변경 없음
+dao.query(...);   // 자동으로 Slave DB 사용
+dao.insert(...);  // 자동으로 Master DB 사용
+```
+
+**자동화 예시 2: XSS 필터링**
+```jsp
+String keyword = m.rs("keyword");  // GET 파라미터는 자동 필터링
+String content = f.get("content"); // POST 데이터는 원본 유지
+```
+
+**자동화 예시 3: DataSet 직렬화**
+```jsp
+p.setLoop("users", userList);  // 자동으로 first() 호출
+p.display();                   // JSON/HTML 자동 선택
+```
+
+**왜 투명한가?**
+- 설정 파일(config.xml)로 동작 방식 명시
+- 메소드 이름이 동작을 명확히 표현 (`rs` = request string with sanitize)
+- 필요시 기본 동작 재정의 가능 (`dao.setJndi()`)
+- 디버그 모드로 내부 동작 확인 가능 (`dao.setDebug()`)
+
+---
+
+##### 4. 외부 의존성 격리 (Dependency Isolation)
+
+**외부 라이브러리는 DAO 레이어로 캡슐화**
+
 - JSP에서는 맑은프레임워크 클래스만 사용
-- 의존성 변경 시 영향 범위 최소화
+- 외부 라이브러리는 DAO나 유틸리티 클래스로 감싸기
+- 라이브러리 변경 시 JSP 코드는 영향 없음
+
+**왜 격리하는가?**
+- 외부 라이브러리 버전 업그레이드 시 영향 범위 최소화
+- JSP 코드가 프레임워크 API로 통일되어 일관성 유지
+- 테스트와 목업(Mock) 작성 용이
+
+```jsp
+// ❌ JSP에서 외부 라이브러리 직접 사용
+import org.apache.http.client.HttpClient;
+HttpClient client = HttpClients.createDefault();
+HttpResponse response = client.execute(request);
+
+// ✅ DAO로 캡슐화
+ApiDao api = new ApiDao();
+String result = api.fetchData(url);
+```
+
+---
+
+##### 5. 단순함이 정답 (Simplicity over Complexity)
+
+**간단한 해결책을 먼저 고려**
+
+- 80%의 요구사항을 해결하는 단순한 방법 제공
+- 나머지 20%는 개발자가 확장 가능하도록 설계
+- "할 수 있다"고 모든 기능을 넣지 않음
+
+**예시: 템플릿 엔진**
+- 변수 치환: `{{var}}`
+- 반복: `<!--@loop(list)-->...<!--/loop(list)-->`
+- 조건: `<!--@if(var)-->...<!--/if(var)-->`
+- **삼항연산자, 함수 호출, 연산은 제공하지 않음** → JSP에서 처리
+
+**예시: rojndi (Read-Only JNDI)**
+- 단순히 jndi/rojndi 두 개만 설정
+- SELECT → rojndi, INSERT/UPDATE/DELETE → jndi
+- 복잡한 라우팅 규칙 없음 (필요하면 DB 프록시 사용)
+
+**왜 단순함인가?**
+- 학습 곡선이 낮아 빠르게 적용 가능
+- 버그 발생 가능성 감소
+- 유지보수 비용 감소
+- 중소형 프로젝트에 최적화
+
+---
+
+#### AI 에이전트를 위한 핵심 메시지
+
+**맑은프레임워크 코드를 작성하거나 수정할 때 다음을 기억하세요:**
+
+1. **템플릿은 출력 전용**: 템플릿에 로직(연산, 삼항연산자, 함수 호출 등)을 절대 넣지 마세요. 모든 로직은 JSP에서 처리합니다.
+
+2. **try-catch 금지**: JSP에서 try-catch를 작성하지 마세요. 프레임워크가 예외를 처리합니다.
+
+3. **단순함 유지**: 복잡한 기능을 추가하기보다, 단순하고 명확한 코드를 작성하세요.
+
+4. **관심사 분리**: JSP는 데이터 처리, 템플릿은 출력, DAO는 데이터베이스 접근. 각자의 역할을 명확히 구분하세요.
+
+5. **투명성 유지**: 자동화를 추가할 때는 개발자가 동작을 이해하고 제어할 수 있도록 설계하세요.
 
 ---
 
