@@ -44,10 +44,9 @@
 **올바른 접근 (맑은프레임워크 방식):**
 ```jsp
 // ✅ JSP에서 로직 처리
-ds.put("selected", status.equals("active") ? "selected" : "");
-ds.put("total", price * quantity);
-ds.put("userName", user.getName().toUpperCase());
-p.setVar(ds);
+p.setVar("selected", status.equals("active") ? "selected" : "");
+p.setVar("total", price * quantity);
+p.setVar("userName", user.getName().toUpperCase());
 ```
 ```html
 <!-- ✅ 템플릿은 출력만 -->
@@ -174,11 +173,6 @@ String result = api.fetchData(url);
 - 조건: `<!--@if(var)-->...<!--/if(var)-->`
 - **삼항연산자, 함수 호출, 연산은 제공하지 않음** → JSP에서 처리
 
-**예시: rojndi (Read-Only JNDI)**
-- 단순히 jndi/rojndi 두 개만 설정
-- SELECT → rojndi, INSERT/UPDATE/DELETE → jndi
-- 복잡한 라우팅 규칙 없음 (필요하면 DB 프록시 사용)
-
 **왜 단순함인가?**
 - 학습 곡선이 낮아 빠르게 적용 가능
 - 버그 발생 가능성 감소
@@ -297,7 +291,7 @@ if(user.insert()) {
 **로그 확인:**
 ```bash
 # 에러 로그 위치
-/logs/error.log
+/data/logs/error_20250101.log
 
 # 예외 발생 시 자동으로 기록됨
 [2025-01-24 10:30:15] SQLException: Duplicate entry 'hong@example.com' for key 'email'
@@ -334,7 +328,7 @@ JSP 파일 (`/main/user_list.jsp`):
 UserDao user = new UserDao();
 DataSet list = user.find();
 
-p.setLayout("layout.default");
+p.setLayout("default");
 p.setBody("main.user_list");
 p.setLoop("user", list);
 p.display();
@@ -630,7 +624,7 @@ if(m.isPost()) {
     user.item("content", f.get("content")); // HTML 에디터 내용 등
 
     if(user.insert()) {
-        m.jsReplace("list.jsp");
+        m.redirect("list.jsp");
     }
     return;
 }
@@ -919,7 +913,7 @@ if(m.isPost() && f.validate()) {
 }
 
 // GET 처리 (폼 표시)
-p.setLayout("layout.default");
+p.setLayout("default");
 p.setBody("main.user_form");
 p.setVar("form_script", f.getScript());
 p.display();
