@@ -30,6 +30,7 @@ Malgn m = new Malgn(request, response, out);
 7. [배열/컬렉션 처리](#배열컬렉션-처리)
 8. [로깅](#로깅)
 9. [기타 유틸리티](#기타-유틸리티)
+10. [고급 기능: 타임존 처리](#고급-기능-타임존-처리)
 
 ---
 
@@ -617,6 +618,219 @@ String scriptDir = m.getScriptDir();
 
 // MX 레코드 조회
 String mx = m.getMX("gmail.com");  // "gmail-smtp-in.l.google.com"
+```
+
+---
+
+## 고급 기능: 타임존 처리
+
+맑은프레임워크는 다양한 타임존(시간대)에서의 날짜/시간 처리를 지원합니다. 글로벌 서비스를 개발하거나 해외 사용자를 대상으로 하는 경우 유용합니다.
+
+### 타임존을 지정한 날짜 포맷팅
+
+```jsp
+// 현재 시간을 다양한 타임존으로 출력
+Date now = new Date();
+
+// 한국 시간
+String koreaTime = m.time("yyyy-MM-dd HH:mm:ss", now, "Asia/Seoul");
+// 2025-01-24 15:30:45
+
+// 미국 동부 시간
+String nyTime = m.time("yyyy-MM-dd HH:mm:ss", now, "America/New_York");
+// 2025-01-24 01:30:45 (UTC-5)
+
+// 영국 시간
+String londonTime = m.time("yyyy-MM-dd HH:mm:ss", now, "Europe/London");
+// 2025-01-24 06:30:45 (UTC+0)
+
+// UTC 시간
+String utcTime = m.time("yyyy-MM-dd HH:mm:ss", now, "UTC");
+// 2025-01-24 06:30:45
+```
+
+### 14자 타임스탬프에서 타임존 변환
+
+```jsp
+// 14자 타임스탬프를 특정 타임존으로 변환
+String timestamp = "20250124153045";  // 한국 시간
+
+// 미국 서부 시간으로 변환
+String laTime = m.time("yyyy-MM-dd HH:mm:ss", timestamp, "America/Los_Angeles");
+// 2025-01-23 22:30:45 (UTC-8)
+
+// 일본 시간으로 변환
+String tokyoTime = m.time("yyyy-MM-dd HH:mm:ss", timestamp, "Asia/Tokyo");
+// 2025-01-24 16:30:45 (UTC+9)
+```
+
+### Unix Timestamp와 타임존
+
+```jsp
+// Unix timestamp를 타임존에 맞춰 포맷팅
+int unixTime = 1706086245;  // 2025-01-24 06:30:45 UTC
+
+String seoulTime = m.time("yyyy-MM-dd HH:mm:ss", unixTime, "Asia/Seoul");
+// 2025-01-24 15:30:45
+
+String sydneyTime = m.time("yyyy-MM-dd HH:mm:ss", unixTime, "Australia/Sydney");
+// 2025-01-24 17:30:45 (UTC+11)
+```
+
+### Locale와 타임존
+
+특정 국가/지역의 날짜 표기 방식을 사용할 수 있습니다:
+
+```jsp
+import java.util.Locale;
+
+Date now = new Date();
+
+// 한국어 표기
+String koreanDate = m.time("yyyy년 MM월 dd일 E요일", now, Locale.KOREA);
+// 2025년 01월 24일 금요일
+
+// 영어 표기
+String englishDate = m.time("MMM dd, yyyy (E)", now, Locale.US);
+// Jan 24, 2025 (Fri)
+
+// 일본어 표기
+String japaneseDate = m.time("yyyy年MM月dd日 (E)", now, Locale.JAPAN);
+// 2025年01月24日 (金)
+```
+
+### 주요 타임존 목록
+
+**아시아/태평양**:
+- `Asia/Seoul` - 한국 (UTC+9)
+- `Asia/Tokyo` - 일본 (UTC+9)
+- `Asia/Shanghai` - 중국 (UTC+8)
+- `Asia/Singapore` - 싱가포르 (UTC+8)
+- `Australia/Sydney` - 호주 시드니 (UTC+10/+11)
+
+**유럽**:
+- `Europe/London` - 영국 (UTC+0/+1)
+- `Europe/Paris` - 프랑스 (UTC+1/+2)
+- `Europe/Berlin` - 독일 (UTC+1/+2)
+
+**미주**:
+- `America/New_York` - 미국 동부 (UTC-5/-4)
+- `America/Chicago` - 미국 중부 (UTC-6/-5)
+- `America/Los_Angeles` - 미국 서부 (UTC-8/-7)
+- `America/Sao_Paulo` - 브라질 (UTC-3/-2)
+
+**기타**:
+- `UTC` - 협정 세계시 (UTC+0)
+- `GMT` - 그리니치 표준시 (UTC+0)
+
+### 실전 예제: 글로벌 이벤트 시스템
+
+```jsp
+// 이벤트 시작 시간 저장 (항상 14자 타임스탬프)
+String eventStartTime = "20250201100000";  // 2025-02-01 10:00:00 (한국 시간)
+
+// 사용자의 타임존에 맞춰 표시
+String userTimezone = m.rs("timezone", "Asia/Seoul");  // 사용자가 설정한 타임존
+
+String localTime = m.time("yyyy년 MM월 dd일 HH:mm", eventStartTime, userTimezone);
+
+p.setVar("event_start", localTime);
+p.setVar("event_timezone", userTimezone);
+```
+
+**템플릿 출력**:
+```html
+<div class="event">
+    <h3>이벤트 시작 시간</h3>
+    <p>{{event_start}} ({{event_timezone}})</p>
+</div>
+```
+
+### 실전 예제: 글로벌 사용자 활동 로그
+
+```jsp
+// 사용자 활동 기록 (서버는 한국에 위치)
+UserDao user = new UserDao();
+user.item("user_id", userId);
+user.item("action", "login");
+user.item("action_time", m.time());  // 20250124153045 (서버 시간, UTC+9)
+user.insert();
+
+// 미국 관리자가 로그를 조회할 때
+DataSet logs = user.find();
+while(logs.next()) {
+    String actionTime = logs.s("action_time");
+
+    // 미국 동부 시간으로 변환하여 표시
+    String nyTime = m.time("yyyy-MM-dd HH:mm:ss", actionTime, "America/New_York");
+
+    logs.put("action_time_ny", nyTime);
+}
+
+p.setLoop("logs", logs);
+```
+
+### strToDate()에서 타임존 사용
+
+```jsp
+// 특정 타임존의 날짜 문자열을 Date 객체로 변환
+Date d1 = Malgn.strToDate("yyyy-MM-dd HH:mm:ss", "2025-01-24 15:30:45", "Asia/Seoul");
+Date d2 = Malgn.strToDate("yyyy-MM-dd HH:mm:ss", "2025-01-24 01:30:45", "America/New_York");
+
+// 두 Date 객체는 같은 시점을 나타냄 (타임존만 다름)
+```
+
+### 주의사항
+
+1. **데이터베이스 저장**: 날짜/시간은 항상 14자 타임스탬프(VARCHAR)로 저장하고, 서버의 기본 타임존(한국: Asia/Seoul)을 기준으로 합니다.
+
+2. **표시만 변환**: 타임존 변환은 사용자에게 표시할 때만 사용하며, 데이터베이스에 저장할 때는 변환하지 않습니다.
+
+3. **일관성 유지**: 모든 서버가 같은 타임존을 사용하도록 설정하면 관리가 쉽습니다.
+
+**권장 패턴**:
+```jsp
+// ✅ 올바른 패턴
+// 1. 저장: 서버 타임존으로 저장
+user.item("reg_date", m.time());  // 20250124153045
+
+// 2. 조회: 데이터베이스에서 가져옴
+DataSet info = user.get(userId);
+String regDate = info.s("reg_date");
+
+// 3. 표시: 사용자 타임존으로 변환
+String userTimezone = getUserTimezone();  // 사용자 설정
+String displayDate = m.time("yyyy-MM-dd HH:mm:ss", regDate, userTimezone);
+p.setVar("reg_date", displayDate);
+```
+
+```jsp
+// ❌ 잘못된 패턴
+// 타임존 변환된 값을 저장하지 마세요
+String nyTime = m.time("yyyyMMddHHmmss", now, "America/New_York");
+user.item("reg_date", nyTime);  // ❌ 잘못됨!
+```
+
+### 관련 메소드 요약
+
+타임존을 지원하는 주요 메소드:
+
+```jsp
+// 포맷팅 (타임존)
+String m.time(String format, Date date, String timezone)
+String m.time(String format, String dateStr, String timezone)
+String m.time(String format, int unixTime, String timezone)
+String m.time(String format, long unixTime, String timezone)
+
+// 포맷팅 (Locale)
+String m.time(String format, Date date, Locale locale)
+String m.time(String format, String dateStr, Locale locale)
+String m.time(String format, int unixTime, Locale locale)
+String m.time(String format, long unixTime, Locale locale)
+
+// 파싱
+Date Malgn.strToDate(String format, String source, String timezone)
+Date Malgn.strToDate(String format, String source, Locale locale)
 ```
 
 ---

@@ -806,6 +806,119 @@ excel.write(response, "users.xlsx");
 
 ---
 
+### 9. 크로스 데이터베이스 호환성 (Cross-Database Compatibility)
+
+**데이터베이스 벤더별 차이를 제거하여 이식성 확보**
+
+맑은프레임워크는 Oracle, MySQL, MSSQL, PostgreSQL 등 다양한 데이터베이스를 지원합니다. 벤더별로 다른 타입과 함수를 피하고 공통 방식을 사용하세요.
+
+#### 날짜/시간 처리: VARCHAR + m.time()
+
+**데이터베이스의 DATE/DATETIME 타입을 사용하지 않습니다.**
+
+각 데이터베이스 벤더마다 날짜 타입이 다릅니다:
+- MySQL: `DATETIME`, `TIMESTAMP`
+- Oracle: `DATE`, `TIMESTAMP`
+- MSSQL: `DATETIME`, `DATETIME2`
+- PostgreSQL: `TIMESTAMP`, `TIMESTAMPTZ`
+
+이러한 차이를 피하기 위해 **VARCHAR(14)**에 14자리 타임스탬프 문자열(`yyyyMMddHHmmss`)을 저장합니다.
+
+**❌ 잘못된 예 (데이터베이스별 함수 사용):**
+```jsp
+// 데이터베이스마다 다른 함수 필요
+user.item("reg_date", "NOW()", "function");        // MySQL
+user.item("reg_date", "SYSDATE", "function");      // Oracle
+user.item("reg_date", "GETDATE()", "function");    // MSSQL
+```
+
+**✅ 올바른 예 (m.time() 사용):**
+```jsp
+// 모든 데이터베이스에서 동일하게 작동
+user.item("reg_date", m.time());                    // 20250124153045
+user.item("reg_date", m.time("yyyyMMddHHmmss"));    // 20250124153045
+user.item("mod_date", m.time("yyyyMMdd"));          // 20250124
+```
+
+**테이블 정의:**
+```sql
+CREATE TABLE tb_user (
+    id INT PRIMARY KEY,
+    name VARCHAR(50),
+    reg_date VARCHAR(14),   -- 날짜/시간: yyyyMMddHHmmss
+    mod_date VARCHAR(14),   -- 수정일시
+    birth_date VARCHAR(8)   -- 생년월일: yyyyMMdd
+);
+```
+
+**장점:**
+1. **이식성**: 모든 데이터베이스에서 동일한 코드 사용
+2. **단순성**: 문자열 비교로 날짜 범위 검색 가능
+3. **호환성**: DB 마이그레이션 시 코드 수정 불필요
+
+**날짜 범위 검색 (문자열 비교):**
+```jsp
+// 2025년 1월 데이터 검색
+user.addWhere("reg_date >= '20250101000000'");
+user.addWhere("reg_date <= '20250131235959'");
+DataSet list = user.find();
+
+// 오늘 등록된 데이터 검색
+String today = m.time("yyyyMMdd");
+user.addWhere("reg_date >= '" + today + "000000'");
+user.addWhere("reg_date <= '" + today + "235959'");
+```
+
+**날짜 포맷 변환 (템플릿 출력):**
+```jsp
+// JSP에서 포맷 변환
+String regDate = info.s("reg_date");  // 20250124153045
+p.setVar("reg_date_formatted", m.time("yyyy-MM-dd HH:mm:ss", regDate));
+// 템플릿 출력: 2025-01-24 15:30:45
+```
+
+**14자 타임스탬프 유틸리티 메소드:**
+
+Malgn.java에는 14자 타임스탬프를 다양한 형식으로 변환하는 유틸리티 메소드가 많이 있습니다:
+
+```jsp
+// 현재 시각을 14자 타임스탬프로
+String now = m.time();                          // 20250124153045
+
+// 14자 타임스탭프를 원하는 포맷으로 변환
+String formatted = m.time("yyyy-MM-dd HH:mm:ss", "20250124153045");
+// 결과: 2025-01-24 15:30:45
+
+String dateOnly = m.time("yyyy년 MM월 dd일", "20250124153045");
+// 결과: 2025년 01월 24일
+
+// Unix timestamp로 변환
+int unixTime = m.getUnixTime("20250124153045");
+
+// Unix timestamp를 포맷팅
+String fromUnix = m.time("yyyy-MM-dd", unixTime);
+
+// 날짜 계산
+String tomorrow = m.addDate("D", 1, now, "yyyyMMddHHmmss");
+String nextWeek = m.addDate("W", 1, now, "yyyyMMddHHmmss");
+String nextMonth = m.addDate("M", 1, now, "yyyyMMddHHmmss");
+
+// 날짜 차이 계산
+int days = m.diffDate("D", "20250101000000", "20250124153045");  // 23일
+int hours = m.diffDate("H", "20250124100000", "20250124153045"); // 5시간
+```
+
+**타임존 처리는 고급 기능 참조:**
+- 타임존이 적용된 날짜 처리가 필요한 경우 [유틸리티 메소드](utility-methods.md) 문서의 "타임존 처리" 섹션을 참조하세요.
+
+**이유:**
+- 데이터베이스 벤더 종속성 제거
+- 코드 이식성 향상
+- 마이그레이션 비용 절감
+- 단순한 문자열 비교로 날짜 범위 검색 가능
+
+---
+
 ## 안티패턴 (하지 말아야 할 것)
 
 ### ❌ 1. JSP에 HTML 혼재
@@ -1051,6 +1164,7 @@ DataSet list = user.find();
 - [ ] DataSet 사용 전에 next()를 호출했는가?
 - [ ] 페이징이 필요 없는데 ListManager를 사용하지 않았는가?
 - [ ] 반복문에서 dao.clear()를 호출했는가?
+- [ ] 날짜/시간 필드는 VARCHAR로 정의하고 m.time()을 사용했는가?
 
 ---
 
