@@ -10296,9 +10296,9 @@ p.display();
 **html/main/date_form.html**:
 ```html
 <select name="year">
-    {{loop:years}}
-    <option value="{{id}}">{{name}}년</option>
-    {{endloop:years}}
+    <!--@loop(years)-->
+    <option value="{{years.id}}">{{years.name}}년</option>
+    <!--/loop(years)-->
 </select>
 ```
 
@@ -10353,9 +10353,9 @@ p.display();
 **html/main/month_form.html**:
 ```html
 <select name="month">
-    {{loop:months}}
-    <option value="{{id}}">{{name}}월</option>
-    {{endloop:months}}
+    <!--@loop(months)-->
+    <option value="{{months.id}}">{{months.name}}월</option>
+    <!--/loop(months)-->
 </select>
 ```
 
@@ -10402,21 +10402,21 @@ p.display();
 ```html
 <form>
     <select name="year">
-        {{loop:years}}
-        <option value="{{id}}">{{name}}년</option>
-        {{endloop:years}}
+        <!--@loop(years)-->
+        <option value="{{years.id}}">{{years.name}}년</option>
+        <!--/loop(years)-->
     </select>
 
     <select name="month">
-        {{loop:months}}
-        <option value="{{id}}">{{name2}}월</option>
-        {{endloop:months}}
+        <!--@loop(months)-->
+        <option value="{{months.id}}">{{months.name2}}월</option>
+        <!--/loop(months)-->
     </select>
 
     <select name="day">
-        {{loop:days}}
-        <option value="{{id}}">{{name2}}일</option>
-        {{endloop:days}}
+        <!--@loop(days)-->
+        <option value="{{days.id}}">{{days.name2}}일</option>
+        <!--/loop(days)-->
     </select>
 </form>
 ```
@@ -10478,15 +10478,15 @@ p.display();
 ```html
 <form>
     <select name="hour">
-        {{loop:hours}}
-        <option value="{{id}}">{{name2}}시</option>
-        {{endloop:hours}}
+        <!--@loop(hours)-->
+        <option value="{{hours.id}}">{{hours.name2}}시</option>
+        <!--/loop(hours)-->
     </select>
     :
     <select name="minute">
-        {{loop:minutes}}
-        <option value="{{id}}">{{name2}}분</option>
-        {{endloop:minutes}}
+        <!--@loop(minutes)-->
+        <option value="{{minutes.id}}">{{minutes.name2}}분</option>
+        <!--/loop(minutes)-->
     </select>
 </form>
 ```
@@ -10549,21 +10549,21 @@ p.display();
         </tr>
     </thead>
     <tbody>
-        {{loop:days}}
-        {{if:weeknum==1}}<tr>{{endif:weeknum==1}}
+        <!--@loop(days)-->
+        <!--@if(days.weeknum:1)--><tr><!--/if(days.weeknum:1)-->
 
         <td class="
-            {{if:type==1}}prev-month{{endif:type==1}}
-            {{if:type==3}}next-month{{endif:type==3}}
-            {{if:weeknum==1}}sunday{{endif:weeknum==1}}
-            {{if:weeknum==7}}saturday{{endif:weeknum==7}}
-            {{if:date==today}}today{{endif:date==today}}
+            <!--@if(days.type:1)-->prev-month<!--/if(days.type:1)-->
+            <!--@if(days.type:3)-->next-month<!--/if(days.type:3)-->
+            <!--@if(days.weeknum:1)-->sunday<!--/if(days.weeknum:1)-->
+            <!--@if(days.weeknum:7)-->saturday<!--/if(days.weeknum:7)-->
+            <!--@if(days.date:{{today}})-->today<!--/if(days.date:{{today}})-->
         ">
-            {{date|substr:-2}}
+            {{days.date}}
         </td>
 
-        {{if:__last}}</tr>{{endif:__last}}
-        {{endloop:days}}
+        <!--@if(days.__last)--></tr><!--/if(days.__last)-->
+        <!--/loop(days)-->
     </tbody>
 </table>
 ```
@@ -10618,18 +10618,18 @@ p.display();
 <table class="calendar">
     <!-- ... 달력 헤더 ... -->
     <tbody>
-        {{loop:days}}
-        {{if:weeknum==1}}<tr>{{endif:weeknum==1}}
+        <!--@loop(days)-->
+        <!--@if(days.weeknum:1)--><tr><!--/if(days.weeknum:1)-->
 
-        <td class="{{if:type==1}}prev-month{{endif:type==1}} {{if:type==3}}next-month{{endif:type==3}}">
-            <div>{{date|substr:-2}}</div>
-            {{if:event_count>0}}
-            <div style="color: red; font-size: 11px;">{{event_count}}건</div>
-            {{endif:event_count>0}}
+        <td class="<!--@if(days.type:1)-->prev-month<!--/if(days.type:1)--> <!--@if(days.type:3)-->next-month<!--/if(days.type:3)-->">
+            <div>{{days.date}}</div>
+            <!--@if(days.event_count)-->
+            <div style="color: red; font-size: 11px;">{{days.event_count}}건</div>
+            <!--/if(days.event_count)-->
         </td>
 
-        {{if:__last}}</tr>{{endif:__last}}
-        {{endloop:days}}
+        <!--@if(days.__last)--></tr><!--/if(days.__last)-->
+        <!--/loop(days)-->
     </tbody>
 </table>
 ```
@@ -10664,38 +10664,38 @@ p.display();
     <div>
         <label>시작일</label>
         <select name="start_year">
-            {{loop:years}}
-            <option value="{{id}}">{{name}}년</option>
-            {{endloop:years}}
+            <!--@loop(years)-->
+            <option value="{{years.id}}">{{years.name}}년</option>
+            <!--/loop(years)-->
         </select>
         <select name="start_month">
-            {{loop:months}}
-            <option value="{{id}}">{{name2}}월</option>
-            {{endloop:months}}
+            <!--@loop(months)-->
+            <option value="{{months.id}}">{{months.name2}}월</option>
+            <!--/loop(months)-->
         </select>
         <select name="start_day">
-            {{loop:days}}
-            <option value="{{id}}">{{name2}}일</option>
-            {{endloop:days}}
+            <!--@loop(days)-->
+            <option value="{{days.id}}">{{days.name2}}일</option>
+            <!--/loop(days)-->
         </select>
     </div>
 
     <div>
         <label>종료일</label>
         <select name="end_year">
-            {{loop:years}}
-            <option value="{{id}}">{{name}}년</option>
-            {{endloop:years}}
+            <!--@loop(years)-->
+            <option value="{{years.id}}">{{years.name}}년</option>
+            <!--/loop(years)-->
         </select>
         <select name="end_month">
-            {{loop:months}}
-            <option value="{{id}}">{{name2}}월</option>
-            {{endloop:months}}
+            <!--@loop(months)-->
+            <option value="{{months.id}}">{{months.name2}}월</option>
+            <!--/loop(months)-->
         </select>
         <select name="end_day">
-            {{loop:days}}
-            <option value="{{id}}">{{name2}}일</option>
-            {{endloop:days}}
+            <!--@loop(days)-->
+            <option value="{{days.id}}">{{days.name2}}일</option>
+            <!--/loop(days)-->
         </select>
     </div>
 
@@ -10884,33 +10884,33 @@ p.display();
         <div class="form-group">
             <label>예약 날짜</label>
             <select name="year">
-                {{loop:years}}
-                <option value="{{id}}">{{name}}년</option>
-                {{endloop:years}}
+                <!--@loop(years)-->
+                <option value="{{years.id}}">{{years.name}}년</option>
+                <!--/loop(years)-->
             </select>
             <select name="month">
-                {{loop:months}}
-                <option value="{{id}}">{{name2}}월</option>
-                {{endloop:months}}
+                <!--@loop(months)-->
+                <option value="{{months.id}}">{{months.name2}}월</option>
+                <!--/loop(months)-->
             </select>
             <select name="day">
-                {{loop:days}}
-                <option value="{{id}}">{{name2}}일</option>
-                {{endloop:days}}
+                <!--@loop(days)-->
+                <option value="{{days.id}}">{{days.name2}}일</option>
+                <!--/loop(days)-->
             </select>
         </div>
 
         <div class="form-group">
             <label>예약 시간</label>
             <select name="hour">
-                {{loop:hours}}
-                <option value="{{id}}">{{name}}</option>
-                {{endloop:hours}}
+                <!--@loop(hours)-->
+                <option value="{{hours.id}}">{{hours.name}}</option>
+                <!--/loop(hours)-->
             </select>
             <select name="minute">
-                {{loop:minutes}}
-                <option value="{{id}}">{{name}}</option>
-                {{endloop:minutes}}
+                <!--@loop(minutes)-->
+                <option value="{{minutes.id}}">{{minutes.name}}</option>
+                <!--/loop(minutes)-->
             </select>
         </div>
 
@@ -10963,9 +10963,9 @@ m.p("월의 마지막날: " + Malgn.getTimeString("yyyy-MM-dd", monthLast));
 
 ```html
 <select name="year">
-    {{loop:years}}
-    <option value="{{id}}" {{if:id==current_year}}selected{{endif:id==current_year}}>{{name}}년</option>
-    {{endloop:years}}
+    <!--@loop(years)-->
+    <option value="{{years.id}}" <!--@if(years.id:{{current_year}})-->selected<!--/if(years.id:{{current_year}})-->>{{years.name}}년</option>
+    <!--/loop(years)-->
 </select>
 ```
 
@@ -11007,8 +11007,8 @@ p.setVar("today", m.time("yyyy-MM-dd"));
 ```
 
 ```html
-<td class="{{if:date==today}}today{{endif:date==today}}">
-    {{date|substr:-2}}
+<td class="<!--@if(days.date:{{today}})-->today<!--/if(days.date:{{today}})-->">
+    {{days.date}}
 </td>
 ```
 
