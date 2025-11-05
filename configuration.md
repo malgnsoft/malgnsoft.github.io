@@ -10,7 +10,7 @@ Config 클래스는 애플리케이션의 환경 설정을 관리하는 정적 �
 
 ### 주요 기능
 
-- 설정 파일 읽기 (config.properties)
+- 설정 파일 읽기 (config.xml)
 - 경로 정보 제공
 - 환경 변수 관리
 - 설정 리로드
@@ -65,32 +65,46 @@ p.setBody("main.list");  // Config.getTplRoot() + "/main/list.vm"
 
 ## 설정 파일
 
-### config.properties
+### config.xml
 
-프로젝트 루트의 `config.properties` 파일에서 설정을 관리합니다.
+`/WEB-INF/config.xml` 파일에서 설정을 관리합니다.
 
-```properties
-# 경로 설정
-docRoot=/var/www/html
-tplRoot=/var/www/html/html
-dataDir=/var/data
-uploadDir=/var/www/html/upload
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <env>
+        <!-- 데이터베이스 JNDI -->
+        <jndi>jdbc/myapp</jndi>
+        <rojndi>jdbc/myapp_ro</rojndi>
 
-# 이메일 설정
-mailFrom=noreply@example.com
-mailHost=smtp.gmail.com
-mailPort=587
-mailUser=admin@example.com
-mailPassword=your_password
+        <!-- 이메일 설정 -->
+        <mailFrom>noreply@example.com</mailFrom>
+        <mailHost>smtp.gmail.com</mailHost>
 
-# API 키
-googleApiKey=YOUR_GOOGLE_API_KEY
-naverApiKey=YOUR_NAVER_API_KEY
+        <!-- 인코딩 설정 -->
+        <encoding>utf-8</encoding>
 
-# 기타 설정
-siteName=My Website
-siteUrl=https://example.com
-debugMode=false
+        <!-- HTML 태그 차단 -->
+        <denyHtml>Y</denyHtml>
+
+        <!-- Redis 설정 (선택사항) -->
+        <redisURI>redis://localhost:6379/0?timeout=3s</redisURI>
+
+        <!-- AWS 설정 (선택사항) -->
+        <awsRegion>ap-northeast-2</awsRegion>
+        <awsAccessKey>YOUR_AWS_ACCESS_KEY</awsAccessKey>
+        <awsSecretKey>YOUR_AWS_SECRET_KEY</awsSecretKey>
+
+        <!-- API 키 -->
+        <googleApiKey>YOUR_GOOGLE_API_KEY</googleApiKey>
+        <naverApiKey>YOUR_NAVER_API_KEY</naverApiKey>
+
+        <!-- 기타 설정 -->
+        <siteName>My Website</siteName>
+        <siteUrl>https://example.com</siteUrl>
+        <debugMode>false</debugMode>
+    </env>
+</config>
 ```
 
 ### 설정 값 읽기
@@ -155,7 +169,7 @@ m.jsReplace("admin.jsp");
 ```
 
 **사용 시나리오**:
-- config.properties 파일을 수정한 후
+- config.xml 파일을 수정한 후
 - 서버 재시작 없이 설정 반영이 필요할 때
 
 ---
@@ -324,6 +338,7 @@ if(stats == null) {
     cache.save("site_stats", stats);
 }
 
+p.setBody("stats.dashboard");
 p.setVar("user_count", stats.getInt("user_count"));
 p.setVar("post_count", stats.getInt("post_count"));
 p.setVar("today_visit", stats.getInt("today_visit"));
@@ -354,20 +369,36 @@ String naverApiKey = Config.get("naverApiKey");
 
 ### 5. 환경별 설정
 
-**config.properties (개발)**:
-```properties
-docRoot=/workspace/myapp/public_html
-dataDir=/workspace/myapp/data
-debugMode=true
-siteUrl=http://localhost:8080
+**config.xml (개발)**:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <env>
+        <jndi>jdbc/myapp_dev</jndi>
+        <rojndi>jdbc/myapp_dev_ro</rojndi>
+        <mailFrom>dev@example.com</mailFrom>
+        <encoding>utf-8</encoding>
+        <denyHtml>N</denyHtml>
+        <debugMode>true</debugMode>
+        <siteUrl>http://localhost:8080</siteUrl>
+    </env>
+</config>
 ```
 
-**config.properties (운영)**:
-```properties
-docRoot=/var/www/html
-dataDir=/var/data
-debugMode=false
-siteUrl=https://www.example.com
+**config.xml (운영)**:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <env>
+        <jndi>jdbc/myapp</jndi>
+        <rojndi>jdbc/myapp_ro</rojndi>
+        <mailFrom>noreply@example.com</mailFrom>
+        <encoding>utf-8</encoding>
+        <denyHtml>Y</denyHtml>
+        <debugMode>false</debugMode>
+        <siteUrl>https://www.example.com</siteUrl>
+    </env>
+</config>
 ```
 
 **사용 예제**:
