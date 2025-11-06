@@ -10023,13 +10023,12 @@ if(m.isPost() && f.validate()) {
 
     // DB에 저장
     ContactDao dao = new ContactDao();
-    DataMap data = new DataMap();
-    data.put("name", name);
-    data.put("email", email);
-    data.put("subject", subject);
-    data.put("message", message);
-    data.put("reg_date", m.time());
-    int newId = dao.insert(data);
+    dao.item("name", name);
+    dao.item("email", email);
+    dao.item("subject", subject);
+    dao.item("message", message);
+    dao.item("reg_date", m.time());
+    int newId = dao.insert();
 
     // 관리자에게 이메일 발송
     String adminEmail = "admin@example.com";
@@ -10211,23 +10210,21 @@ try {
 
     // 발송 로그 저장
     EmailLogDao logDao = new EmailLogDao();
-    DataMap log = new DataMap();
-    log.put("to_email", email);
-    log.put("subject", subject);
-    log.put("status", "success");
-    log.put("sent_date", m.time());
-    logDao.insert(log);
+    logDao.item("to_email", email);
+    logDao.item("subject", subject);
+    logDao.item("status", "success");
+    logDao.item("sent_date", m.time());
+    logDao.insert();
 
 } catch(Exception e) {
     // 실패 로그 저장
     EmailLogDao logDao = new EmailLogDao();
-    DataMap log = new DataMap();
-    log.put("to_email", email);
-    log.put("subject", subject);
-    log.put("status", "failed");
-    log.put("error_message", e.getMessage());
-    log.put("sent_date", m.time());
-    logDao.insert(log);
+    logDao.item("to_email", email);
+    logDao.item("subject", subject);
+    logDao.item("status", "failed");
+    logDao.item("error_message", e.getMessage());
+    logDao.item("sent_date", m.time());
+    logDao.insert();
 }
 ```
 
@@ -10804,13 +10801,12 @@ if(m.isPost() && f.validate()) {
     }
 
     // 예약 저장
-    DataMap data = new DataMap();
-    data.put("name", name);
-    data.put("phone", phone);
-    data.put("reservation_datetime", reservationDatetime);
-    data.put("status", "pending");
-    data.put("reg_date", m.time());
-    int newId = dao.insert(data);
+    dao.item("name", name);
+    dao.item("phone", phone);
+    dao.item("reservation_datetime", reservationDatetime);
+    dao.item("status", "pending");
+    dao.item("reg_date", m.time());
+    int newId = dao.insert();
 
     m.jsAlert("예약이 완료되었습니다.");
     m.jsReplace("reservation_view.jsp?id=" + newId);
@@ -13150,12 +13146,12 @@ try {
 
     for(int i = 0; i < questions.length(); i++) {
         JSONObject q = questions.getJSONObject(i);
-        DataMap data = new DataMap();
-        data.put("question", q.getString("question"));
-        data.put("choices", q.getJSONArray("choices").toString());
-        data.put("answer", q.getInt("answer"));
-        data.put("explanation", q.getString("explanation"));
-        dao.insert(data);
+        dao.item("question", q.getString("question"));
+        dao.item("choices", q.getJSONArray("choices").toString());
+        dao.item("answer", q.getInt("answer"));
+        dao.item("explanation", q.getString("explanation"));
+        dao.insert();
+        dao.clear();
     }
 
     j.success(questions.length() + "개의 문제가 생성되었습니다");
@@ -14514,10 +14510,9 @@ p.setVar("siteUrl", siteUrl);
 if(m.isPost() && f.validate()) {
 
     MenuDao dao = new MenuDao();
-    DataMap menu = new DataMap();
-    menu.put("title", f.get("title"));
-    menu.put("url", f.get("url"));
-    dao.insert(menu);
+    dao.item("title", f.get("title"));
+    dao.item("url", f.get("url"));
+    dao.insert();
 
     // 메뉴 캐시 삭제
     Cache cache = new Cache();

@@ -669,12 +669,12 @@ try {
 
     for(int i = 0; i < questions.length(); i++) {
         JSONObject q = questions.getJSONObject(i);
-        DataMap data = new DataMap();
-        data.put("question", q.getString("question"));
-        data.put("choices", q.getJSONArray("choices").toString());
-        data.put("answer", q.getInt("answer"));
-        data.put("explanation", q.getString("explanation"));
-        dao.insert(data);
+        dao.item("question", q.getString("question"));
+        dao.item("choices", q.getJSONArray("choices").toString());
+        dao.item("answer", q.getInt("answer"));
+        dao.item("explanation", q.getString("explanation"));
+        dao.insert();
+        dao.clear();
     }
 
     j.success(questions.length() + "개의 문제가 생성되었습니다");

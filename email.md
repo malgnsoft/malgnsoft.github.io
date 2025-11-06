@@ -739,13 +739,12 @@ if(m.isPost() && f.validate()) {
 
     // DB에 저장
     ContactDao dao = new ContactDao();
-    DataMap data = new DataMap();
-    data.put("name", name);
-    data.put("email", email);
-    data.put("subject", subject);
-    data.put("message", message);
-    data.put("reg_date", m.time());
-    int newId = dao.insert(data);
+    dao.item("name", name);
+    dao.item("email", email);
+    dao.item("subject", subject);
+    dao.item("message", message);
+    dao.item("reg_date", m.time());
+    int newId = dao.insert();
 
     // 관리자에게 이메일 발송
     String adminEmail = "admin@example.com";
@@ -927,23 +926,21 @@ try {
 
     // 발송 로그 저장
     EmailLogDao logDao = new EmailLogDao();
-    DataMap log = new DataMap();
-    log.put("to_email", email);
-    log.put("subject", subject);
-    log.put("status", "success");
-    log.put("sent_date", m.time());
-    logDao.insert(log);
+    logDao.item("to_email", email);
+    logDao.item("subject", subject);
+    logDao.item("status", "success");
+    logDao.item("sent_date", m.time());
+    logDao.insert();
 
 } catch(Exception e) {
     // 실패 로그 저장
     EmailLogDao logDao = new EmailLogDao();
-    DataMap log = new DataMap();
-    log.put("to_email", email);
-    log.put("subject", subject);
-    log.put("status", "failed");
-    log.put("error_message", e.getMessage());
-    log.put("sent_date", m.time());
-    logDao.insert(log);
+    logDao.item("to_email", email);
+    logDao.item("subject", subject);
+    logDao.item("status", "failed");
+    logDao.item("error_message", e.getMessage());
+    logDao.item("sent_date", m.time());
+    logDao.insert();
 }
 ```
 

@@ -557,13 +557,12 @@ if(m.isPost() && f.validate()) {
     }
 
     // 예약 저장
-    DataMap data = new DataMap();
-    data.put("name", name);
-    data.put("phone", phone);
-    data.put("reservation_datetime", reservationDatetime);
-    data.put("status", "pending");
-    data.put("reg_date", m.time());
-    int newId = dao.insert(data);
+    dao.item("name", name);
+    dao.item("phone", phone);
+    dao.item("reservation_datetime", reservationDatetime);
+    dao.item("status", "pending");
+    dao.item("reg_date", m.time());
+    int newId = dao.insert();
 
     m.jsAlert("예약이 완료되었습니다.");
     m.jsReplace("reservation_view.jsp?id=" + newId);

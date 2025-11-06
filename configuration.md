@@ -432,10 +432,9 @@ p.setVar("siteUrl", siteUrl);
 if(m.isPost() && f.validate()) {
 
     MenuDao dao = new MenuDao();
-    DataMap menu = new DataMap();
-    menu.put("title", f.get("title"));
-    menu.put("url", f.get("url"));
-    dao.insert(menu);
+    dao.item("title", f.get("title"));
+    dao.item("url", f.get("url"));
+    dao.insert();
 
     // 메뉴 캐시 삭제
     Cache cache = new Cache();
