@@ -383,7 +383,7 @@ ai.apiKey(Config.get("openaiApiKey"));
 
 // DB에서 히스토리 로드
 ChatHistoryDao dao = new ChatHistoryDao();
-DataSet ds = dao.find("user_id = ?", userId);
+DataSet ds = dao.find("user_id = ?", new Object[]{userId});
 if(ds.next()) {
     String historyJson = ds.s("history");
     ai.setHistory(historyJson);
@@ -395,13 +395,13 @@ String response = ai.chatMemory(message);
 // DB에 히스토리 저장
 String updatedHistory = ai.getHistory();
 if(ds.getRow() > 0) {
-    dao.update("history = ?", updatedHistory, "user_id = ?", userId);
+    dao.item("history", updatedHistory);
+    dao.update("user_id = ?", new Object[]{userId});
 } else {
-    DataMap data = new DataMap();
-    data.put("user_id", userId);
-    data.put("history", updatedHistory);
-    data.put("reg_date", m.time());
-    dao.insert(data);
+    dao.item("user_id", userId);
+    dao.item("history", updatedHistory);
+    dao.item("reg_date", m.time());
+    dao.insert();
 }
 
 j.success(response);
@@ -417,7 +417,7 @@ j.success(response);
 int userId = m.getInt("user_id");
 
 ChatHistoryDao dao = new ChatHistoryDao();
-DataSet ds = dao.find("user_id = ?", userId);
+DataSet ds = dao.find("user_id = ?", new Object[]{userId});
 
 if(ds.next()) {
     String historyJson = ds.s("history");
@@ -440,7 +440,7 @@ if(ds.next()) {
 int userId = m.getInt("user_id");
 
 ChatHistoryDao dao = new ChatHistoryDao();
-dao.delete("user_id = ?", userId);
+dao.delete("user_id = ?", new Object[]{userId});
 
 j.success("대화 히스토리가 초기화되었습니다");
 

@@ -345,7 +345,7 @@ m.p("HTML 이메일이 발송되었습니다.");
 // 사용자 정보 조회
 int userId = m.ri("user_id");
 UserDao dao = new UserDao();
-DataSet user = dao.find("id = ?", userId);
+DataSet user = dao.find("id = ?", new Object[]{userId});
 
 if(user.next()) {
 

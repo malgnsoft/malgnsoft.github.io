@@ -331,7 +331,7 @@ if(stats == null) {
     // 방문자 수 (오늘)
     String today = m.time("yyyyMMdd");
     VisitDao visitDao = new VisitDao();
-    DataSet visits = visitDao.query("WHERE visit_date = ?", today);
+    DataSet visits = visitDao.query("WHERE visit_date = ?", new Object[]{today});
     stats.put("today_visit", visits.size());
 
     // 캐시에 저장 (10분)

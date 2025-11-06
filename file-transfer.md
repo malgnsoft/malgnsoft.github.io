@@ -461,7 +461,7 @@ if(fileIds.length == 0) {
 
 // 파일 경로 조회
 FileDao dao = new FileDao();
-DataSet files = dao.query("WHERE id IN (?)", Malgn.implode(",", fileIds));
+DataSet files = dao.query("WHERE id IN (?)", new Object[]{Malgn.implode(",", fileIds)});
 
 ArrayList<String> filePaths = new ArrayList<>();
 while(files.next()) {
@@ -503,7 +503,7 @@ int galleryId = m.ri("gallery_id");
 
 // 갤러리의 모든 이미지 조회
 ImageDao dao = new ImageDao();
-DataSet images = dao.query("WHERE gallery_id = ?", galleryId);
+DataSet images = dao.query("WHERE gallery_id = ?", new Object[]{galleryId});
 
 String[] files = new String[images.size()];
 int idx = 0;

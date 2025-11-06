@@ -268,7 +268,7 @@ if(m.isPost() && f.validate()) {
 int id = m.ri("id");
 
 FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", id);
+DataSet info = dao.find("id = ?", new Object[]{id});
 
 if(!info.next()) {
     m.jsError("파일을 찾을 수 없습니다.");
@@ -329,7 +329,7 @@ if(!auth.isLogin()) {
 }
 
 FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", id);
+DataSet info = dao.find("id = ?", new Object[]{id});
 
 if(!info.next()) {
     m.jsError("파일을 찾을 수 없습니다.");
@@ -368,7 +368,7 @@ if(m.isPost()) {
     int id = m.ri("id");
 
     FileDao dao = new FileDao();
-    DataSet info = dao.find("id = ?", id);
+    DataSet info = dao.find("id = ?", new Object[]{id});
 
     if(info.next()) {
         String filePath = info.s("file_path");
@@ -404,7 +404,7 @@ FileDao dao = new FileDao();
 ArrayList<String> filePaths = new ArrayList<>();
 
 for(String id : fileIds) {
-    DataSet info = dao.find("id = ?", id);
+    DataSet info = dao.find("id = ?", new Object[]{id});
     if(info.next()) {
         filePaths.add(info.s("file_path"));
     }
@@ -653,7 +653,7 @@ m.download("/data/file/" + fileName, fileName);  // 위험!
 // Good - DB에서 경로 조회
 int fileId = m.ri("id");
 FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", fileId);
+DataSet info = dao.find("id = ?", new Object[]{fileId});
 if(info.next()) {
     m.download(info.s("file_path"), info.s("file_name"));
 }
@@ -742,7 +742,7 @@ p.display();
 int id = m.ri("id");
 
 FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", id);
+DataSet info = dao.find("id = ?", new Object[]{id});
 
 if(!info.next()) {
     m.jsError("파일을 찾을 수 없습니다.");
@@ -772,7 +772,7 @@ if(!auth.isLogin()) {
 int id = m.ri("id");
 
 FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", id);
+DataSet info = dao.find("id = ?", new Object[]{id});
 
 if(!info.next()) {
     m.jsError("파일을 찾을 수 없습니다.");
@@ -796,7 +796,7 @@ if(file.exists()) {
 }
 
 // DB 삭제
-dao.delete("id = ?", id);
+dao.delete("id = ?", new Object[]{id});
 
 m.jsAlert("삭제되었습니다.");
 m.jsReplace("list.jsp");

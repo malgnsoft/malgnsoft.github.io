@@ -550,7 +550,7 @@ if(m.isPost() && f.validate()) {
 
     // 중복 예약 체크
     ReservationDao dao = new ReservationDao();
-    DataSet existing = dao.find("reservation_datetime = ?", reservationDatetime);
+    DataSet existing = dao.find("reservation_datetime = ?", new Object[]{reservationDatetime});
     if(existing.next()) {
         m.jsError("해당 시간은 이미 예약되어 있습니다.");
         return;

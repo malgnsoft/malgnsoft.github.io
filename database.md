@@ -334,7 +334,7 @@ logDao.insert();
 // 통계 데이터베이스에서 조회
 StatsDao statsDao = new StatsDao();
 statsDao.setJndi("jdbc/stats_db");  // 통계 전용 DB 지정
-DataSet stats = statsDao.query("SELECT * FROM tb_daily_stats WHERE stat_date = ?", m.time("yyyyMMdd"));
+DataSet stats = statsDao.query("SELECT * FROM tb_daily_stats WHERE stat_date = ?", new Object[]{m.time("yyyyMMdd")});
 
 %>
 ```
@@ -376,7 +376,7 @@ p.display();
 
 // 메인 DB - 비즈니스 로직 처리
 UserDao userDao = new UserDao();
-DataSet user = userDao.find("id = ?", userId);
+DataSet user = userDao.find("id = ?", new Object[]{userId});
 
 if(user.next()) {
     // 사용자 정보 업데이트
@@ -405,17 +405,17 @@ if(user.next()) {
 // 주문 DB
 OrderDao orderDao = new OrderDao();
 orderDao.setJndi("jdbc/order_db");
-DataSet orders = orderDao.query("WHERE user_id = ?", userId);
+DataSet orders = orderDao.query("WHERE user_id = ?", new Object[]{userId});
 
 // 상품 DB
 ProductDao productDao = new ProductDao();
 productDao.setJndi("jdbc/product_db");
-DataSet products = productDao.query("WHERE id IN (SELECT product_id FROM tb_order WHERE user_id = ?)", userId);
+DataSet products = productDao.query("WHERE id IN (SELECT product_id FROM tb_order WHERE user_id = ?)", new Object[]{userId});
 
 // 결제 DB
 PaymentDao paymentDao = new PaymentDao();
 paymentDao.setJndi("jdbc/payment_db");
-DataSet payments = paymentDao.query("WHERE user_id = ?", userId);
+DataSet payments = paymentDao.query("WHERE user_id = ?", new Object[]{userId});
 
 p.setBody("user.order_history");
 p.setLoop("orders", orders);

@@ -154,7 +154,7 @@ String id = (String)profile.get("id");
 
 // 회원 가입 또는 로그인 처리
 UserDao dao = new UserDao();
-DataSet user = dao.query("WHERE email = ?", email);
+DataSet user = dao.query("WHERE email = ?", new Object[]{email});
 
 if(!user.next()) {
     // 신규 회원 가입
@@ -165,7 +165,7 @@ if(!user.next()) {
     dao.item("reg_date", Malgn.time());
     dao.insert();
 
-    user = dao.query("WHERE email = ?", email);
+    user = dao.query("WHERE email = ?", new Object[]{email});
     user.next();
 }
 
@@ -421,7 +421,7 @@ String name = (String)profile.get("name");
 
 // 회원 확인
 UserDao dao = new UserDao();
-DataSet user = dao.query("WHERE oauth_provider = ? AND oauth_id = ?", vendor, oauthId);
+DataSet user = dao.query("WHERE oauth_provider = ? AND oauth_id = ?", new Object[]{vendor, oauthId});
 
 if(!user.next()) {
     // 신규 회원 가입

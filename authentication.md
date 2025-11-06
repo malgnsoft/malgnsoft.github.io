@@ -154,7 +154,7 @@ if(m.isPost() && f.validate()) {
 
     // 데이터베이스에서 사용자 확인
     UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", id, Malgn.sha256(passwd));
+    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
 
     if(user.next()) {
         // 로그인 성공 - 인증 정보 저장
@@ -353,7 +353,7 @@ if(m.isPost() && f.validate()) {
 
     // 사용자 확인
     UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", id, Malgn.sha256(passwd));
+    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
 
     if(user.next()) {
         // 로그인 성공
@@ -459,7 +459,7 @@ if(m.isPost() && f.validate()) {
     String autoLogin = f.get("auto_login");
 
     UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", id, Malgn.sha256(passwd));
+    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
 
     if(user.next()) {
         auth.put("user_id", user.getInt("id"));
@@ -497,7 +497,7 @@ if(m.isPost() && f.validate()) {
     String passwd = f.get("passwd");
 
     UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", id, Malgn.sha256(passwd));
+    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
 
     if(user.next()) {
         int userId = user.getInt("id");
@@ -586,7 +586,7 @@ if(apiToken == null || apiToken.isEmpty()) {
 
 // 토큰 검증
 UserDao dao = new UserDao();
-DataSet user = dao.query("WHERE api_token = ? AND status = 1", apiToken);
+DataSet user = dao.query("WHERE api_token = ? AND status = 1", new Object[]{apiToken});
 
 if(!user.next()) {
     j.error(401, "유효하지 않은 토큰입니다");
@@ -681,7 +681,7 @@ f.addElement("passwd_confirm", null, "required:Y, equalTo:'passwd'");
 String sql = "SELECT * FROM tb_user WHERE user_id = '" + id + "'";
 
 // Good - Prepared Statement 사용
-DataSet user = dao.query("WHERE user_id = ?", id);
+DataSet user = dao.query("WHERE user_id = ?", new Object[]{id});
 ```
 
 ### 4. XSS 방지

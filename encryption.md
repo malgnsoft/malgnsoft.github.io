@@ -115,7 +115,7 @@ if(m.isPost() && f.validate()) {
 
     // DB에서 사용자 확인
     UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND password = ?", userId, hashedPassword);
+    DataSet user = dao.query("WHERE user_id = ? AND password = ?", new Object[]{userId, hashedPassword});
 
     if(user.next()) {
         // 로그인 성공

@@ -3,7 +3,7 @@
 **Java JSP 웹 개발 프레임워크**
 
 버전: 1.3
-최종 수정일: 2025-11-05
+최종 수정일: 2025-11-06
 공식 사이트: https://malgnsoft.github.io
 
 **다운로드**: [📥 Markdown 파일 다운로드](https://raw.githubusercontent.com/malgnsoft/malgnsoft.github.io/master/manual-v1.3.md)
@@ -1812,7 +1812,7 @@ logDao.insert();
 // 통계 데이터베이스에서 조회
 StatsDao statsDao = new StatsDao();
 statsDao.setJndi("jdbc/stats_db");  // 통계 전용 DB 지정
-DataSet stats = statsDao.query("SELECT * FROM tb_daily_stats WHERE stat_date = ?", m.time("yyyyMMdd"));
+DataSet stats = statsDao.query("SELECT * FROM tb_daily_stats WHERE stat_date = ?", new Object[]{m.time("yyyyMMdd")});
 
 %>
 ```
@@ -1854,7 +1854,7 @@ p.display();
 
 // 메인 DB - 비즈니스 로직 처리
 UserDao userDao = new UserDao();
-DataSet user = userDao.find("id = ?", userId);
+DataSet user = userDao.find("id = ?", new Object[]{userId});
 
 if(user.next()) {
     // 사용자 정보 업데이트
@@ -1883,17 +1883,17 @@ if(user.next()) {
 // 주문 DB
 OrderDao orderDao = new OrderDao();
 orderDao.setJndi("jdbc/order_db");
-DataSet orders = orderDao.query("WHERE user_id = ?", userId);
+DataSet orders = orderDao.query("WHERE user_id = ?", new Object[]{userId});
 
 // 상품 DB
 ProductDao productDao = new ProductDao();
 productDao.setJndi("jdbc/product_db");
-DataSet products = productDao.query("WHERE id IN (SELECT product_id FROM tb_order WHERE user_id = ?)", userId);
+DataSet products = productDao.query("WHERE id IN (SELECT product_id FROM tb_order WHERE user_id = ?)", new Object[]{userId});
 
 // 결제 DB
 PaymentDao paymentDao = new PaymentDao();
 paymentDao.setJndi("jdbc/payment_db");
-DataSet payments = paymentDao.query("WHERE user_id = ?", userId);
+DataSet payments = paymentDao.query("WHERE user_id = ?", new Object[]{userId});
 
 p.setBody("user.order_history");
 p.setLoop("orders", orders);
@@ -3802,7 +3802,7 @@ if(m.isPost() && f.validate()) {
 int id = m.ri("id");
 
 FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", id);
+DataSet info = dao.find("id = ?", new Object[]{id});
 
 if(!info.next()) {
     m.jsError("파일을 찾을 수 없습니다.");
@@ -3863,7 +3863,7 @@ if(!auth.isLogin()) {
 }
 
 FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", id);
+DataSet info = dao.find("id = ?", new Object[]{id});
 
 if(!info.next()) {
     m.jsError("파일을 찾을 수 없습니다.");
@@ -3902,7 +3902,7 @@ if(m.isPost()) {
     int id = m.ri("id");
 
     FileDao dao = new FileDao();
-    DataSet info = dao.find("id = ?", id);
+    DataSet info = dao.find("id = ?", new Object[]{id});
 
     if(info.next()) {
         String filePath = info.s("file_path");
@@ -3938,7 +3938,7 @@ FileDao dao = new FileDao();
 ArrayList<String> filePaths = new ArrayList<>();
 
 for(String id : fileIds) {
-    DataSet info = dao.find("id = ?", id);
+    DataSet info = dao.find("id = ?", new Object[]{id});
     if(info.next()) {
         filePaths.add(info.s("file_path"));
     }
@@ -4187,7 +4187,7 @@ m.download("/data/file/" + fileName, fileName);  // 위험!
 // Good - DB에서 경로 조회
 int fileId = m.ri("id");
 FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", fileId);
+DataSet info = dao.find("id = ?", new Object[]{fileId});
 if(info.next()) {
     m.download(info.s("file_path"), info.s("file_name"));
 }
@@ -4276,7 +4276,7 @@ p.display();
 int id = m.ri("id");
 
 FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", id);
+DataSet info = dao.find("id = ?", new Object[]{id});
 
 if(!info.next()) {
     m.jsError("파일을 찾을 수 없습니다.");
@@ -4306,7 +4306,7 @@ if(!auth.isLogin()) {
 int id = m.ri("id");
 
 FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", id);
+DataSet info = dao.find("id = ?", new Object[]{id});
 
 if(!info.next()) {
     m.jsError("파일을 찾을 수 없습니다.");
@@ -4330,7 +4330,7 @@ if(file.exists()) {
 }
 
 // DB 삭제
-dao.delete("id = ?", id);
+dao.delete("id = ?", new Object[]{id});
 
 m.jsAlert("삭제되었습니다.");
 m.jsReplace("list.jsp");
@@ -6993,7 +6993,7 @@ if(m.isPost() && f.validate()) {
 
     // DB에서 사용자 확인
     UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND password = ?", userId, hashedPassword);
+    DataSet user = dao.query("WHERE user_id = ? AND password = ?", new Object[]{userId, hashedPassword});
 
     if(user.next()) {
         // 로그인 성공
@@ -7622,7 +7622,7 @@ if(m.isPost() && f.validate()) {
 
     // 데이터베이스에서 사용자 확인
     UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", id, Malgn.sha256(passwd));
+    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
 
     if(user.next()) {
         // 로그인 성공 - 인증 정보 저장
@@ -7821,7 +7821,7 @@ if(m.isPost() && f.validate()) {
 
     // 사용자 확인
     UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", id, Malgn.sha256(passwd));
+    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
 
     if(user.next()) {
         // 로그인 성공
@@ -7927,7 +7927,7 @@ if(m.isPost() && f.validate()) {
     String autoLogin = f.get("auto_login");
 
     UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", id, Malgn.sha256(passwd));
+    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
 
     if(user.next()) {
         auth.put("user_id", user.getInt("id"));
@@ -7965,7 +7965,7 @@ if(m.isPost() && f.validate()) {
     String passwd = f.get("passwd");
 
     UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", id, Malgn.sha256(passwd));
+    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
 
     if(user.next()) {
         int userId = user.getInt("id");
@@ -8054,7 +8054,7 @@ if(apiToken == null || apiToken.isEmpty()) {
 
 // 토큰 검증
 UserDao dao = new UserDao();
-DataSet user = dao.query("WHERE api_token = ? AND status = 1", apiToken);
+DataSet user = dao.query("WHERE api_token = ? AND status = 1", new Object[]{apiToken});
 
 if(!user.next()) {
     j.error(401, "유효하지 않은 토큰입니다");
@@ -8149,7 +8149,7 @@ f.addElement("passwd_confirm", null, "required:Y, equalTo:'passwd'");
 String sql = "SELECT * FROM tb_user WHERE user_id = '" + id + "'";
 
 // Good - Prepared Statement 사용
-DataSet user = dao.query("WHERE user_id = ?", id);
+DataSet user = dao.query("WHERE user_id = ?", new Object[]{id});
 ```
 
 #### 4. XSS 방지
@@ -8356,7 +8356,7 @@ String id = (String)profile.get("id");
 
 // 회원 가입 또는 로그인 처리
 UserDao dao = new UserDao();
-DataSet user = dao.query("WHERE email = ?", email);
+DataSet user = dao.query("WHERE email = ?", new Object[]{email});
 
 if(!user.next()) {
     // 신규 회원 가입
@@ -8367,7 +8367,7 @@ if(!user.next()) {
     dao.item("reg_date", Malgn.time());
     dao.insert();
 
-    user = dao.query("WHERE email = ?", email);
+    user = dao.query("WHERE email = ?", new Object[]{email});
     user.next();
 }
 
@@ -8623,7 +8623,7 @@ String name = (String)profile.get("name");
 
 // 회원 확인
 UserDao dao = new UserDao();
-DataSet user = dao.query("WHERE oauth_provider = ? AND oauth_id = ?", vendor, oauthId);
+DataSet user = dao.query("WHERE oauth_provider = ? AND oauth_id = ?", new Object[]{vendor, oauthId});
 
 if(!user.next()) {
     // 신규 회원 가입
@@ -9629,7 +9629,7 @@ m.p("HTML 이메일이 발송되었습니다.");
 // 사용자 정보 조회
 int userId = m.ri("user_id");
 UserDao dao = new UserDao();
-DataSet user = dao.find("id = ?", userId);
+DataSet user = dao.find("id = ?", new Object[]{userId});
 
 if(user.next()) {
 
@@ -10797,7 +10797,7 @@ if(m.isPost() && f.validate()) {
 
     // 중복 예약 체크
     ReservationDao dao = new ReservationDao();
-    DataSet existing = dao.find("reservation_datetime = ?", reservationDatetime);
+    DataSet existing = dao.find("reservation_datetime = ?", new Object[]{reservationDatetime});
     if(existing.next()) {
         m.jsError("해당 시간은 이미 예약되어 있습니다.");
         return;
@@ -12864,7 +12864,7 @@ ai.apiKey(Config.get("openaiApiKey"));
 
 // DB에서 히스토리 로드
 ChatHistoryDao dao = new ChatHistoryDao();
-DataSet ds = dao.find("user_id = ?", userId);
+DataSet ds = dao.find("user_id = ?", new Object[]{userId});
 if(ds.next()) {
     String historyJson = ds.s("history");
     ai.setHistory(historyJson);
@@ -12876,13 +12876,13 @@ String response = ai.chatMemory(message);
 // DB에 히스토리 저장
 String updatedHistory = ai.getHistory();
 if(ds.getRow() > 0) {
-    dao.update("history = ?", updatedHistory, "user_id = ?", userId);
+    dao.item("history", updatedHistory);
+    dao.update("user_id = ?", new Object[]{userId});
 } else {
-    DataMap data = new DataMap();
-    data.put("user_id", userId);
-    data.put("history", updatedHistory);
-    data.put("reg_date", m.time());
-    dao.insert(data);
+    dao.item("user_id", userId);
+    dao.item("history", updatedHistory);
+    dao.item("reg_date", m.time());
+    dao.insert();
 }
 
 j.success(response);
@@ -12898,7 +12898,7 @@ j.success(response);
 int userId = m.getInt("user_id");
 
 ChatHistoryDao dao = new ChatHistoryDao();
-DataSet ds = dao.find("user_id = ?", userId);
+DataSet ds = dao.find("user_id = ?", new Object[]{userId});
 
 if(ds.next()) {
     String historyJson = ds.s("history");
@@ -12921,7 +12921,7 @@ if(ds.next()) {
 int userId = m.getInt("user_id");
 
 ChatHistoryDao dao = new ChatHistoryDao();
-dao.delete("user_id = ?", userId);
+dao.delete("user_id = ?", new Object[]{userId});
 
 j.success("대화 히스토리가 초기화되었습니다");
 
@@ -13927,7 +13927,7 @@ if(fileIds.length == 0) {
 
 // 파일 경로 조회
 FileDao dao = new FileDao();
-DataSet files = dao.query("WHERE id IN (?)", Malgn.implode(",", fileIds));
+DataSet files = dao.query("WHERE id IN (?)", new Object[]{Malgn.implode(",", fileIds)});
 
 ArrayList<String> filePaths = new ArrayList<>();
 while(files.next()) {
@@ -13969,7 +13969,7 @@ int galleryId = m.ri("gallery_id");
 
 // 갤러리의 모든 이미지 조회
 ImageDao dao = new ImageDao();
-DataSet images = dao.query("WHERE gallery_id = ?", galleryId);
+DataSet images = dao.query("WHERE gallery_id = ?", new Object[]{galleryId});
 
 String[] files = new String[images.size()];
 int idx = 0;
@@ -14413,7 +14413,7 @@ if(stats == null) {
     // 방문자 수 (오늘)
     String today = m.time("yyyyMMdd");
     VisitDao visitDao = new VisitDao();
-    DataSet visits = visitDao.query("WHERE visit_date = ?", today);
+    DataSet visits = visitDao.query("WHERE visit_date = ?", new Object[]{today});
     stats.put("today_visit", visits.size());
 
     // 캐시에 저장 (10분)
