@@ -124,8 +124,7 @@ UserDao user = new UserDao();
 
 // SQL 직접 작성
 DataSet list = user.query(
-    "SELECT * FROM tb_user WHERE status = ? ORDER BY id DESC",
-    new Object[] { 1 }
+    "SELECT * FROM tb_user WHERE status = 1 ORDER BY id DESC"
 );
 
 // 복잡한 쿼리
@@ -133,14 +132,12 @@ DataSet list2 = user.query(
     "SELECT u.*, c.name AS city_name " +
     "FROM tb_user u " +
     "LEFT JOIN tb_city c ON u.city_id = c.id " +
-    "WHERE u.status = ? AND u.age >= ?",
-    new Object[] { 1, 18 }
+    "WHERE u.status = 1 AND u.age >= 18"
 );
 
 // 개수 제한
 DataSet list3 = user.query(
     "SELECT * FROM tb_user ORDER BY id DESC",
-    null,
     10  // LIMIT 10
 );
 ```
@@ -264,7 +261,7 @@ user.item("status", 0);
 user.item("block_date", new Date());
 
 // 특정 조건의 레코드들 수정
-if(user.update("age < ?", new Object[] { 18 })) {
+if(user.update("age < 18")) {
     m.p("미성년자 계정 차단 완료");
 }
 ```
