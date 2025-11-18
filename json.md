@@ -138,11 +138,22 @@ j.put(list);
 
 Json 클래스는 표준 API 응답 형식을 제공합니다:
 
+**성공 응답**:
 ```json
 {
-  "error": 0,
+  "success": true,
   "message": "success",
   "data": { ... }
+}
+```
+
+**에러 응답**:
+```json
+{
+  "success": false,
+  "error": "ERROR_CODE",
+  "message": "에러 메시지",
+  "details": { ... }
 }
 ```
 
@@ -153,43 +164,82 @@ Json 클래스는 표준 API 응답 형식을 제공합니다:
 
 // 간단한 성공 응답
 j.success();
-// {"error":0,"message":"success"}
+// {"success":true,"message":"success"}
 
-// 데이터와 함께
+// 메시지와 함께
+j.success("작업이 완료되었습니다");
+// {"success":true,"message":"작업이 완료되었습니다"}
+
+// 데이터와 함께 (Map)
 DataMap data = new DataMap();
 data.put("id", 123);
 data.put("name", "John");
-j.success(data);
-// {"error":0,"message":"success","data":{"id":123,"name":"John"}}
+j.success("조회 성공", data);
+// {"success":true,"message":"조회 성공","data":{"id":123,"name":"John"}}
 
-// 사용자 정의 메시지
-j.success("작업이 완료되었습니다", data);
-// {"error":0,"message":"작업이 완료되었습니다","data":{...}}
+// 데이터와 함께 (List)
+List<DataMap> list = new ArrayList<>();
+// ... list에 데이터 추가
+j.success("목록 조회 성공", list);
+// {"success":true,"message":"목록 조회 성공","data":[...]}
 
 %>
+```
+
+### DataSet 자동 처리
+
+DataSet을 전달하면 레코드 개수에 따라 자동으로 처리됩니다:
+
+```jsp
+UserDao user = new UserDao();
+
+// 단일 레코드 - Map 형태로 반환
+DataSet info = user.find("id = 1");
+info.next();
+j.success(info);
+// {"success":true,"message":"success","data":{"id":1,"name":"John",...}}
+
+// 복수 레코드 - Array 형태로 반환
+DataSet list = user.find();
+j.success(list);
+// {"success":true,"message":"success","data":[{"id":1,"name":"John"},{"id":2,"name":"Jane"}]}
 ```
 
 ### 에러 응답
 
 ```jsp
 // 에러 코드와 메시지
-j.error(404, "데이터를 찾을 수 없습니다");
-// {"error":404,"message":"데이터를 찾을 수 없습니다"}
+j.error("NOT_FOUND", "데이터를 찾을 수 없습니다");
+// {"success":false,"error":"NOT_FOUND","message":"데이터를 찾을 수 없습니다"}
 
-// 간단한 에러 메시지
+// 상세 정보 포함
+DataMap details = new DataMap();
+details.put("field", "email");
+details.put("value", "test@example.com");
+j.error("INVALID_INPUT", "유효하지 않은 이메일입니다", details);
+// {"success":false,"error":"INVALID_INPUT","message":"유효하지 않은 이메일입니다","details":{...}}
+
+// 간단한 에러 (구버전 호환)
 j.error("오류가 발생했습니다");
-// {"_ERROR_":"오류가 발생했습니다"}
+// {"success":false,"error":"ERROR","message":"오류가 발생했습니다"}
 ```
 
-### 사용자 정의 응답
+### 에러 코드 예시
 
 ```jsp
-// 완전한 제어
-j.print(0, "success", data);
-j.print(100, "validation error", null);
+// 일반적인 HTTP 상태 코드 스타일
+j.error("BAD_REQUEST", "잘못된 요청입니다");
+j.error("UNAUTHORIZED", "인증이 필요합니다");
+j.error("FORBIDDEN", "권한이 없습니다");
+j.error("NOT_FOUND", "데이터를 찾을 수 없습니다");
+j.error("CONFLICT", "이미 존재하는 데이터입니다");
+j.error("VALIDATION_ERROR", "입력값 검증 실패");
+j.error("INTERNAL_ERROR", "서버 내부 오류");
 ```
 
 ### 실제 사용 예제
+
+#### 로그인 API
 
 ```jsp
 <%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
@@ -199,25 +249,74 @@ f.addElement("email", null, "required:Y, email:Y");
 f.addElement("password", null, "required:Y, minlength:8");
 
 if(!f.validate()) {
-    j.error(400, f.getErrorString());
+    j.error("VALIDATION_ERROR", f.getErrorString());
     return;
 }
 
-// 데이터 처리
+// 사용자 조회
 UserDao user = new UserDao();
 DataSet info = user.query("WHERE email = ?", f.get("email"));
 
 if(!info.next()) {
-    j.error(404, "사용자를 찾을 수 없습니다");
+    j.error("NOT_FOUND", "사용자를 찾을 수 없습니다");
     return;
 }
 
-// 성공 응답
-DataMap result = new DataMap();
-result.put("id", info.i("id"));
-result.put("name", info.s("name"));
-result.put("email", info.s("email"));
-j.success("로그인 성공", result);
+// 비밀번호 확인
+if(!info.s("password").equals(Malgn.sha256(f.get("password")))) {
+    j.error("UNAUTHORIZED", "비밀번호가 일치하지 않습니다");
+    return;
+}
+
+// 성공 응답 - DataSet을 직접 전달 (자동으로 Map 변환)
+j.success("로그인 성공", info);
+// {"success":true,"message":"로그인 성공","data":{"id":1,"name":"John","email":"john@example.com"}}
+
+%>
+```
+
+#### 목록 조회 API
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+UserDao user = new UserDao();
+DataSet list = user.find("status = 1");
+
+// 복수 레코드는 자동으로 Array로 변환
+j.success("사용자 목록 조회 성공", list);
+// {"success":true,"message":"사용자 목록 조회 성공","data":[{"id":1,"name":"John"},{"id":2,"name":"Jane"}]}
+
+%>
+```
+
+#### 데이터 생성 API
+
+```jsp
+<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
+
+f.addElement("name", null, "required:Y");
+f.addElement("email", null, "required:Y, email:Y");
+
+if(!f.validate()) {
+    j.error("VALIDATION_ERROR", f.getErrorString());
+    return;
+}
+
+UserDao user = new UserDao();
+user.item("name", f.get("name"));
+user.item("email", f.get("email"));
+user.item("reg_date", m.time());
+
+int newId = user.insert();
+
+if(newId > 0) {
+    DataMap result = new DataMap();
+    result.put("id", newId);
+    j.success("사용자가 등록되었습니다", result);
+} else {
+    j.error("INTERNAL_ERROR", "등록 중 오류가 발생했습니다");
+}
 
 %>
 ```
@@ -371,6 +470,24 @@ j.setUrl("https://api.example.com/data");  // HTTP 요청/응답 로그 출력
    if(data == null) {
        // 데이터가 없거나 경로가 잘못됨
    }
+   ```
+
+5. **응답 형식 변경사항**: v1.13.7부터 표준 응답 형식이 변경되었습니다
+   ```jsp
+   // 이전 (deprecated)
+   j.error(404, "Not Found");
+   // {"error":404,"message":"Not Found"}
+
+   // 현재 (권장)
+   j.error("NOT_FOUND", "데이터를 찾을 수 없습니다");
+   // {"success":false,"error":"NOT_FOUND","message":"데이터를 찾을 수 없습니다"}
+   ```
+
+6. **DataSet 자동 처리**: DataSet을 전달할 때는 next() 호출 후 전달
+   ```jsp
+   DataSet info = user.find("id = 1");
+   info.next();  // 중요!
+   j.success(info);
    ```
 
 ---
