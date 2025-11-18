@@ -451,43 +451,6 @@ XML은 주로 레거시 시스템이나 특정 표준(SOAP 등)을 따를 때 �
 
 ---
 
-## 베스트 프랙티스
-
-### 1. 설정 파일은 XML보다 properties 사용
-
-```jsp
-// config.properties (더 간단)
-db.host=localhost
-db.port=3306
-db.name=myapp
-
-// 읽기
-Config config = new Config();
-String dbHost = config.getString("db.host");
-```
-
-### 2. API 응답은 JSON 사용
-
-```jsp
-// XML (X)
-<%@ page contentType="text/xml; charset=utf-8" %>
-<response><status>success</status></response>
-
-// JSON (O)
-<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
-j.success("성공");
-%>
-```
-
-### 3. XML 사용이 필요한 경우
-
-- 레거시 시스템과 연동
-- XML 기반 표준 프로토콜 (SOAP, RSS 등)
-- 복잡한 계층 구조의 설정 파일
-- 스키마 검증이 필요한 경우
-
----
-
 ## 주요 메소드 정리
 
 ### SimpleParser
