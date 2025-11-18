@@ -190,8 +190,8 @@ DataSet posts = cache.getDataSet("posts_cache");
 
 if(posts == null) {
     // 캐시에 데이터가 없으면 DB에서 조회
-    BlogDao dao = new BlogDao();
-    posts = dao.query("WHERE status = 1 ORDER BY id DESC");
+    BlogDao blog = new BlogDao();
+    posts = blog.query("WHERE status = 1 ORDER BY id DESC");
 
     // 캐시에 저장
     cache.save("posts_cache", posts);
@@ -289,18 +289,18 @@ email.send();
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
 Cache cache = new Cache();
-DataSet menu = cache.getDataSet("main_menu");
+DataSet menuList = cache.getDataSet("main_menu");
 
-if(menu == null) {
+if(menuList == null) {
     // DB에서 메뉴 조회
-    MenuDao dao = new MenuDao();
-    menu = dao.query("WHERE status = 1 ORDER BY order_num ASC");
+    MenuDao menu = new MenuDao();
+    menuList = menu.query("WHERE status = 1 ORDER BY order_num ASC");
 
     // 캐시에 저장 (1시간)
-    cache.save("main_menu", menu);
+    cache.save("main_menu", menuList);
 }
 
-p.setLoop("menu", menu);
+p.setLoop("menu", menuList);
 p.setBody("main.index");
 p.display();
 
@@ -431,10 +431,10 @@ p.setVar("siteUrl", siteUrl);
 // 관리자가 메뉴를 수정한 후
 if(m.isPost() && f.validate()) {
 
-    MenuDao dao = new MenuDao();
-    dao.item("title", f.get("title"));
-    dao.item("url", f.get("url"));
-    dao.insert();
+    MenuDao menu = new MenuDao();
+    menu.item("title", f.get("title"));
+    menu.item("url", f.get("url"));
+    menu.insert();
 
     // 메뉴 캐시 삭제
     Cache cache = new Cache();
@@ -480,7 +480,7 @@ long now = System.currentTimeMillis();
 
 if(cacheTime == 0 || (now - cacheTime) > 3600000) {  // 1시간
     // 캐시 갱신
-    DataSet menu = dao.query("...");
+    DataSet menu = blog.query("...");
     cache.save("main_menu", menu);
     cache.save("menu_cache_time", now);
 }
@@ -537,7 +537,7 @@ String siteName = Config.get("siteName", "My Site");  // 기본 이름
 Cache cache = new Cache();
 DataSet categories = cache.getDataSet("categories");
 if(categories == null) {
-    categories = dao.query("WHERE status = 1");
+    categories = blog.query("WHERE status = 1");
     cache.save("categories", categories);
 }
 ```
@@ -548,7 +548,7 @@ if(categories == null) {
 // 통계 데이터 (매번 계산하면 느림)
 DataMap stats = cache.getDataMap("monthly_stats");
 if(stats == null) {
-    stats = dao.getMonthlyStats();  // 복잡한 집계 쿼리
+    stats = blog.getMonthlyStats();  // 복잡한 집계 쿼리
     cache.save("monthly_stats", stats);
 }
 ```

@@ -332,14 +332,14 @@ MCal cal = new MCal();
 DataSet calendar = cal.getMonthDays(month + "-01");
 
 // 해당 월의 일정 조회
-EventDao dao = new EventDao();
-DataSet events = dao.find("event_date >= ? AND event_date < ?",
+EventDao event = new EventDao();
+DataSet list = event.find("event_date >= ? AND event_date < ?",
     new Object[] { month + "-01", Malgn.addMonth(1, month + "-01") });
 
 // 날짜별로 일정 카운트
 Hashtable<String, Integer> eventCounts = new Hashtable<>();
-while(events.next()) {
-    String date = events.s("event_date");
+while(list.next()) {
+    String date = list.s("event_date");
     eventCounts.put(date, eventCounts.getOrDefault(date, 0) + 1);
 }
 
@@ -481,12 +481,12 @@ if(m.isPost()) {
     }
 
     // 데이터 조회
-    OrderDao dao = new OrderDao();
-    DataSet orders = dao.find("order_date >= ? AND order_date <= ?",
+    OrderDao order = new OrderDao();
+    DataSet orderList = order.find("order_date >= ? AND order_date <= ?",
         new Object[] { startDate, endDate });
 
     p.setBody("main.order_list");
-    p.setLoop("orders", orders);
+    p.setLoop("orders", orderList);
     p.setVar("start_date", startDate);
     p.setVar("end_date", endDate);
     p.display();
@@ -549,20 +549,20 @@ if(m.isPost() && f.validate()) {
     }
 
     // 중복 예약 체크
-    ReservationDao dao = new ReservationDao();
-    DataSet existing = dao.find("reservation_datetime = ?", new Object[]{reservationDatetime});
-    if(existing.next()) {
+    ReservationDao reservation = new ReservationDao();
+    DataSet info = reservation.find("reservation_datetime = ?", new Object[]{reservationDatetime});
+    if(info.next()) {
         m.jsError("해당 시간은 이미 예약되어 있습니다.");
         return;
     }
 
     // 예약 저장
-    dao.item("name", name);
-    dao.item("phone", phone);
-    dao.item("reservation_datetime", reservationDatetime);
-    dao.item("status", "pending");
-    dao.item("reg_date", m.time());
-    int newId = dao.insert();
+    reservation.item("name", name);
+    reservation.item("phone", phone);
+    reservation.item("reservation_datetime", reservationDatetime);
+    reservation.item("status", "pending");
+    reservation.item("reg_date", m.time());
+    int newId = reservation.insert();
 
     m.jsAlert("예약이 완료되었습니다.");
     m.jsReplace("reservation_view.jsp?id=" + newId);

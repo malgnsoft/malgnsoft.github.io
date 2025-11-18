@@ -382,10 +382,10 @@ OpenAI ai = new OpenAI();
 ai.apiKey(Config.get("openaiApiKey"));
 
 // DB에서 히스토리 로드
-ChatHistoryDao dao = new ChatHistoryDao();
-DataSet ds = dao.find("user_id = ?", new Object[]{userId});
-if(ds.next()) {
-    String historyJson = ds.s("history");
+ChatHistoryDao chatHistory = new ChatHistoryDao();
+DataSet info = chatHistory.find("user_id = ?", new Object[]{userId});
+if(info.next()) {
+    String historyJson = info.s("history");
     ai.setHistory(historyJson);
 }
 
@@ -394,14 +394,14 @@ String response = ai.chatMemory(message);
 
 // DB에 히스토리 저장
 String updatedHistory = ai.getHistory();
-if(ds.getRow() > 0) {
-    dao.item("history", updatedHistory);
-    dao.update("user_id = ?", new Object[]{userId});
+if(info.getRow() > 0) {
+    chatHistory.item("history", updatedHistory);
+    chatHistory.update("user_id = ?", new Object[]{userId});
 } else {
-    dao.item("user_id", userId);
-    dao.item("history", updatedHistory);
-    dao.item("reg_date", m.time());
-    dao.insert();
+    chatHistory.item("user_id", userId);
+    chatHistory.item("history", updatedHistory);
+    chatHistory.item("reg_date", m.time());
+    chatHistory.insert();
 }
 
 j.success(response);
@@ -416,11 +416,11 @@ j.success(response);
 
 int userId = m.getInt("user_id");
 
-ChatHistoryDao dao = new ChatHistoryDao();
-DataSet ds = dao.find("user_id = ?", new Object[]{userId});
+ChatHistoryDao chatHistory = new ChatHistoryDao();
+DataSet info = chatHistory.find("user_id = ?", new Object[]{userId});
 
-if(ds.next()) {
-    String historyJson = ds.s("history");
+if(info.next()) {
+    String historyJson = info.s("history");
     JSONArray history = new JSONArray(historyJson);
 
     // JSON으로 반환
@@ -439,8 +439,8 @@ if(ds.next()) {
 
 int userId = m.getInt("user_id");
 
-ChatHistoryDao dao = new ChatHistoryDao();
-dao.delete("user_id = ?", new Object[]{userId});
+ChatHistoryDao chatHistory = new ChatHistoryDao();
+chatHistory.delete("user_id = ?", new Object[]{userId});
 
 j.success("대화 히스토리가 초기화되었습니다");
 
@@ -665,16 +665,16 @@ String response = ai.chat(messages.toString());
 // JSON 파싱하여 DB에 저장
 try {
     JSONArray questions = new JSONArray(response);
-    QuizDao dao = new QuizDao();
+    QuizDao quiz = new QuizDao();
 
     for(int i = 0; i < questions.length(); i++) {
         JSONObject q = questions.getJSONObject(i);
-        dao.item("question", q.getString("question"));
-        dao.item("choices", q.getJSONArray("choices").toString());
-        dao.item("answer", q.getInt("answer"));
-        dao.item("explanation", q.getString("explanation"));
-        dao.insert();
-        dao.clear();
+        quiz.item("question", q.getString("question"));
+        quiz.item("choices", q.getJSONArray("choices").toString());
+        quiz.item("answer", q.getInt("answer"));
+        quiz.item("explanation", q.getString("explanation"));
+        quiz.insert();
+        quiz.clear();
     }
 
     j.success(questions.length() + "개의 문제가 생성되었습니다");

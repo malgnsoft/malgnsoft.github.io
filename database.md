@@ -211,19 +211,19 @@ user.execute("DELETE FROM tb_user WHERE id = 'hong'");
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-UserDao dao = new UserDao();
+UserDao user = new UserDao();
 
 // 읽기 쿼리 - Slave DB(rojndi) 사용
-DataSet users = dao.query("SELECT * FROM tb_user WHERE status = 1");
+DataSet userList = user.query("SELECT * FROM tb_user WHERE status = 1");
 
 // 쓰기 작업 - Master DB(jndi) 사용
-dao.item("name", "홍길동");
-dao.item("email", "hong@example.com");
-dao.insert();
+user.item("name", "홍길동");
+user.item("email", "hong@example.com");
+user.insert();
 
 // 수정 작업 - Master DB(jndi) 사용
-dao.item("status", 1);
-dao.update("id = 123");
+user.item("status", 1);
+user.update("id = 123");
 
 %>
 ```
@@ -322,7 +322,7 @@ UserDao userDao = new UserDao();
 DataSet users = userDao.query("SELECT * FROM tb_user WHERE status = 1");
 
 // 로그 데이터베이스에 로그 기록
-LogDao logDao = new LogDao();
+LogDao log = new LogDao();
 logDao.setJndi("jdbc/log_db");  // 로그 전용 DB 지정
 
 logDao.item("user_id", userId);
@@ -351,7 +351,7 @@ lm.setSearchCond(searchCond);
 DataSet boardList = lm.getDataSet();
 
 // 로그 DB의 접속 기록 목록
-LogDao logDao = new LogDao();
+LogDao log = new LogDao();
 logDao.setJndi("jdbc/log_db");  // 로그 DB 지정
 
 ListManager logLm = new ListManager(logDao, m.req("page"), 50);
@@ -375,23 +375,23 @@ p.display();
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
 // 메인 DB - 비즈니스 로직 처리
-UserDao userDao = new UserDao();
-DataSet user = userDao.find("id = ?", new Object[]{userId});
+UserDao user = new UserDao();
+DataSet info = user.find("id = ?", new Object[]{userId});
 
-if(user.next()) {
+if(info.next()) {
     // 사용자 정보 업데이트
-    userDao.item("last_login", m.time("yyyyMMddHHmmss"));
-    userDao.update("id = ?", new Object[] { userId });
+    user.item("last_login", m.time("yyyyMMddHHmmss"));
+    user.update("id = ?", new Object[] { userId });
 
     // 로그 DB - 접속 이력 저장
-    AccessLogDao logDao = new AccessLogDao();
-    logDao.setJndi("jdbc/log_db");
+    AccessLogDao accessLog = new AccessLogDao();
+    accessLog.setJndi("jdbc/log_db");
 
-    logDao.item("user_id", userId);
-    logDao.item("login_time", m.time("yyyyMMddHHmmss"));
-    logDao.item("ip_address", m.getRemoteAddr());
-    logDao.item("user_agent", request.getHeader("User-Agent"));
-    logDao.insert();
+    accessLog.item("user_id", userId);
+    accessLog.item("login_time", m.time("yyyyMMddHHmmss"));
+    accessLog.item("ip_address", m.getRemoteAddr());
+    accessLog.item("user_agent", request.getHeader("User-Agent"));
+    accessLog.insert();
 }
 
 %>

@@ -377,18 +377,18 @@ out.print(xml.toString());
 ```jsp
 <%@ page contentType="text/xml; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-UserDao dao = new UserDao();
-DataSet users = dao.query("WHERE status = 1");
+UserDao user = new UserDao();
+DataSet userList = user.query("WHERE status = 1");
 
 StringBuilder xml = new StringBuilder();
 xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 xml.append("<users>\n");
 
-while(users.next()) {
+while(userList.next()) {
     xml.append("  <user>\n");
-    xml.append("    <id>").append(users.getInt("id")).append("</id>\n");
-    xml.append("    <name>").append(Malgn.escapeXml(users.getString("name"))).append("</name>\n");
-    xml.append("    <email>").append(Malgn.escapeXml(users.getString("email"))).append("</email>\n");
+    xml.append("    <id>").append(userList.getInt("id")).append("</id>\n");
+    xml.append("    <name>").append(Malgn.escapeXml(userList.getString("name"))).append("</name>\n");
+    xml.append("    <email>").append(Malgn.escapeXml(userList.getString("email"))).append("</email>\n");
     xml.append("  </user>\n");
 }
 

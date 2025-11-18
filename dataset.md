@@ -257,8 +257,8 @@ j.print(0, "완료되었습니다", dataMap);
 ### 조회 결과를 DataSet으로
 
 ```jsp
-UserDao dao = new UserDao();
-DataSet list = dao.query("WHERE status = 1 ORDER BY id DESC");
+UserDao user = new UserDao();
+DataSet list = user.query("WHERE status = 1 ORDER BY id DESC");
 
 while(list.next()) {
     m.p(list.getInt("id"));
@@ -374,12 +374,12 @@ p.display();
 <%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
 try {
-    UserDao dao = new UserDao();
-    DataSet users = dao.query("WHERE status = 1 ORDER BY name ASC");
+    UserDao user = new UserDao();
+    DataSet userList = user.query("WHERE status = 1 ORDER BY name ASC");
 
     DataMap result = new DataMap();
-    result.put("total", users.size());
-    result.put("users", users);
+    result.put("total", userList.size());
+    result.put("users", userList);
 
     j.success("사용자 목록 조회 성공", result);
 
@@ -407,8 +407,8 @@ if(m.isPost() && f.validate()) {
     data.put("age", f.getInt("age"));
     data.put("reg_date", m.time());
 
-    UserDao dao = new UserDao();
-    int newId = dao.insert(data);
+    UserDao user = new UserDao();
+    int newId = user.insert(data);
 
     m.jsAlert("등록되었습니다. ID: " + newId);
     m.jsReplace("list.jsp");

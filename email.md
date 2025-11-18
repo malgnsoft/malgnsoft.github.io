@@ -344,22 +344,22 @@ m.p("HTML 이메일이 발송되었습니다.");
 
 // 사용자 정보 조회
 int userId = m.ri("user_id");
-UserDao dao = new UserDao();
-DataSet user = dao.find("id = ?", new Object[]{userId});
+UserDao user = new UserDao();
+DataSet info = user.find("id = ?", new Object[]{userId});
 
-if(user.next()) {
+if(info.next()) {
 
     // init.jsp의 Page 객체(p) 활용
     p.setBody("mail.welcome");
-    p.setVar("name", user.s("name"));
-    p.setVar("email", user.s("email"));
+    p.setVar("name", info.s("name"));
+    p.setVar("email", info.s("email"));
     p.setVar("site_url", Config.getSiteUrl());
 
     String htmlBody = p.fetch();
 
     // 이메일 발송
     Gmail mail = new Gmail();
-    mail.send(user.s("email"), "회원가입을 환영합니다", htmlBody);
+    mail.send(info.s("email"), "회원가입을 환영합니다", htmlBody);
 
     m.p("회원가입 환영 이메일이 발송되었습니다.");
 }
@@ -426,12 +426,12 @@ m.p("여러 명에게 발송되었습니다.");
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
 // 이메일 수신 동의한 회원 조회
-UserDao dao = new UserDao();
-DataSet users = dao.find("email_agree = 'Y'");
+UserDao user = new UserDao();
+DataSet userList = user.find("email_agree = 'Y'");
 
 ArrayList<String> emailList = new ArrayList<>();
-while(users.next()) {
-    emailList.add(users.s("email"));
+while(userList.next()) {
+    emailList.add(userList.s("email"));
 }
 
 if(emailList.size() > 0) {
@@ -456,15 +456,15 @@ if(emailList.size() > 0) {
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-UserDao dao = new UserDao();
-DataSet users = dao.find("email_agree = 'Y'");
+UserDao user = new UserDao();
+DataSet userList = user.find("email_agree = 'Y'");
 
 Gmail mail = new Gmail("your-email@gmail.com", "앱비밀번호");
 
 int sentCount = 0;
-while(users.next()) {
-    String email = users.s("email");
-    String name = users.s("name");
+while(userList.next()) {
+    String email = userList.s("email");
+    String name = userList.s("name");
 
     String subject = name + "님께 특별 제안";
     String message = "<h1>" + name + "님, 안녕하세요!</h1>" +
@@ -521,19 +521,19 @@ m.p("파일 첨부 이메일이 발송 대기열에 추가되었습니다.");
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-UserDao dao = new UserDao();
-DataSet users = dao.find("email_agree = 'Y'");
+UserDao user = new UserDao();
+DataSet userList = user.find("email_agree = 'Y'");
 
 int queuedCount = 0;
 
-while(users.next()) {
-    String email = users.s("email");
-    String name = users.s("name");
+while(userList.next()) {
+    String email = userList.s("email");
+    String name = userList.s("name");
 
     // 템플릿으로 개인화된 HTML 생성
     p.setBody("mail.promotion");
     p.setVar("name", name);
-    p.setVar("user_id", users.s("id"));
+    p.setVar("user_id", userList.s("id"));
     String htmlBody = p.fetch();
 
     // 백그라운드로 발송 (즉시 반환)
@@ -602,15 +602,15 @@ m.mailer("user51@example.com", "제목51", "내용51");  // 100ms 대기 후 재
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-UserDao dao = new UserDao();
-DataSet users = dao.find("email_agree = 'Y'");
+UserDao user = new UserDao();
+DataSet userList = user.find("email_agree = 'Y'");
 
 int totalCount = 0;
 int batchSize = 100;  // 100건씩 배치 처리
 
-while(users.next()) {
-    String email = users.s("email");
-    String name = users.s("name");
+while(userList.next()) {
+    String email = userList.s("email");
+    String name = userList.s("name");
 
     p.setBody("mail.newsletter");
     p.setVar("name", name);
@@ -738,13 +738,13 @@ if(m.isPost() && f.validate()) {
     String message = f.get("message");
 
     // DB에 저장
-    ContactDao dao = new ContactDao();
-    dao.item("name", name);
-    dao.item("email", email);
-    dao.item("subject", subject);
-    dao.item("message", message);
-    dao.item("reg_date", m.time());
-    int newId = dao.insert();
+    ContactDao contact = new ContactDao();
+    contact.item("name", name);
+    contact.item("email", email);
+    contact.item("subject", subject);
+    contact.item("message", message);
+    contact.item("reg_date", m.time());
+    int newId = contact.insert();
 
     // 관리자에게 이메일 발송
     String adminEmail = "admin@example.com";
@@ -867,14 +867,14 @@ if(!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
 ### 3. 대량 발송 시 지연
 
 ```jsp
-UserDao dao = new UserDao();
-DataSet users = dao.find("email_agree = 'Y'");
+UserDao user = new UserDao();
+DataSet userList = user.find("email_agree = 'Y'");
 
 Gmail mail = new Gmail();
 int count = 0;
 
-while(users.next()) {
-    String email = users.s("email");
+while(userList.next()) {
+    String email = userList.s("email");
 
     try {
         mail.send(email, "제목", "내용");
@@ -899,8 +899,8 @@ m.p("총 " + count + "건 발송 완료");
 
 ```jsp
 // 회원가입 처리
-UserDao dao = new UserDao();
-dao.insert(userData);
+UserDao user = new UserDao();
+user.insert(userData);
 
 // 비동기로 환영 이메일 발송
 new Thread(() -> {
@@ -925,7 +925,7 @@ try {
     mail.send(email, subject, body);
 
     // 발송 로그 저장
-    EmailLogDao logDao = new EmailLogDao();
+    EmailLogDao emailLog = new EmailLogDao();
     logDao.item("to_email", email);
     logDao.item("subject", subject);
     logDao.item("status", "success");
@@ -934,7 +934,7 @@ try {
 
 } catch(Exception e) {
     // 실패 로그 저장
-    EmailLogDao logDao = new EmailLogDao();
+    EmailLogDao emailLog = new EmailLogDao();
     logDao.item("to_email", email);
     logDao.item("subject", subject);
     logDao.item("status", "failed");

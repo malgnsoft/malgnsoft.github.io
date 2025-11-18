@@ -153,14 +153,14 @@ if(m.isPost() && f.validate()) {
     String passwd = f.get("passwd");
 
     // 데이터베이스에서 사용자 확인
-    UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
+    UserDao user = new UserDao();
+    DataSet userInfo = user.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
 
-    if(user.next()) {
+    if(userInfo.next()) {
         // 로그인 성공 - 인증 정보 저장
-        auth.put("user_id", user.getInt("id"));
+        auth.put("user_id", userInfo.getInt("id"));
         auth.put("user_name", user.getString("name"));
-        auth.put("user_level", user.getInt("level"));
+        auth.put("user_level", userInfo.getInt("level"));
         auth.save();
 
         m.jsAlert("로그인 성공");
@@ -352,12 +352,12 @@ if(m.isPost() && f.validate()) {
     String rememberId = f.get("remember_id");
 
     // 사용자 확인
-    UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
+    UserDao user = new UserDao();
+    DataSet userInfo = user.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
 
-    if(user.next()) {
+    if(userInfo.next()) {
         // 로그인 성공
-        auth.put("user_id", user.getInt("id"));
+        auth.put("user_id", userInfo.getInt("id"));
         auth.put("user_name", user.getString("name"));
         auth.save();
 
@@ -428,16 +428,16 @@ if(auth.isValid()) {
     // 자동 로그인 체크
     String autoLoginToken = m.getCookie("auto_login_token");
     if(autoLoginToken != null) {
-        UserDao dao = new UserDao();
-        DataSet user = dao.query("WHERE auto_login_token = ?", new Object[]{autoLoginToken});
+        UserDao user = new UserDao();
+        DataSet userInfo = user.query("WHERE auto_login_token = ?", new Object[]{autoLoginToken});
 
-        if(user.next()) {
+        if(userInfo.next()) {
             // 자동 로그인 처리
-            auth.put("user_id", user.getInt("id"));
+            auth.put("user_id", userInfo.getInt("id"));
             auth.put("user_name", user.getString("name"));
             auth.save();
 
-            userId = user.getInt("id");
+            userId = userInfo.getInt("id");
             userName = user.getString("name");
         }
     }
@@ -458,11 +458,11 @@ if(m.isPost() && f.validate()) {
     String passwd = f.get("passwd");
     String autoLogin = f.get("auto_login");
 
-    UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
+    UserDao user = new UserDao();
+    DataSet userInfo = user.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
 
-    if(user.next()) {
-        auth.put("user_id", user.getInt("id"));
+    if(userInfo.next()) {
+        auth.put("user_id", userInfo.getInt("id"));
         auth.put("user_name", user.getString("name"));
         auth.save();
 
@@ -472,8 +472,8 @@ if(m.isPost() && f.validate()) {
             String token = Malgn.uuid();
 
             // DB에 토큰 저장
-            dao.item("auto_login_token", token);
-            dao.update("id = ?", new Object[] { user.getInt("id") });
+            user.item("auto_login_token", token);
+            user.update("id = ?", new Object[] { userInfo.getInt("id") });
 
             // 쿠키에 저장 (30일)
             m.setCookie("auto_login_token", token, 60 * 60 * 24 * 30);
@@ -496,16 +496,16 @@ if(m.isPost() && f.validate()) {
     String id = f.get("id");
     String passwd = f.get("passwd");
 
-    UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
+    UserDao user = new UserDao();
+    DataSet userInfo = user.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
 
-    if(user.next()) {
-        int userId = user.getInt("id");
+    if(userInfo.next()) {
+        int userId = userInfo.getInt("id");
 
         // 마지막 로그인 시간 업데이트
-        dao.item("last_login", m.time());
-        dao.item("login_count", user.getInt("login_count") + 1);
-        dao.update("id = ?", new Object[] { userId });
+        user.item("last_login", m.time());
+        user.item("login_count", userInfo.getInt("login_count") + 1);
+        user.update("id = ?", new Object[] { userId });
 
         // 인증 정보 저장
         auth.put("user_id", userId);
@@ -585,8 +585,8 @@ if(apiToken == null || apiToken.isEmpty()) {
 }
 
 // 토큰 검증
-UserDao dao = new UserDao();
-DataSet user = dao.query("WHERE api_token = ? AND status = 1", new Object[]{apiToken});
+UserDao user = new UserDao();
+DataSet userInfo = user.query("WHERE api_token = ? AND status = 1", new Object[]{apiToken});
 
 if(!user.next()) {
     j.error(401, "유효하지 않은 토큰입니다");
@@ -595,7 +595,7 @@ if(!user.next()) {
 
 // API 처리
 DataMap result = new DataMap();
-result.put("user_id", user.getInt("id"));
+result.put("user_id", userInfo.getInt("id"));
 result.put("user_name", user.getString("name"));
 
 j.success("인증 성공", result);
@@ -614,11 +614,11 @@ j.success("인증 성공", result);
 String plainPassword = f.get("passwd");
 String hashedPassword = Malgn.sha256(plainPassword);
 
-UserDao dao = new UserDao();
-dao.item("user_id", f.get("id"));
-dao.item("passwd", hashedPassword);
-dao.item("name", f.get("name"));
-dao.insert();
+UserDao user = new UserDao();
+user.item("user_id", f.get("id"));
+user.item("passwd", hashedPassword);
+user.item("name", f.get("name"));
+user.insert();
 ```
 
 ### 다양한 해시 알고리즘
@@ -681,7 +681,7 @@ f.addElement("passwd_confirm", null, "required:Y, equalTo:'passwd'");
 String sql = "SELECT * FROM tb_user WHERE user_id = '" + id + "'";
 
 // Good - Prepared Statement 사용
-DataSet user = dao.query("WHERE user_id = ?", new Object[]{id});
+DataSet userInfo = user.query("WHERE user_id = ?", new Object[]{id});
 ```
 
 ### 4. XSS 방지

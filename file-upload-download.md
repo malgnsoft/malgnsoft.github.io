@@ -54,13 +54,13 @@ if(m.isPost() && f.validate()) {
         m.p("파일크기: " + fileSize);
 
         // DB에 파일 정보 저장
-        FileDao dao = new FileDao();
-        dao.item("title", f.get("title"));
-        dao.item("file_name", fileName);
-        dao.item("file_path", filePath);
-        dao.item("file_size", fileSize);
-        dao.item("reg_date", m.time());
-        dao.insert();
+        FileDao file = new FileDao();
+        file.item("title", f.get("title"));
+        file.item("file_name", fileName);
+        file.item("file_path", filePath);
+        file.item("file_size", fileSize);
+        file.item("reg_date", m.time());
+        file.insert();
 
         m.jsAlert("업로드 완료");
         m.jsReplace("list.jsp");
@@ -246,11 +246,11 @@ if(m.isPost() && f.validate()) {
         m.p("저장 파일명: " + newFileName);
 
         // DB에 두 파일명 모두 저장
-        FileDao dao = new FileDao();
-        dao.item("original_name", originalName);
-        dao.item("saved_name", newFileName);
-        dao.item("file_path", savePath);
-        dao.insert();
+        FileDao file = new FileDao();
+        file.item("original_name", originalName);
+        file.item("saved_name", newFileName);
+        file.item("file_path", savePath);
+        file.insert();
     }
     return;
 }
@@ -267,8 +267,8 @@ if(m.isPost() && f.validate()) {
 
 int id = m.ri("id");
 
-FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", new Object[]{id});
+FileDao file = new FileDao();
+DataSet info = file.find("id = ?", new Object[]{id});
 
 if(!info.next()) {
     m.jsError("파일을 찾을 수 없습니다.");
@@ -328,8 +328,8 @@ if(!auth.isLogin()) {
     return;
 }
 
-FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", new Object[]{id});
+FileDao file = new FileDao();
+DataSet info = file.find("id = ?", new Object[]{id});
 
 if(!info.next()) {
     m.jsError("파일을 찾을 수 없습니다.");
@@ -346,7 +346,7 @@ if(uploadUserId != currentUserId && !auth.isAdmin()) {
 }
 
 // 다운로드 카운트 증가
-dao.execute("UPDATE tb_file SET download_count = download_count + 1 WHERE id = ?", id);
+file.execute("UPDATE tb_file SET download_count = download_count + 1 WHERE id = ?", id);
 
 // 다운로드
 String filePath = info.s("file_path");
@@ -367,8 +367,8 @@ GET 방식 대신 POST로 다운로드:
 if(m.isPost()) {
     int id = m.ri("id");
 
-    FileDao dao = new FileDao();
-    DataSet info = dao.find("id = ?", new Object[]{id});
+    FileDao file = new FileDao();
+    DataSet info = file.find("id = ?", new Object[]{id});
 
     if(info.next()) {
         String filePath = info.s("file_path");
@@ -400,11 +400,11 @@ if(fileIds.length == 0) {
     return;
 }
 
-FileDao dao = new FileDao();
+FileDao file = new FileDao();
 ArrayList<String> filePaths = new ArrayList<>();
 
 for(String id : fileIds) {
-    DataSet info = dao.find("id = ?", new Object[]{id});
+    DataSet info = file.find("id = ?", new Object[]{id});
     if(info.next()) {
         filePaths.add(info.s("file_path"));
     }
@@ -452,13 +452,13 @@ if(m.isPost() && f.validate()) {
         thumb.createThumbnail(filePath, thumbFullPath, 200, 0);
 
         // DB 저장
-        ImageDao dao = new ImageDao();
-        dao.item("title", f.get("title"));
-        dao.item("image_path", filePath);
-        dao.item("thumb_path", thumbFullPath);
-        dao.item("file_size", file.length());
-        dao.item("reg_date", m.time());
-        dao.insert();
+        ImageDao image = new ImageDao();
+        image.item("title", f.get("title"));
+        image.item("image_path", filePath);
+        image.item("thumb_path", thumbFullPath);
+        image.item("file_size", file.length());
+        image.item("reg_date", m.time());
+        image.insert();
 
         m.jsAlert("이미지 업로드 완료");
         m.jsReplace("list.jsp");
@@ -652,8 +652,8 @@ m.download("/data/file/" + fileName, fileName);  // 위험!
 
 // Good - DB에서 경로 조회
 int fileId = m.ri("id");
-FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", new Object[]{fileId});
+FileDao file = new FileDao();
+DataSet info = file.find("id = ?", new Object[]{fileId});
 if(info.next()) {
     m.download(info.s("file_path"), info.s("file_name"));
 }
@@ -707,18 +707,18 @@ if(m.isPost() && f.validate()) {
         String filePath = file.getAbsolutePath();
         long fileSize = file.length();
 
-        FileDao dao = new FileDao();
-        dao.item("user_id", auth.getUserId());
-        dao.item("title", f.get("title"));
-        dao.item("content", f.get("content"));
-        dao.item("file_name", fileName);
-        dao.item("file_path", filePath);
-        dao.item("file_size", fileSize);
-        dao.item("download_count", 0);
-        dao.item("reg_date", m.time());
+        FileDao fileData = new FileDao();
+        fileData.item("user_id", auth.getUserId());
+        fileData.item("title", f.get("title"));
+        fileData.item("content", f.get("content"));
+        fileData.item("file_name", fileName);
+        fileData.item("file_path", filePath);
+        fileData.item("file_size", fileSize);
+        fileData.item("download_count", 0);
+        fileData.item("reg_date", m.time());
 
-        dao.insert();
-        int newId = dao.getInsertId();
+        fileData.insert();
+        int newId = fileData.getInsertId();
 
         m.jsAlert("업로드 완료");
         m.jsReplace("view.jsp?id=" + newId);
@@ -741,8 +741,8 @@ p.display();
 
 int id = m.ri("id");
 
-FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", new Object[]{id});
+FileDao file = new FileDao();
+DataSet info = file.find("id = ?", new Object[]{id});
 
 if(!info.next()) {
     m.jsError("파일을 찾을 수 없습니다.");
@@ -750,7 +750,7 @@ if(!info.next()) {
 }
 
 // 다운로드 카운트 증가
-dao.execute("UPDATE tb_file SET download_count = download_count + 1 WHERE id = ?", id);
+file.execute("UPDATE tb_file SET download_count = download_count + 1 WHERE id = ?", id);
 
 // 다운로드
 String filePath = info.s("file_path");
@@ -771,8 +771,8 @@ if(!auth.isLogin()) {
 
 int id = m.ri("id");
 
-FileDao dao = new FileDao();
-DataSet info = dao.find("id = ?", new Object[]{id});
+FileDao file = new FileDao();
+DataSet info = file.find("id = ?", new Object[]{id});
 
 if(!info.next()) {
     m.jsError("파일을 찾을 수 없습니다.");
@@ -796,7 +796,7 @@ if(file.exists()) {
 }
 
 // DB 삭제
-dao.delete("id = ?", new Object[]{id});
+file.delete("id = ?", new Object[]{id});
 
 m.jsAlert("삭제되었습니다.");
 m.jsReplace("list.jsp");

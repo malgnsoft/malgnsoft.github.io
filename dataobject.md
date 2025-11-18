@@ -180,27 +180,6 @@ user.item("score", 98.5f);             // float
 user.item("reg_date", new Date());     // Date
 ```
 
-### insert() - Hashtable로 일괄 입력
-
-```jsp
-UserDao user = new UserDao();
-
-// Form 데이터를 Hashtable로 받기
-Hashtable<String, String> data = new Hashtable<>();
-data.put("name", f.get("name"));
-data.put("email", f.get("email"));
-data.put("age", f.get("age"));
-
-// Hashtable 데이터로 바로 insert
-if(user.insert(data)) {
-    m.p("등록 성공");
-
-    // 자동 생성된 ID 가져오기
-    int newId = user.getInsertId();
-    m.p("생성된 ID: " + newId);
-}
-```
-
 ### replace() - REPLACE INTO
 
 ```jsp
@@ -265,29 +244,6 @@ if(user.update("age < 18")) {
     m.p("미성년자 계정 차단 완료");
 }
 ```
-
-### update() - Hashtable로 수정
-
-```jsp
-UserDao user = new UserDao();
-
-Hashtable<String, String> data = new Hashtable<>();
-data.put("id", "123");  // Primary Key
-data.put("name", f.get("name"));
-data.put("email", f.get("email"));
-
-// Hashtable에서 id를 추출하여 해당 레코드 수정
-if(user.update(data)) {
-    m.p("수정 완료");
-}
-
-// 조건절 지정
-if(user.update(data, "id = ? AND user_type = ?", new Object[] { 123, "admin" })) {
-    m.p("관리자 정보 수정 완료");
-}
-```
-
----
 
 ## 데이터 삭제
 
@@ -930,7 +886,6 @@ if(m.isPost()) {
 | 메소드 | 설명 |
 |--------|------|
 | `item(String name, Object value)` | 필드 값 설정 |
-| `item(Hashtable data)` | Hashtable로 일괄 설정 |
 | `insert()` | 레코드 삽입 |
 | `insert(true)` | 삽입 후 ID 반환 |
 | `update()` | Primary Key로 수정 |

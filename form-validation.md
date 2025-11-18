@@ -146,12 +146,6 @@ f.addElement("content", null, "allowhtml:'Y'");
 f.addElement("content", null, "allowhtml:'N'");  // 기본값
 ```
 
-### 한글명 지정
-
-```jsp
-f.addElement("name", null, "title:'이름', required:'Y'");
-```
-
 ---
 
 ## 전체 예제
@@ -162,16 +156,16 @@ f.addElement("name", null, "title:'이름', required:'Y'");
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-f.addElement("id", null, "title:'아이디', required:true, minlength:4, maxlength:12");
-f.addElement("passwd", null, "title:'비밀번호', required:true, minlength:4");
-f.addElement("passwd_confirm", null, "title:'비밀번호 확인', match:'passwd', required:true");
-f.addElement("name", null, "title:'이름', required:true, maxlength:20");
-f.addElement("email", null, "title:'이메일', type:'email', required:true");
-f.addElement("phone", null, "title:'전화번호', type:'phone', required:true");
-f.addElement("age", null, "title:'나이', type:'number', min:1, max:150");
-f.addElement("url", null, "title:'홈페이지', type:'url'");
-f.addElement("gender", "M", "title:'성별', required:true");
-f.addElement("agree", null, "title:'약관동의', required:true");
+f.addElement("id", null, "required:true, minlength:4, maxlength:12");
+f.addElement("passwd", null, "required:true, minlength:4");
+f.addElement("passwd_confirm", null, "match:'passwd', required:true");
+f.addElement("name", null, "required:true, maxlength:20");
+f.addElement("email", null, "type:'email', required:true");
+f.addElement("phone", null, "type:'phone', required:true");
+f.addElement("age", null, "type:'number', min:1, max:150");
+f.addElement("url", null, "type:'url'");
+f.addElement("gender", "M", "required:true");
+f.addElement("agree", null, "required:true");
 
 if(m.isPost() && f.validate()) {
 
@@ -466,7 +460,7 @@ String phone = f.glue("-", "phone1", "phone2", "phone3");
 ### 1. 명확한 에러 메시지
 
 ```jsp
-f.addElement("email", null, "title:'이메일 주소', type:'email', required:'Y'");
+f.addElement("email", null, "type:'email', required:'Y'");
 ```
 
 ### 2. 적절한 타입 지정

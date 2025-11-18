@@ -153,24 +153,24 @@ String name = (String)profile.get("name");
 String id = (String)profile.get("id");
 
 // 회원 가입 또는 로그인 처리
-UserDao dao = new UserDao();
-DataSet user = dao.query("WHERE email = ?", new Object[]{email});
+UserDao user = new UserDao();
+DataSet userInfo = user.query("WHERE email = ?", new Object[]{email});
 
-if(!user.next()) {
+if(!userInfo.next()) {
     // 신규 회원 가입
-    dao.item("email", email);
-    dao.item("name", name);
-    dao.item("oauth_provider", "google");
-    dao.item("oauth_id", id);
-    dao.item("reg_date", Malgn.time());
-    dao.insert();
+    user.item("email", email);
+    user.item("name", name);
+    user.item("oauth_provider", "google");
+    user.item("oauth_id", id);
+    user.item("reg_date", Malgn.time());
+    user.insert();
 
-    user = dao.query("WHERE email = ?", new Object[]{email});
-    user.next();
+    userInfo = user.query("WHERE email = ?", new Object[]{email});
+    userInfo.next();
 }
 
 // 세션에 로그인 정보 저장
-auth.login(user.i("id"), user.s("name"));
+auth.login(userInfo.i("id"), userInfo.s("name"));
 
 m.jsAlert("로그인되었습니다");
 m.jsReplace("/");
@@ -420,19 +420,19 @@ String email = (String)profile.get("email");
 String name = (String)profile.get("name");
 
 // 회원 확인
-UserDao dao = new UserDao();
-DataSet user = dao.query("WHERE oauth_provider = ? AND oauth_id = ?", new Object[]{vendor, oauthId});
+UserDao user = new UserDao();
+DataSet userInfo = user.query("WHERE oauth_provider = ? AND oauth_id = ?", new Object[]{vendor, oauthId});
 
-if(!user.next()) {
+if(!userInfo.next()) {
     // 신규 회원 가입
-    dao.item("email", email);
-    dao.item("name", name);
-    dao.item("oauth_provider", vendor);
-    dao.item("oauth_id", oauthId);
-    dao.item("reg_date", Malgn.time());
+    user.item("email", email);
+    user.item("name", name);
+    user.item("oauth_provider", vendor);
+    user.item("oauth_id", oauthId);
+    user.item("reg_date", Malgn.time());
 
-    dao.insert();
-    int userId = dao.getInsertId();
+    user.insert();
+    int userId = user.getInsertId();
 
     // 세션 로그인
     auth.login(userId, name);
@@ -441,9 +441,9 @@ if(!user.next()) {
     m.jsReplace("/");
 } else {
     // 기존 회원 로그인
-    auth.login(user.i("id"), user.s("name"));
+    auth.login(userInfo.i("id"), userInfo.s("name"));
 
-    m.jsAlert(user.s("name") + "님, 환영합니다!");
+    m.jsAlert(userInfo.s("name") + "님, 환영합니다!");
     m.jsReplace("/");
 }
 
@@ -545,10 +545,10 @@ if(profile == null) {
 
 ```jsp
 // 사용자의 OAuth 정보 제거
-UserDao dao = new UserDao();
-dao.item("oauth_provider", null);
-dao.item("oauth_id", null);
-dao.update("id = ?", new Object[] { userId });
+UserDao user = new UserDao();
+user.item("oauth_provider", null);
+user.item("oauth_id", null);
+user.update("id = ?", new Object[] { userId });
 ```
 
 ### 계정 연동
@@ -558,10 +558,10 @@ dao.update("id = ?", new Object[] { userId });
 if(auth.isLogin()) {
     HashMap<String, Object> profile = oauth.getProfile(code);
 
-    UserDao dao = new UserDao();
-    dao.item("oauth_provider", vendor);
-    dao.item("oauth_id", profile.get("id"));
-    dao.update("id = ?", new Object[] { auth.id() });
+    UserDao user = new UserDao();
+    user.item("oauth_provider", vendor);
+    user.item("oauth_id", profile.get("id"));
+    user.update("id = ?", new Object[] { auth.id() });
 
     m.jsAlert("계정이 연동되었습니다");
     m.jsReplace("/mypage");

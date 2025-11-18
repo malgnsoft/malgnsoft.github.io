@@ -148,36 +148,36 @@ excel.write(Config.getDataDir() + "/users.xlsx");
 ExcelX excel = new ExcelX();
 
 // 첫 번째 시트 - 회원 정보
-DataSet users = new DataSet();
-users.addRow();
-users.put("col0", "user001");
-users.put("col1", "홍길동");
-users.put("col2", "hong@example.com");
+DataSet userList = new DataSet();
+userList.addRow();
+userList.put("col0", "user001");
+userList.put("col1", "홍길동");
+userList.put("col2", "hong@example.com");
 
-users.addRow();
-users.put("col0", "user002");
-users.put("col1", "김철수");
-users.put("col2", "kim@example.com");
+userList.addRow();
+userList.put("col0", "user002");
+userList.put("col1", "김철수");
+userList.put("col2", "kim@example.com");
 
 String[] userColumns = {"col0=>아이디", "col1=>이름", "col2=>이메일"};
 excel.setSheet("회원정보");
-excel.setData(users, userColumns);
+excel.setData(userList, userColumns);
 
 // 두 번째 시트 - 주문 정보
-DataSet orders = new DataSet();
-orders.addRow();
-orders.put("col0", "20250101");
-orders.put("col1", "ORD001");
-orders.put("col2", "50000");
+DataSet orderList = new DataSet();
+orderList.addRow();
+orderList.put("col0", "20250101");
+orderList.put("col1", "ORD001");
+orderList.put("col2", "50000");
 
-orders.addRow();
-orders.put("col0", "20250102");
-orders.put("col1", "ORD002");
-orders.put("col2", "35000");
+orderList.addRow();
+orderList.put("col0", "20250102");
+orderList.put("col1", "ORD002");
+orderList.put("col2", "35000");
 
 String[] orderColumns = {"col0=>주문일", "col1=>주문번호", "col2=>금액"};
 excel.setSheet("주문내역");
-excel.setData(orders, orderColumns);
+excel.setData(orderList, orderColumns);
 
 // 다운로드
 excel.write(response, "보고서.xlsx");
@@ -208,8 +208,8 @@ excel.write(response, "보호문서.xlsx");
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
 // 데이터베이스 조회
-UserDao dao = new UserDao();
-DataSet users = dao.query("WHERE status = 1 ORDER BY reg_date DESC");
+UserDao user = new UserDao();
+DataSet userList = user.query("WHERE status = 1 ORDER BY reg_date DESC");
 
 // Excel 생성
 ExcelX excel = new ExcelX();
@@ -224,7 +224,7 @@ String[] columns = {
 };
 
 excel.setSheet("회원목록");
-excel.setData(users, columns);
+excel.setData(userList, columns);
 
 // 다운로드
 excel.write(response, "회원목록_" + m.time("yyyyMMdd") + ".xlsx");
@@ -258,22 +258,22 @@ if(m.isPost() && f.validate()) {
     }
 
     // 데이터베이스에 일괄 저장
-    UserDao dao = new UserDao();
+    UserDao user = new UserDao();
     int successCount = 0;
 
     data.first();
     while(data.next()) {
-        dao.item("user_id", data.getString("col0"));
-        dao.item("name", data.getString("col1"));
-        dao.item("email", data.getString("col2"));
-        dao.item("reg_date", m.time());
+        user.item("user_id", data.getString("col0"));
+        user.item("name", data.getString("col1"));
+        user.item("email", data.getString("col2"));
+        user.item("reg_date", m.time());
 
-        if(dao.insert()) {
+        if(user.insert()) {
             successCount++;
         } else {
-            m.p("오류: " + dao.getErrMsg());
+            m.p("오류: " + user.getErrMsg());
         }
-        dao.clear();
+        user.clear();
     }
 
     m.jsAlert(successCount + "명의 회원이 등록되었습니다.");
@@ -357,7 +357,7 @@ p.display();
 
 // 월별 집계 데이터 조회
 DataObject dao = new DataObject();
-DataSet monthly = dao.queryDataSet(
+DataSet list = dao.queryDataSet(
     "SELECT " +
     "  DATE_FORMAT(reg_date, '%Y-%m') AS month, " +
     "  COUNT(*) AS cnt, " +
@@ -378,7 +378,7 @@ String[] columns = {
 };
 
 excel.setSheet("월별통계");
-excel.setData(monthly, columns);
+excel.setData(list, columns);
 
 excel.write(response, "월별통계_" + m.time("yyyyMMdd") + ".xlsx");
 

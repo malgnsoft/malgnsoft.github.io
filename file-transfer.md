@@ -460,14 +460,14 @@ if(fileIds.length == 0) {
 }
 
 // 파일 경로 조회
-FileDao dao = new FileDao();
-DataSet files = dao.query("WHERE id IN (?)", new Object[]{Malgn.implode(",", fileIds)});
+FileDao file = new FileDao();
+DataSet fileList = file.query("WHERE id IN (?)", new Object[]{Malgn.implode(",", fileIds)});
 
 ArrayList<String> filePaths = new ArrayList<>();
-while(files.next()) {
-    String path = files.s("file_path");
-    File file = new File(path);
-    if(file.exists()) {
+while(fileList.next()) {
+    String path = fileList.s("file_path");
+    File f = new File(path);
+    if(f.exists()) {
         filePaths.add(path);
     }
 }
@@ -502,15 +502,15 @@ if(!success) {
 int galleryId = m.ri("gallery_id");
 
 // 갤러리의 모든 이미지 조회
-ImageDao dao = new ImageDao();
-DataSet images = dao.query("WHERE gallery_id = ?", new Object[]{galleryId});
+ImageDao image = new ImageDao();
+DataSet imageList = image.query("WHERE gallery_id = ?", new Object[]{galleryId});
 
-String[] files = new String[images.size()];
+String[] files = new String[imageList.size()];
 int idx = 0;
 
-while(images.next()) {
-    String originalName = images.s("original_name");
-    String filePath = images.s("file_path");
+while(imageList.next()) {
+    String originalName = imageList.s("original_name");
+    String filePath = imageList.s("file_path");
 
     // 압축 파일 내에서 원본 파일명 사용
     files[idx++] = filePath + "=>" + originalName;

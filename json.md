@@ -204,19 +204,19 @@ if(!f.validate()) {
 }
 
 // 데이터 처리
-UserDao dao = new UserDao();
-DataSet user = dao.query("WHERE email = ?", f.get("email"));
+UserDao user = new UserDao();
+DataSet info = user.query("WHERE email = ?", f.get("email"));
 
-if(!user.next()) {
+if(!info.next()) {
     j.error(404, "사용자를 찾을 수 없습니다");
     return;
 }
 
 // 성공 응답
 DataMap result = new DataMap();
-result.put("id", user.i("id"));
-result.put("name", user.s("name"));
-result.put("email", user.s("email"));
+result.put("id", info.i("id"));
+result.put("name", info.s("name"));
+result.put("email", info.s("email"));
 j.success("로그인 성공", result);
 
 %>

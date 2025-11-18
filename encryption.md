@@ -81,12 +81,12 @@ if(m.isPost() && f.validate()) {
     // 비밀번호 해시화
     String hashedPassword = Malgn.sha256(plainPassword);
 
-    UserDao dao = new UserDao();
-    dao.item("user_id", userId);
-    dao.item("password", hashedPassword);
-    dao.item("name", f.get("name"));
-    dao.item("reg_date", m.time());
-    dao.insert();
+    UserDao user = new UserDao();
+    user.item("user_id", userId);
+    user.item("password", hashedPassword);
+    user.item("name", f.get("name"));
+    user.item("reg_date", m.time());
+    user.insert();
 
     m.jsAlert("회원가입이 완료되었습니다");
     m.jsReplace("/login.jsp");
@@ -114,8 +114,8 @@ if(m.isPost() && f.validate()) {
     String hashedPassword = Malgn.sha256(plainPassword);
 
     // DB에서 사용자 확인
-    UserDao dao = new UserDao();
-    DataSet user = dao.query("WHERE user_id = ? AND password = ?", new Object[]{userId, hashedPassword});
+    UserDao user = new UserDao();
+    DataSet info = user.query("WHERE user_id = ? AND password = ?", new Object[]{userId, hashedPassword});
 
     if(user.next()) {
         // 로그인 성공
@@ -297,12 +297,12 @@ if(m.isPost() && f.validate()) {
     String phone = f.get("phone");
     String encryptedPhone = aes.encrypt(phone);
 
-    UserDao dao = new UserDao();
-    dao.item("name", f.get("name"));
-    dao.item("ssn", encryptedSsn);
-    dao.item("phone", encryptedPhone);
-    dao.item("email", f.get("email"));
-    dao.insert();
+    UserDao user = new UserDao();
+    user.item("name", f.get("name"));
+    user.item("ssn", encryptedSsn);
+    user.item("phone", encryptedPhone);
+    user.item("email", f.get("email"));
+    user.insert();
 
     m.jsAlert("저장되었습니다");
     m.jsReplace("list.jsp");
@@ -317,16 +317,16 @@ if(m.isPost() && f.validate()) {
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
-UserDao dao = new UserDao();
-DataSet users = dao.query("WHERE status = 1");
+UserDao user = new UserDao();
+DataSet userList = user.query("WHERE status = 1");
 
 String secretKey = Config.get("personalDataKey");
 AES aes = new AES(secretKey);
 
 // 복호화
-while(users.next()) {
-    String encryptedSsn = users.getString("ssn");
-    String encryptedPhone = users.getString("phone");
+while(userList.next()) {
+    String encryptedSsn = userList.getString("ssn");
+    String encryptedPhone = userList.getString("phone");
 
     String ssn = aes.decrypt(encryptedSsn);
     String phone = aes.decrypt(encryptedPhone);
@@ -335,11 +335,11 @@ while(users.next()) {
     String maskedSsn = ssn.substring(0, 6) + "-*******";
     String maskedPhone = phone.substring(0, 3) + "-****-" + phone.substring(9);
 
-    users.put("ssn_masked", maskedSsn);
-    users.put("phone_masked", maskedPhone);
+    userList.put("ssn_masked", maskedSsn);
+    userList.put("phone_masked", maskedPhone);
 }
 
-p.setLoop("users", users);
+p.setLoop("users", userList);
 p.display();
 
 %>
