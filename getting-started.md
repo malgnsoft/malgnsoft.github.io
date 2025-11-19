@@ -198,6 +198,7 @@ m.p(info);  // DataSet 내용 출력
 ```
 /
 ├── build.xml                   # Ant 빌드 스크립트
+├── pom.xml                     # Maven 의존성 관리
 ├── src/                        # Java 소스 파일
 │   └── dao/                   # DAO 클래스
 │       └── UserDao.java
@@ -259,9 +260,122 @@ public class UserDao extends DataObject {
 }
 ```
 
-### 2. 빌드 설정
+### 2. 의존성 관리 (pom.xml)
 
-프로젝트는 Apache Ant를 이용하여 빌드합니다.
+Maven의 pom.xml을 사용하여 필요한 라이브러리를 자동으로 다운로드합니다.
+
+**pom.xml** (프로젝트 루트):
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>myproject</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <!-- 맑은프레임워크 -->
+        <dependency>
+            <groupId>malgnsoft</groupId>
+            <artifactId>malgn</artifactId>
+            <version>1.14.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/public_html/WEB-INF/lib/malgn.jar</systemPath>
+        </dependency>
+
+        <!-- Servlet API -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- MySQL Connector (필요시) -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version>
+        </dependency>
+
+        <!-- Oracle JDBC (필요시) -->
+        <!--
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+            <version>19.3.0.0</version>
+        </dependency>
+        -->
+
+        <!-- JSON 처리 -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+
+        <!-- Apache Commons -->
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.5</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- 의존성 복사 플러그인 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.basedir}/public_html/WEB-INF/lib</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                            <excludeScope>provided</excludeScope>
+                            <excludeScope>system</excludeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+```
+
+**의존성 다운로드**:
+
+```bash
+# 의존성 라이브러리를 public_html/WEB-INF/lib에 다운로드
+mvn package
+
+# 또는 의존성만 복사
+mvn dependency:copy-dependencies -DoutputDirectory=public_html/WEB-INF/lib
+```
+
+### 3. 빌드 설정 (build.xml)
+
+Apache Ant를 이용하여 컴파일합니다.
 
 **build.xml** (프로젝트 루트):
 
@@ -281,7 +395,7 @@ public class UserDao extends DataObject {
         </fileset>
     </path>
 
-    <!-- 컴파일 타겟 -->
+    <!-- 컴파일 타겟 (기본) -->
     <target name="compile" description="Compile Java sources">
         <mkdir dir="${build.dir}"/>
         <javac srcdir="${src.dir}"
@@ -310,7 +424,10 @@ public class UserDao extends DataObject {
 **빌드 실행**:
 
 ```bash
-# 컴파일
+# 컴파일 (기본 타겟이므로 ant만 입력해도 됨)
+ant
+
+# 또는 명시적으로
 ant compile
 
 # 클린 (빌드 파일 삭제)
@@ -326,7 +443,7 @@ ant rebuild
 javac -cp public_html/WEB-INF/lib/malgn.jar -d public_html/WEB-INF/classes src/dao/UserDao.java
 ```
 
-### 3. JSP 파일 작성
+### 4. JSP 파일 작성
 
 **/public_html/main/user_list.jsp**
 
@@ -343,7 +460,7 @@ p.display();
 %>
 ```
 
-### 4. HTML 템플릿 작성
+### 5. HTML 템플릿 작성
 
 **/public_html/html/main/user_list.html**
 
