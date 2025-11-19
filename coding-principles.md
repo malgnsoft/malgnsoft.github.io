@@ -232,7 +232,6 @@ if(m.isPost() && f.validate()) {
 p.setLayout("default");
 p.setBody("main.user_form");
 p.setVar("mode", "insert");
-p.setVar("action", "user_insert.jsp");
 p.setVar("form_script", f.getScript());  // 클라이언트 검증 스크립트
 p.display();
 %>
@@ -275,7 +274,6 @@ if(m.isPost() && f.validate()) {
 p.setLayout("default");
 p.setBody("main.user_form");
 p.setVar("mode", "modify");
-p.setVar("action", "user_modify.jsp?id=" + id);
 p.setVar("name", info.s("name"));
 p.setVar("email", info.s("email"));
 p.setVar("form_script", f.getScript());  // 클라이언트 검증 스크립트
@@ -379,7 +377,7 @@ DataSet info = user.find("id = ?", new Object[]{id});
 
 **HTML 템플릿 예시:**
 ```html
-<form method="post" action="{{action}}">
+<form method="post">
     <input type="text" name="name" value="{{name}}" />
     <input type="email" name="email" value="{{email}}" />
 
@@ -391,12 +389,31 @@ DataSet info = user.find("id = ?", new Object[]{id});
     <button type="submit">수정</button>
     <!--/if(mode)-->
 </form>
+
+{{form_script}}
+```
+
+**action 속성 생략 (권장):**
+
+HTML 폼에서 `action` 속성을 생략하면 **자동으로 현재 페이지로 제출**되어 자연스럽게 Postback 방식이 됩니다:
+
+```html
+<!-- ✅ 권장: action 생략 (자동 Postback) -->
+<form method="post">
+    <!-- 현재 페이지(user_insert.jsp 또는 user_modify.jsp)로 제출됨 -->
+</form>
+
+<!-- ⚠️ 가능하지만 불필요: action 명시 -->
+<form method="post" action="{{action}}">
+    <!-- JSP에서 p.setVar("action", "user_insert.jsp") 설정 필요 -->
+</form>
 ```
 
 **이유:**
 - JSP 분리: 등록과 수정의 비즈니스 로직이 명확히 구분됨
 - HTML 공유: 중복 코드 제거, 유지보수 편의성 향상
 - mode 변수로 등록/수정 모드 구분
+- action 생략 시 코드가 더 간결하고 자동으로 Postback 구현
 
 ---
 
