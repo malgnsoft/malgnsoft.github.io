@@ -11,7 +11,7 @@
 ### 파일 위치
 
 ```
-/{Document Root}/init.jsp
+/public_html/init.jsp
 ```
 
 ### 기본 코드
@@ -53,7 +53,7 @@ http://localhost:8080/init.jsp
 
 ### 1. 간단한 출력
 
-**/main/index.jsp**
+**/public_html/main/index.jsp**
 
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
@@ -87,13 +87,13 @@ m.p(arrayList);
 ### 파일 구조
 
 ```
-/main/index.jsp          - JSP 파일 (Controller)
-/html/main/index.html    - HTML 템플릿 (View)
+/public_html/main/index.jsp          - JSP 파일 (Controller)
+/public_html/html/main/index.html    - HTML 템플릿 (View)
 ```
 
 ### JSP 파일
 
-**/main/index.jsp**
+**/public_html/main/index.jsp**
 
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
@@ -106,7 +106,7 @@ p.display();
 
 ### HTML 템플릿
 
-**/html/main/index.html**
+**/public_html/html/main/index.html**
 
 ```html
 <html>
@@ -118,13 +118,13 @@ p.display();
 
 ### 템플릿 경로 규칙
 
-- `main.index` → `/html/main/index.html`
+- `main.index` → `/public_html/html/main/index.html`
 - 폴더는 `.`(점)으로 구분
 - 확장자는 생략 (자동으로 `.html` 추가)
 
 **예시**:
-- `main.user` → `/html/main/user.html`
-- `admin.member.list` → `/html/admin/member/list.html`
+- `main.user` → `/public_html/html/main/user.html`
+- `admin.member.list` → `/public_html/html/admin/member/list.html`
 
 ---
 
@@ -197,40 +197,45 @@ m.p(info);  // DataSet 내용 출력
 
 ```
 /
-├── init.jsp                    # 공통 초기화 파일
-├── assets/                     # 정적 파일
-│   ├── css/                   # CSS 파일
-│   │   └── style.css
-│   ├── js/                    # JavaScript 파일
-│   │   └── lib.validate.js
-│   └── images/                # 이미지 파일
-├── main/                       # 메인 모듈
-│   ├── index.jsp              # 메인 페이지
-│   ├── user_list.jsp          # 사용자 목록
-│   ├── user_insert.jsp        # 사용자 등록
-│   └── user_modify.jsp        # 사용자 수정
-├── data/                       # 데이터 폴더
-│   ├── file/                  # 업로드 파일
-│   ├── tmp/                   # 임시 파일
-│   └── log/                   # 로그 파일
-├── html/                       # 템플릿 루트
-│   ├── layout/                # 레이아웃 템플릿
-│   │   ├── layout_main.html
-│   │   └── layout_admin.html
-│   └── main/                  # 모듈 템플릿
-│       ├── index.html
-│       ├── user_list.html
-│       ├── user_insert.html
-│       └── user_modify.html
-└── WEB-INF/
-    ├── lib/
-    │   └── malgn.jar
-    ├── classes/
-    │   └── dao/               # DAO 클래스
-    │       └── UserDao.java
-    ├── config.xml
-    ├── web.xml
-    └── resin-web.xml
+├── src/                        # Java 소스 파일
+│   └── dao/                   # DAO 클래스
+│       └── UserDao.java
+│
+└── public_html/                # 웹 애플리케이션 루트
+    ├── init.jsp               # 공통 초기화 파일
+    ├── assets/                # 정적 파일
+    │   ├── css/              # CSS 파일
+    │   │   └── style.css
+    │   ├── js/               # JavaScript 파일
+    │   │   └── lib.validate.js
+    │   └── images/           # 이미지 파일
+    ├── main/                  # 메인 모듈
+    │   ├── index.jsp         # 메인 페이지
+    │   ├── user_list.jsp     # 사용자 목록
+    │   ├── user_insert.jsp   # 사용자 등록
+    │   └── user_modify.jsp   # 사용자 수정
+    ├── data/                  # 데이터 폴더
+    │   ├── file/             # 업로드 파일
+    │   ├── tmp/              # 임시 파일
+    │   └── log/              # 로그 파일
+    ├── html/                  # 템플릿 루트
+    │   ├── layout/           # 레이아웃 템플릿
+    │   │   ├── layout_main.html
+    │   │   └── layout_admin.html
+    │   └── main/             # 모듈 템플릿
+    │       ├── index.html
+    │       ├── user_list.html
+    │       ├── user_insert.html
+    │       └── user_modify.html
+    └── WEB-INF/
+        ├── lib/
+        │   └── malgn.jar
+        ├── classes/          # 컴파일된 클래스 파일
+        │   └── dao/
+        │       └── UserDao.class
+        ├── config.xml
+        ├── web.xml
+        └── resin-web.xml
 ```
 
 ---
@@ -239,7 +244,7 @@ m.p(info);  // DataSet 내용 출력
 
 ### 1. DAO 클래스 작성
 
-**/WEB-INF/classes/dao/UserDao.java**
+**/src/dao/UserDao.java**
 
 ```java
 package dao;
@@ -253,9 +258,14 @@ public class UserDao extends DataObject {
 }
 ```
 
+**컴파일**:
+```bash
+javac -cp public_html/WEB-INF/lib/malgn.jar -d public_html/WEB-INF/classes src/dao/UserDao.java
+```
+
 ### 2. JSP 파일 작성
 
-**/main/user_list.jsp**
+**/public_html/main/user_list.jsp**
 
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
@@ -272,7 +282,7 @@ p.display();
 
 ### 3. HTML 템플릿 작성
 
-**/html/main/user_list.html**
+**/public_html/html/main/user_list.html**
 
 ```html
 <!DOCTYPE html>
@@ -360,7 +370,7 @@ Template file not found: main.index
 - 템플릿 경로가 잘못됨
 
 **해결**:
-- `/html/main/index.html` 파일 존재 확인
+- `/public_html/html/main/index.html` 파일 존재 확인
 - 파일명 대소문자 확인
 
 ### 2. 변수가 치환되지 않음
