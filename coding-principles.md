@@ -208,8 +208,12 @@ String result = api.fetchData(url);
 **/main/user_insert.jsp** (등록):
 ```jsp
 <%
-// POST 처리 (등록 처리)
-if(m.isPost()) {
+// 유효성 검증 규칙 설정
+f.addElement("name", null, "required:Y, minLen:2, maxLen:50");
+f.addElement("email", null, "required:Y, email:Y");
+
+// POST 처리 (등록 처리) - 유효성 검증 포함
+if(m.isPost() && f.validate()) {
     UserDao user = new UserDao();
     user.item("name", f.get("name"));
     user.item("email", f.get("email"));
@@ -229,6 +233,7 @@ p.setLayout("default");
 p.setBody("main.user_form");
 p.setVar("mode", "insert");
 p.setVar("action", "user_insert.jsp");
+p.setVar("form_script", f.getScript());  // 클라이언트 검증 스크립트
 p.display();
 %>
 ```
@@ -238,9 +243,21 @@ p.display();
 <%
 int id = m.ri("id");
 
-// POST 처리 (수정 처리)
-if(m.isPost()) {
-    UserDao user = new UserDao();
+// 기존 데이터 조회 (보안: POST/GET 모두 동일한 데이터 사용)
+UserDao user = new UserDao();
+DataSet info = user.find("id = ?", new Object[]{id});
+
+if(!info.next()) {
+    m.jsError("데이터를 찾을 수 없습니다.");
+    return;
+}
+
+// 유효성 검증 규칙 설정 (기존 값을 두 번째 파라미터에 설정)
+f.addElement("name", info.s("name"), "required:Y, minLen:2, maxLen:50");
+f.addElement("email", info.s("email"), "required:Y, email:Y");
+
+// POST 처리 (수정 처리) - 유효성 검증 포함
+if(m.isPost() && f.validate()) {
     user.item("name", f.get("name"));
     user.item("email", f.get("email"));
     user.item("mod_date", m.time());
@@ -254,21 +271,14 @@ if(m.isPost()) {
     return;
 }
 
-// GET 처리 (기존 데이터 조회 및 폼 표시)
-UserDao user = new UserDao();
-DataSet info = user.find("id = ?", new Object[]{id});
-
-if(!info.next()) {
-    m.jsError("데이터를 찾을 수 없습니다.");
-    return;
-}
-
+// GET 처리 (폼 표시)
 p.setLayout("default");
 p.setBody("main.user_form");
 p.setVar("mode", "modify");
 p.setVar("action", "user_modify.jsp?id=" + id);
 p.setVar("name", info.s("name"));
 p.setVar("email", info.s("email"));
+p.setVar("form_script", f.getScript());  // 클라이언트 검증 스크립트
 p.display();
 %>
 ```
@@ -284,6 +294,71 @@ p.display();
 - 한 파일에서 폼 표시와 처리를 모두 담당하여 관리가 용이
 - 파일 수 감소로 프로젝트 구조 단순화
 - 에러 발생 시 같은 페이지에서 재입력 폼 표시 가능
+
+**유효성 검증 필수 사항:**
+
+Postback 방식에서는 반드시 다음과 같이 유효성 검증을 포함해야 합니다:
+
+1. **f.addElement()로 검증 규칙 설정**
+   ```jsp
+   f.addElement("name", null, "required:Y, minLen:2, maxLen:50");
+   f.addElement("email", null, "required:Y, email:Y");
+   ```
+
+2. **if(m.isPost() && f.validate()) 조건 검사**
+   ```jsp
+   if(m.isPost() && f.validate()) {
+       // 검증 통과 시에만 처리
+   }
+   ```
+
+3. **p.setVar("form_script", f.getScript())로 클라이언트 검증 스크립트 전달**
+   ```jsp
+   p.setVar("form_script", f.getScript());
+   ```
+
+**검증을 하는 이유:**
+- **보안**: 악의적인 데이터 입력 방지
+- **데이터 무결성**: 올바른 형식의 데이터만 DB에 저장
+- **사용자 경험**: 클라이언트 검증으로 즉각적인 피드백 제공
+- **서버 부하 감소**: 잘못된 데이터의 DB 처리 방지
+
+**수정 페이지 특별 주의사항:**
+
+수정 페이지에서는 반드시 **데이터 조회를 먼저** 수행한 후, `f.addElement()`의 **두 번째 파라미터에 기존 값을 설정**해야 합니다:
+
+```jsp
+// ✅ 올바른 방법: 데이터 조회 후 addElement
+UserDao user = new UserDao();
+DataSet info = user.find("id = ?", new Object[]{id});
+
+f.addElement("name", info.s("name"), "required:Y");  // 기존 값 설정
+f.addElement("email", info.s("email"), "required:Y");
+
+if(m.isPost() && f.validate()) {
+    // POST 시에도 info에는 동일한 데이터가 있음
+    // 다른 ID로 업데이트되는 것 방지
+}
+```
+
+```jsp
+// ❌ 잘못된 방법: addElement를 먼저 설정
+f.addElement("name", null, "required:Y");
+f.addElement("email", null, "required:Y");
+
+if(m.isPost() && f.validate()) {
+    // POST 처리
+}
+
+// GET일 때만 데이터 조회 (보안 문제!)
+UserDao user = new UserDao();
+DataSet info = user.find("id = ?", new Object[]{id});
+```
+
+**이유:**
+- **보안**: POST 요청 시에도 URL의 id 파라미터를 재확인하여 권한이 없는 데이터 수정 방지
+- **일관성**: GET/POST 모두 동일한 데이터를 사용하여 예기치 않은 동작 방지
+- **무결성**: 잘못된 id로 다른 데이터가 수정되는 것 방지
 
 ---
 
