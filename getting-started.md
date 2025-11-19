@@ -197,6 +197,7 @@ m.p(info);  // DataSet 내용 출력
 
 ```
 /
+├── build.xml                   # Ant 빌드 스크립트
 ├── src/                        # Java 소스 파일
 │   └── dao/                   # DAO 클래스
 │       └── UserDao.java
@@ -258,12 +259,74 @@ public class UserDao extends DataObject {
 }
 ```
 
-**컴파일**:
+### 2. 빌드 설정
+
+프로젝트는 Apache Ant를 이용하여 빌드합니다.
+
+**build.xml** (프로젝트 루트):
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="MyProject" default="compile" basedir=".">
+
+    <!-- 프로퍼티 설정 -->
+    <property name="src.dir" value="src"/>
+    <property name="build.dir" value="public_html/WEB-INF/classes"/>
+    <property name="lib.dir" value="public_html/WEB-INF/lib"/>
+
+    <!-- 클래스패스 설정 -->
+    <path id="classpath">
+        <fileset dir="${lib.dir}">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <!-- 컴파일 타겟 -->
+    <target name="compile" description="Compile Java sources">
+        <mkdir dir="${build.dir}"/>
+        <javac srcdir="${src.dir}"
+               destdir="${build.dir}"
+               encoding="UTF-8"
+               includeantruntime="false">
+            <classpath refid="classpath"/>
+        </javac>
+        <echo message="Compilation complete!"/>
+    </target>
+
+    <!-- 클린 타겟 -->
+    <target name="clean" description="Clean build directory">
+        <delete dir="${build.dir}"/>
+        <echo message="Build directory cleaned!"/>
+    </target>
+
+    <!-- 리빌드 타겟 -->
+    <target name="rebuild" depends="clean,compile" description="Clean and compile">
+        <echo message="Rebuild complete!"/>
+    </target>
+
+</project>
+```
+
+**빌드 실행**:
+
+```bash
+# 컴파일
+ant compile
+
+# 클린 (빌드 파일 삭제)
+ant clean
+
+# 리빌드 (클린 + 컴파일)
+ant rebuild
+```
+
+**수동 컴파일** (Ant 없이):
+
 ```bash
 javac -cp public_html/WEB-INF/lib/malgn.jar -d public_html/WEB-INF/classes src/dao/UserDao.java
 ```
 
-### 2. JSP 파일 작성
+### 3. JSP 파일 작성
 
 **/public_html/main/user_list.jsp**
 
@@ -280,7 +343,7 @@ p.display();
 %>
 ```
 
-### 3. HTML 템플릿 작성
+### 4. HTML 템플릿 작성
 
 **/public_html/html/main/user_list.html**
 
