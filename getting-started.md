@@ -275,6 +275,24 @@ Apache Ivy를 사용하여 필요한 라이브러리를 자동으로 다운로�
         <!-- Servlet API -->
         <dependency org="javax.servlet" name="javax.servlet-api" rev="4.0.1" conf="compile->default"/>
 
+        <!-- Apache Commons Compress -->
+        <dependency org="org.apache.commons" name="commons-compress" rev="1.21" conf="compile->default"/>
+
+        <!-- MyBatis -->
+        <dependency org="org.mybatis" name="mybatis" rev="3.5.11" conf="compile->default"/>
+
+        <!-- Apache POI (Excel 처리) -->
+        <dependency org="org.apache.poi" name="poi-ooxml" rev="3.17" conf="compile->default"/>
+
+        <!-- JExcel API -->
+        <dependency org="net.sourceforge.jexcelapi" name="jxl" rev="2.6.12" conf="compile->default"/>
+
+        <!-- JXLS (Excel 템플릿) -->
+        <dependency org="net.sf.jxls" name="jxls-core" rev="1.0.6" conf="compile->default"/>
+
+        <!-- JWT (JSON Web Token) -->
+        <dependency org="io.jsonwebtoken" name="jjwt" rev="0.9.1" conf="compile->default"/>
+
         <!-- MySQL Connector (필요시) -->
         <dependency org="mysql" name="mysql-connector-java" rev="8.0.33" conf="compile->default"/>
 
