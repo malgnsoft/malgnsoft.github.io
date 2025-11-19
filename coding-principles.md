@@ -231,7 +231,7 @@ if(m.isPost() && f.validate()) {
 // GET 처리 (폼 표시)
 p.setLayout("default");
 p.setBody("main.user_form");
-p.setVar("mode", "insert");
+p.setVar("is_modify", false);
 p.setVar("form_script", f.getScript());  // 클라이언트 검증 스크립트
 p.display();
 %>
@@ -273,7 +273,7 @@ if(m.isPost() && f.validate()) {
 // GET 처리 (폼 표시)
 p.setLayout("default");
 p.setBody("main.user_form");
-p.setVar("mode", "modify");
+p.setVar("is_modify", true);
 p.setVar("name", info.s("name"));
 p.setVar("email", info.s("email"));
 p.setVar("form_script", f.getScript());  // 클라이언트 검증 스크립트
@@ -381,13 +381,11 @@ DataSet info = user.find("id = ?", new Object[]{id});
     <input type="text" name="name" value="{{name}}" />
     <input type="email" name="email" value="{{email}}" />
 
-    <!--@if(mode=='insert')-->
-    <button type="submit">등록</button>
-    <!--/if(mode)-->
-
-    <!--@if(mode=='modify')-->
+    <!--@if(is_modify)-->
     <button type="submit">수정</button>
-    <!--/if(mode)-->
+    <!--@else-->
+    <button type="submit">등록</button>
+    <!--/if(is_modify)-->
 </form>
 
 {{form_script}}
@@ -412,7 +410,7 @@ HTML 폼에서 `action` 속성을 생략하면 **자동으로 현재 페이지�
 **이유:**
 - JSP 분리: 등록과 수정의 비즈니스 로직이 명확히 구분됨
 - HTML 공유: 중복 코드 제거, 유지보수 편의성 향상
-- mode 변수로 등록/수정 모드 구분
+- is_modify 변수로 등록/수정 모드 구분 (boolean)
 - action 생략 시 코드가 더 간결하고 자동으로 Postback 구현
 
 ---
