@@ -274,9 +274,7 @@ if(m.isPost() && f.validate()) {
 p.setLayout("default");
 p.setBody("main.user_form");
 p.setVar("is_modify", true);
-p.setVar("name", info.s("name"));
-p.setVar("email", info.s("email"));
-p.setVar("form_script", f.getScript());  // 클라이언트 검증 스크립트
+p.setVar("form_script", f.getScript());  // 자동으로 폼 값 설정 및 검증
 p.display();
 %>
 ```
@@ -378,8 +376,8 @@ DataSet info = user.find("id = ?", new Object[]{id});
 **HTML 템플릿 예시:**
 ```html
 <form method="post">
-    <input type="text" name="name" value="{{name}}" />
-    <input type="email" name="email" value="{{email}}" />
+    <input type="text" name="name" />
+    <input type="email" name="email" />
 
     <!--@if(is_insert)-->
     <button type="submit">등록</button>
@@ -392,6 +390,8 @@ DataSet info = user.find("id = ?", new Object[]{id});
 
 {{form_script}}
 ```
+
+**중요**: `{{form_script}}`가 자동으로 모든 폼 요소의 값을 설정하므로, `value="{{name}}"` 같은 변수 바인딩은 불필요합니다.
 
 **action 속성 생략 (권장):**
 
