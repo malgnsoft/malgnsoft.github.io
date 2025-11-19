@@ -199,7 +199,334 @@ String result = api.fetchData(url);
 
 ## 코딩 원칙
 
-### 1. JSP에서는 맑은프레임워크 클래스만 사용
+### 1. 등록과 수정은 반드시 Postback 방식 사용
+
+등록(insert)과 수정(update) 처리는 **같은 JSP 파일 내에서 Postback 방식**으로 처리합니다.
+
+**✅ 올바른 예 (Postback 방식):**
+
+**/main/user_insert.jsp** (등록):
+```jsp
+<%
+// POST 처리 (등록 처리)
+if(m.isPost()) {
+    UserDao user = new UserDao();
+    user.item("name", f.get("name"));
+    user.item("email", f.get("email"));
+    user.item("reg_date", m.time());
+
+    if(user.insert()) {
+        m.jsAlert("등록되었습니다.");
+        m.jsReplace("list.jsp");
+    } else {
+        m.jsError("등록 실패: " + user.getErrMsg());
+    }
+    return;
+}
+
+// GET 처리 (폼 표시)
+p.setLayout("default");
+p.setBody("main.user_form");
+p.setVar("mode", "insert");
+p.setVar("action", "user_insert.jsp");
+p.display();
+%>
+```
+
+**/main/user_modify.jsp** (수정):
+```jsp
+<%
+int id = m.ri("id");
+
+// POST 처리 (수정 처리)
+if(m.isPost()) {
+    UserDao user = new UserDao();
+    user.item("name", f.get("name"));
+    user.item("email", f.get("email"));
+    user.item("mod_date", m.time());
+
+    if(user.update("id = ?", new Object[]{id})) {
+        m.jsAlert("수정되었습니다.");
+        m.jsReplace("list.jsp");
+    } else {
+        m.jsError("수정 실패: " + user.getErrMsg());
+    }
+    return;
+}
+
+// GET 처리 (기존 데이터 조회 및 폼 표시)
+UserDao user = new UserDao();
+DataSet info = user.find("id = ?", new Object[]{id});
+
+if(!info.next()) {
+    m.jsError("데이터를 찾을 수 없습니다.");
+    return;
+}
+
+p.setLayout("default");
+p.setBody("main.user_form");
+p.setVar("mode", "modify");
+p.setVar("action", "user_modify.jsp?id=" + id);
+p.setVar("name", info.s("name"));
+p.setVar("email", info.s("email"));
+p.display();
+%>
+```
+
+**❌ 잘못된 예 (별도 처리 파일 사용):**
+```jsp
+// user_form.jsp (폼만 표시)
+// user_insert_proc.jsp (등록 처리만)
+// user_modify_proc.jsp (수정 처리만)
+```
+
+**이유:**
+- 한 파일에서 폼 표시와 처리를 모두 담당하여 관리가 용이
+- 파일 수 감소로 프로젝트 구조 단순화
+- 에러 발생 시 같은 페이지에서 재입력 폼 표시 가능
+
+---
+
+### 2. 등록과 수정 JSP는 분리, HTML은 공유 가능
+
+등록과 수정은 **별도의 JSP 파일**로 분리하되, **HTML 템플릿은 공유**할 수 있습니다.
+
+**JSP 파일 (분리):**
+```
+/main/user_insert.jsp  - 등록 로직
+/main/user_modify.jsp  - 수정 로직
+```
+
+**HTML 템플릿 (공유 가능):**
+```
+/html/main/user_form.html  - 등록/수정 공통 폼
+```
+
+**HTML 템플릿 예시:**
+```html
+<form method="post" action="{{action}}">
+    <input type="text" name="name" value="{{name}}" />
+    <input type="email" name="email" value="{{email}}" />
+
+    <!--@if(mode=='insert')-->
+    <button type="submit">등록</button>
+    <!--/if(mode)-->
+
+    <!--@if(mode=='modify')-->
+    <button type="submit">수정</button>
+    <!--/if(mode)-->
+</form>
+```
+
+**이유:**
+- JSP 분리: 등록과 수정의 비즈니스 로직이 명확히 구분됨
+- HTML 공유: 중복 코드 제거, 유지보수 편의성 향상
+- mode 변수로 등록/수정 모드 구분
+
+---
+
+### 3. Page 메소드 호출 순서 준수
+
+Page 객체의 메소드는 반드시 다음 순서로 호출해야 합니다:
+
+**올바른 순서:**
+```jsp
+p.setLayout("default");         // 1. 레이아웃 설정 (선택)
+p.setBody("main.content");      // 2. 본문 템플릿 설정 (필수)
+p.setVar("title", "제목");       // 3. 변수 설정
+p.setLoop("list", dataSet);     // 4. 반복 데이터 설정
+p.display();                    // 5. 출력 (필수)
+```
+
+**❌ 잘못된 순서:**
+```jsp
+p.setVar("title", "제목");       // 변수를 먼저 설정
+p.setLoop("list", dataSet);     // 반복 데이터를 먼저 설정
+p.setBody("main.content");      // 본문을 나중에 설정
+p.display();
+```
+
+**이유:**
+- 템플릿 파일을 먼저 지정해야 변수와 루프를 올바르게 바인딩할 수 있음
+- 순서를 지키지 않으면 변수가 치환되지 않거나 템플릿을 찾지 못할 수 있음
+
+---
+
+### 4. 인증 처리는 init.jsp에서, 페이지는 값만 확인
+
+인증 관련 공통 로직은 **최상위 init.jsp**에서 처리하고, 각 페이지에서는 **인증된 값만 확인**합니다.
+
+**/public_html/init.jsp** (공통 초기화):
+```jsp
+<%@ page import="java.util.*, java.io.*, malgnsoft.db.*, malgnsoft.util.*" %><%
+
+Malgn m = new Malgn(request, response, out);
+
+Form f = new Form();
+f.setRequest(request);
+
+Page p = new Page();
+p.setRequest(request);
+p.setWriter(out);
+p.setPageContext(pageContext);
+
+// 인증 처리
+Auth auth = new Auth(request, response);
+
+int userId = 0;
+String userName = "";
+int userLevel = 0;
+
+if(auth.isValid()) {
+    userId = auth.getInt("user_id");
+    userName = auth.getString("user_name");
+    userLevel = auth.getInt("user_level");
+}
+
+// 템플릿에서 사용할 수 있도록 전역 변수 설정
+p.setVar("userId", userId);
+p.setVar("userName", userName);
+p.setVar("userLevel", userLevel);
+
+%>
+```
+
+**개별 페이지에서 인증 값 확인:**
+```jsp
+<%@ include file="/init.jsp" %><%
+
+// 로그인 체크
+if(userId == 0) {
+    m.jsError("로그인이 필요합니다.");
+    m.jsReplace("/member/login.jsp");
+    return;
+}
+
+// 관리자 체크
+if(userLevel < 9) {
+    m.jsError("관리자 권한이 필요합니다.");
+    m.jsBack();
+    return;
+}
+
+// 정상 로직 처리
+UserDao user = new UserDao();
+DataSet list = user.find();
+
+p.setBody("admin.user_list");
+p.setLoop("list", list);
+p.display();
+%>
+```
+
+**이유:**
+- 인증 로직을 한 곳에서 관리하여 일관성 유지
+- 각 페이지는 비즈니스 로직에만 집중
+- 인증 방식 변경 시 init.jsp만 수정
+
+---
+
+### 5. 폴더별 공통 코드는 폴더 init.jsp 사용
+
+특정 폴더의 모든 페이지에 공통 코드가 필요한 경우, **해당 폴더에 init.jsp**를 생성합니다.
+
+**폴더 구조:**
+```
+/public_html/
+├── init.jsp              # 전역 초기화
+├── admin/
+│   ├── init.jsp         # 관리자 폴더 공통 코드
+│   ├── user_list.jsp
+│   ├── user_modify.jsp
+│   └── settings.jsp
+└── member/
+    ├── init.jsp         # 회원 폴더 공통 코드
+    ├── mypage.jsp
+    └── password.jsp
+```
+
+**/public_html/admin/init.jsp** (관리자 폴더 공통):
+```jsp
+<%@ include file="/init.jsp" %><%
+
+// 관리자 권한 체크
+if(userLevel < 9) {
+    m.jsError("관리자 권한이 필요합니다.");
+    m.jsReplace("/main/index.jsp");
+    return;
+}
+
+// 관리자 메뉴 데이터 준비
+MenuDao menu = new MenuDao();
+DataSet adminMenu = menu.find("type = 'admin'");
+p.setLoop("adminMenu", adminMenu);
+
+%>
+```
+
+**/public_html/admin/user_list.jsp** (개별 페이지):
+```jsp
+<%@ include file="init.jsp" %><%
+// 이미 관리자 권한이 체크되었으므로 바로 로직 처리
+
+UserDao user = new UserDao();
+DataSet list = user.find();
+
+p.setLayout("admin");
+p.setBody("admin.user_list");
+p.setLoop("list", list);
+p.display();
+%>
+```
+
+**/public_html/member/init.jsp** (회원 폴더 공통):
+```jsp
+<%@ include file="/init.jsp" %><%
+
+// 로그인 체크
+if(userId == 0) {
+    m.jsError("로그인이 필요합니다.");
+    m.jsReplace("/member/login.jsp");
+    return;
+}
+
+%>
+```
+
+**/public_html/member/mypage.jsp** (개별 페이지):
+```jsp
+<%@ include file="init.jsp" %><%
+// 이미 로그인이 체크되었으므로 바로 로직 처리
+
+UserDao user = new UserDao();
+DataSet info = user.find("id = ?", new Object[]{userId});
+info.next();
+
+p.setLayout("default");
+p.setBody("member.mypage");
+p.setVar("name", info.s("name"));
+p.setVar("email", info.s("email"));
+p.display();
+%>
+```
+
+**include 계층 구조:**
+```
+/public_html/init.jsp          # 전역 초기화 (인증 객체 생성)
+    ↓ include
+/public_html/admin/init.jsp    # 관리자 권한 체크
+    ↓ include
+/public_html/admin/user_list.jsp  # 실제 비즈니스 로직
+```
+
+**이유:**
+- 폴더별 공통 로직(권한 체크, 메뉴 준비 등)을 한 곳에서 관리
+- 개별 페이지의 중복 코드 제거
+- 유지보수성 향상
+
+---
+
+### 6. JSP에서는 맑은프레임워크 클래스만 사용
 
 JSP 파일에서는 맑은프레임워크가 제공하는 클래스만 사용해야 합니다.
 
@@ -648,28 +975,6 @@ if(m.isPost()) {
 **사용 기준:**
 - **GET (m.rs, m.ri)**: 검색 키워드, 페이지 번호, ID 조회, 필터 조건
 - **POST (f.get)**: 게시글 내용, 사용자 입력 데이터, 파일 업로드
-
----
-
-### 6. Page 메소드 호출 순서 준수
-
-Page 객체의 메소드는 정해진 순서대로 호출해야 합니다.
-
-**올바른 순서:**
-```jsp
-p.setLayout("layout.default");  // 1. 레이아웃 설정
-p.setBody("main.content");      // 2. 본문 템플릿 설정
-p.setVar("title", "제목");       // 3. 변수 설정
-p.setLoop("list", data);        // 4. 반복 데이터 설정
-p.display();                    // 5. 출력
-```
-
-**❌ 잘못된 순서:**
-```jsp
-p.setVar("title", "제목");       // 변수를 먼저 설정
-p.setBody("main.content");      // 본문을 나중에 설정
-p.display();                    // Layout이 설정되지 않음
-```
 
 ---
 
