@@ -198,7 +198,7 @@ m.p(info);  // DataSet 내용 출력
 ```
 /
 ├── build.xml                   # Ant 빌드 스크립트
-├── pom.xml                     # Maven 의존성 관리
+├── ivy.xml                     # Ivy 의존성 관리
 ├── src/                        # Java 소스 파일
 │   └── dao/                   # DAO 클래스
 │       └── UserDao.java
@@ -260,133 +260,72 @@ public class UserDao extends DataObject {
 }
 ```
 
-### 2. 의존성 관리 (pom.xml)
+### 2. 의존성 관리 (Apache Ivy)
 
-Maven의 pom.xml을 사용하여 필요한 라이브러리를 자동으로 다운로드합니다.
+Apache Ivy를 사용하여 필요한 라이브러리를 자동으로 다운로드합니다.
 
-**pom.xml** (프로젝트 루트):
+**ivy.xml** (프로젝트 루트):
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.example</groupId>
-    <artifactId>myproject</artifactId>
-    <version>1.0.0</version>
-    <packaging>jar</packaging>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
+<ivy-module version="2.0">
+    <info organisation="com.example" module="myproject" revision="1.0.0"/>
 
     <dependencies>
-        <!-- 맑은프레임워크 -->
-        <dependency>
-            <groupId>malgnsoft</groupId>
-            <artifactId>malgn</artifactId>
-            <version>1.14.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/public_html/WEB-INF/lib/malgn.jar</systemPath>
-        </dependency>
-
         <!-- Servlet API -->
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>4.0.1</version>
-            <scope>provided</scope>
-        </dependency>
+        <dependency org="javax.servlet" name="javax.servlet-api" rev="4.0.1" conf="compile->default"/>
 
         <!-- MySQL Connector (필요시) -->
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.33</version>
-        </dependency>
+        <dependency org="mysql" name="mysql-connector-java" rev="8.0.33" conf="compile->default"/>
 
-        <!-- Oracle JDBC (필요시) -->
-        <!--
-        <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8</artifactId>
-            <version>19.3.0.0</version>
-        </dependency>
-        -->
+        <!-- Oracle JDBC (필요시 - 주석 제거 후 사용) -->
+        <!-- <dependency org="com.oracle.database.jdbc" name="ojdbc8" rev="19.3.0.0" conf="compile->default"/> -->
 
         <!-- JSON 처리 -->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.10.1</version>
-        </dependency>
+        <dependency org="com.google.code.gson" name="gson" rev="2.10.1" conf="compile->default"/>
 
-        <!-- Apache Commons -->
-        <dependency>
-            <groupId>commons-fileupload</groupId>
-            <artifactId>commons-fileupload</artifactId>
-            <version>1.5</version>
-        </dependency>
+        <!-- Apache Commons FileUpload -->
+        <dependency org="commons-fileupload" name="commons-fileupload" rev="1.5" conf="compile->default"/>
+
+        <!-- Apache Commons IO -->
+        <dependency org="commons-io" name="commons-io" rev="2.11.0" conf="compile->default"/>
     </dependencies>
-
-    <build>
-        <plugins>
-            <!-- 의존성 복사 플러그인 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.6.0</version>
-                <executions>
-                    <execution>
-                        <id>copy-dependencies</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.basedir}/public_html/WEB-INF/lib</outputDirectory>
-                            <overWriteReleases>false</overWriteReleases>
-                            <overWriteSnapshots>true</overWriteSnapshots>
-                            <excludeScope>provided</excludeScope>
-                            <excludeScope>system</excludeScope>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-</project>
-```
-
-**의존성 다운로드**:
-
-```bash
-# 의존성 라이브러리를 public_html/WEB-INF/lib에 다운로드
-mvn package
-
-# 또는 의존성만 복사
-mvn dependency:copy-dependencies -DoutputDirectory=public_html/WEB-INF/lib
+</ivy-module>
 ```
 
 ### 3. 빌드 설정 (build.xml)
 
-Apache Ant를 이용하여 컴파일합니다.
+Apache Ant와 Ivy를 이용하여 의존성 관리 및 컴파일을 수행합니다.
 
 **build.xml** (프로젝트 루트):
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="MyProject" default="compile" basedir=".">
+<project name="MyProject" default="compile" basedir="."
+         xmlns:ivy="antlib:org.apache.ivy.ant">
 
     <!-- 프로퍼티 설정 -->
     <property name="src.dir" value="src"/>
     <property name="build.dir" value="public_html/WEB-INF/classes"/>
     <property name="lib.dir" value="public_html/WEB-INF/lib"/>
+
+    <!-- Ivy 초기화 -->
+    <target name="ivy-init">
+        <path id="ivy.lib.path">
+            <fileset dir="${user.home}/.ant/lib" includes="ivy-*.jar"/>
+        </path>
+        <taskdef resource="org/apache/ivy/ant/antlib.xml"
+                 uri="antlib:org.apache.ivy.ant"
+                 classpathref="ivy.lib.path"/>
+    </target>
+
+    <!-- 의존성 다운로드 -->
+    <target name="resolve" depends="ivy-init" description="Download dependencies">
+        <ivy:retrieve pattern="${lib.dir}/[artifact]-[revision].[ext]"
+                      conf="compile"
+                      sync="false"/>
+        <echo message="Dependencies downloaded to ${lib.dir}"/>
+    </target>
 
     <!-- 클래스패스 설정 -->
     <path id="classpath">
@@ -396,7 +335,7 @@ Apache Ant를 이용하여 컴파일합니다.
     </path>
 
     <!-- 컴파일 타겟 (기본) -->
-    <target name="compile" description="Compile Java sources">
+    <target name="compile" depends="resolve" description="Compile Java sources">
         <mkdir dir="${build.dir}"/>
         <javac srcdir="${src.dir}"
                destdir="${build.dir}"
@@ -421,13 +360,31 @@ Apache Ant를 이용하여 컴파일합니다.
 </project>
 ```
 
+**Ivy 설치**:
+
+```bash
+# Ivy jar 파일을 Ant의 lib 디렉토리에 복사
+# https://ant.apache.org/ivy/download.cgi 에서 다운로드
+
+# 또는 자동 설치 (Linux/Mac)
+mkdir -p ~/.ant/lib
+wget https://repo1.maven.org/maven2/org/apache/ivy/ivy/2.5.2/ivy-2.5.2.jar -P ~/.ant/lib/
+
+# Windows
+# https://repo1.maven.org/maven2/org/apache/ivy/ivy/2.5.2/ivy-2.5.2.jar
+# 다운로드 후 %USERPROFILE%\.ant\lib\ 에 복사
+```
+
 **빌드 실행**:
 
 ```bash
-# 컴파일 (기본 타겟이므로 ant만 입력해도 됨)
+# 의존성 다운로드 + 컴파일 (기본 타겟)
 ant
 
-# 또는 명시적으로
+# 의존성만 다운로드
+ant resolve
+
+# 컴파일만 (의존성이 이미 있는 경우)
 ant compile
 
 # 클린 (빌드 파일 삭제)
