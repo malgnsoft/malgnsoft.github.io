@@ -272,9 +272,6 @@ Apache Ivy를 사용하여 필요한 라이브러리를 자동으로 다운로�
     <info organisation="com.example" module="myproject" revision="1.0.0"/>
 
     <dependencies>
-        <!-- Servlet API -->
-        <dependency org="javax.servlet" name="javax.servlet-api" rev="4.0.1" conf="compile->default"/>
-
         <!-- Apache Commons Compress -->
         <dependency org="org.apache.commons" name="commons-compress" rev="1.21" conf="compile->default"/>
 
@@ -298,15 +295,6 @@ Apache Ivy를 사용하여 필요한 라이브러리를 자동으로 다운로�
 
         <!-- Oracle JDBC (필요시 - 주석 제거 후 사용) -->
         <!-- <dependency org="com.oracle.database.jdbc" name="ojdbc8" rev="19.3.0.0" conf="compile->default"/> -->
-
-        <!-- JSON 처리 -->
-        <dependency org="com.google.code.gson" name="gson" rev="2.10.1" conf="compile->default"/>
-
-        <!-- Apache Commons FileUpload -->
-        <dependency org="commons-fileupload" name="commons-fileupload" rev="1.5" conf="compile->default"/>
-
-        <!-- Apache Commons IO -->
-        <dependency org="commons-io" name="commons-io" rev="2.11.0" conf="compile->default"/>
     </dependencies>
 </ivy-module>
 ```
