@@ -48,6 +48,6 @@
 - [파일 전송 및 압축](file-transfer.md)
 - [환경설정 및 캐시](configuration.md)
 
-**다운로드**
+**기타**
 
-- [📄 통합 매뉴얼](manual-v1.3.md)
+- [클로드 코드 가이드](claude-code-guide.md)
