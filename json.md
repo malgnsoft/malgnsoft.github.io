@@ -445,10 +445,10 @@ j.setUrl("https://api.example.com/data");  // HTTP 요청/응답 로그 출력
 
 ## 주의사항
 
-1. **경로 표현**: JSON 경로는 `//`로 시작해야 합니다
+1. **경로 표현**: JSON 경로는 `//` 없이도 동작합니다
    ```jsp
    j.getString("//name")      // 올바름
-   j.getString("name")        // 작동 안 함
+   j.getString("name")        // 동일하게 동작
    ```
 
 2. **배열 인덱스**: 숫자로 배열 요소에 접근
@@ -459,9 +459,10 @@ j.setUrl("https://api.example.com/data");  // HTTP 요청/응답 로그 출력
 
 3. **타입 변환**: 적절한 getter 메소드 사용
    ```jsp
-   int age = j.getInt("//age");        // 숫자
-   String name = j.getString("//name"); // 문자열
-   double price = j.getDouble("//price"); // 실수
+   int age = j.getInt("//age");           // 숫자
+   String name = j.getString("//name");    // 문자열
+   double price = j.getDouble("//price");  // 실수
+   boolean active = j.getBoolean("//active"); // 불리언
    ```
 
 4. **에러 처리**: null 체크 필수
