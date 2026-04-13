@@ -68,8 +68,11 @@ router.forward();
 router.cors(new String[]{
     "https://yourdomain.com",
     "https://app.yourdomain.com",
-    "http://localhost:3000"
+    "http://localhost:3000"  // 개발 환경
 });
+
+// OPTIONS 요청 (preflight) 처리
+if(router.handlePreflight()) return;
 ```
 
 ### 3. /routes/init.jsp 공통 초기화 파일
@@ -81,18 +84,11 @@ routes 폴더의 모든 JSP 파일에서 공통으로 사용할 객체와 인증
 
 RestAPI api = new RestAPI(request, response);
 
-// CORS 설정 (외부 도메인 API 호출 허용)
-api.cors();  // 모든 도메인 허용
-
-// 또는 여러 도메인 허용 (화이트리스트)
-// api.cors(new String[]{
-//     "https://yourdomain.com",
-//     "https://app.yourdomain.com",
-//     "http://localhost:3000"
-// });
-
-// OPTIONS 요청 (preflight) 처리
-if(api.handlePreflight()) return;
+// 직접 호출 차단 (/routes/index.jsp 를 통한 forward만 허용)
+if(request.getAttribute("__forward_original_uri__") == null) {
+    response.sendError(403);
+    return;
+}
 
 // 퍼블릭 라우팅 설정 (인증 불필요)
 api.publicRoute(

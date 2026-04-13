@@ -8,50 +8,48 @@
 
 ### 모든 도메인 허용
 
+CORS 설정과 OPTIONS preflight 처리는 `/routes/index.jsp`에서 합니다:
+
 ```jsp
-<%@ include file="/routes/init.jsp" %><%
+// /routes/index.jsp
+router.cors();
 
-// init.jsp에 이미 api.cors() 설정되어 있음
-// 추가 설정 불필요
+// OPTIONS 요청 (preflight) 처리
+if(router.handlePreflight()) return;
 
-api.get("/", () -> {
-    // 정상 처리
-    return j.success("처리되었습니다.");
-});
-
-%>
+router.forward();
 ```
 
 ---
 
 ## 2. 특정 도메인만 허용
 
-### init.jsp 수정
+### /routes/index.jsp 수정
 
 ```jsp
 // 특정 도메인만 허용
-api.cors("https://yourdomain.com");
+router.cors("https://yourdomain.com");
 
 // OPTIONS 요청 처리
-if(api.handlePreflight()) return;
+if(router.handlePreflight()) return;
 ```
 
 ---
 
 ## 3. 여러 도메인 허용 (화이트리스트)
 
-### init.jsp 또는 index.jsp 수정
+### /routes/index.jsp 수정
 
 ```jsp
 // 여러 도메인 허용 - String 배열
-api.cors(new String[]{
+router.cors(new String[]{
     "https://yourdomain.com",
     "https://app.yourdomain.com",
     "http://localhost:3000"  // 개발 환경
 });
 
 // OPTIONS 요청 처리
-if(api.handlePreflight()) return;
+if(router.handlePreflight()) return;
 ```
 
 ---
@@ -104,11 +102,11 @@ api.cors("https://yourdomain.com", "GET, POST", "Content-Type, Authorization", 7
 CORS preflight 요청을 자동으로 처리합니다:
 
 ```jsp
-// init.jsp 또는 index.jsp
-api.cors();
+// /routes/index.jsp
+router.cors();
 
 // OPTIONS 요청 처리
-if(api.handlePreflight()) return;
+if(router.handlePreflight()) return;
 ```
 
 ### Preflight란?
@@ -167,8 +165,8 @@ fetch('https://api.yourdomain.com/api/user', {
 
 **해결:**
 ```jsp
-// init.jsp 또는 index.jsp에 추가
-api.cors();
+// /routes/index.jsp에 추가
+router.cors();
 ```
 
 ### "The 'Access-Control-Allow-Origin' header contains multiple values"
@@ -176,8 +174,7 @@ api.cors();
 **원인:** CORS 헤더가 중복 설정되었습니다.
 
 **해결:**
-- `init.jsp`와 각 API 파일에서 중복 호출 제거
-- `init.jsp`에서 한 번만 설정
+- `index.jsp`에서만 설정하고 중복 호출 제거
 
 ### "Response to preflight request doesn't pass access control check"
 
@@ -185,8 +182,9 @@ api.cors();
 
 **해결:**
 ```jsp
-api.cors();
-if(api.handlePreflight()) return;
+// /routes/index.jsp
+router.cors();
+if(router.handlePreflight()) return;
 ```
 
 ---
