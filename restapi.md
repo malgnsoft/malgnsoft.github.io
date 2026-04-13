@@ -18,10 +18,14 @@ REST API에서는 `/api/user`와 같이 확장자 없는 깔끔한 URL을 사용
          http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
          version="3.1">
 
-    <!-- /api/* 요청을 /api/index.jsp로 매핑 -->
+    <!-- /api/* 요청을 APIRouter 서블릿으로 매핑 -->
     <servlet>
         <servlet-name>APIRouter</servlet-name>
-        <jsp-file>/api/index.jsp</jsp-file>
+        <servlet-class>malgnsoft.util.APIRouter</servlet-class>
+        <init-param>
+            <param-name>routerJsp</param-name>
+            <param-value>/api/index.jsp</param-value>
+        </init-param>
     </servlet>
     <servlet-mapping>
         <servlet-name>APIRouter</servlet-name>

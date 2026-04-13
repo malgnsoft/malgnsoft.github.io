@@ -21,9 +21,9 @@ api.get("/:id", () -> {
     DataSet info = user.get(id);
 
     if(info.next()) {
-        j.success(info);
+        return j.success(info);
     } else {
-        j.error("NOT_FOUND", "사용자를 찾을 수 없습니다.");
+        return j.error("NOT_FOUND", "사용자를 찾을 수 없습니다.");
     }
 });
 
@@ -44,14 +44,14 @@ api.get("/list", () -> {
 
     UserDao user = new UserDao();
     DataSet list = user.findWithPaging(page, size);
-    j.success("조회되었습니다.", list);
+    return j.success("조회되었습니다.", list);
 });
 
 // GET /api/user/active
 api.get("/active", () -> {
     UserDao user = new UserDao();
     DataSet list = user.findByStatus("active");
-    j.success(list);
+    return j.success(list);
 });
 
 // GET /api/user/search
@@ -59,7 +59,7 @@ api.get("/search", () -> {
     String keyword = m.rs("keyword");  // query string
     UserDao user = new UserDao();
     DataSet list = user.search(keyword);
-    j.success(list);
+    return j.success(list);
 });
 ```
 
@@ -76,9 +76,9 @@ api.get("/:id", () -> {
     DataSet info = user.get(id);
 
     if(info.next()) {
-        j.success(info);
+        return j.success(info);
     } else {
-        j.error("NOT_FOUND", "사용자를 찾을 수 없습니다.");
+        return j.error("NOT_FOUND", "사용자를 찾을 수 없습니다.");
     }
 });
 ```
@@ -99,9 +99,9 @@ api.get("/:category/:id", () -> {
     DataSet info = product.get(id);
 
     if(info.next() && category.equals(info.s("category"))) {
-        j.success(info);
+        return j.success(info);
     } else {
-        j.error("NOT_FOUND", "상품을 찾을 수 없습니다.");
+        return j.error("NOT_FOUND", "상품을 찾을 수 없습니다.");
     }
 });
 ```
@@ -117,7 +117,7 @@ api.get("/:id/comments", () -> {
 
     CommentDao comment = new CommentDao();
     DataSet list = comment.findByPostId(postId);
-    j.success(list);
+    return j.success(list);
 });
 
 // GET /api/user/:id/orders
@@ -126,7 +126,7 @@ api.get("/:id/orders", () -> {
 
     OrderDao order = new OrderDao();
     DataSet list = order.findByUserId(userId);
-    j.success(list);
+    return j.success(list);
 });
 
 // GET /api/user/:id/orders/:orderId
@@ -138,9 +138,9 @@ api.get("/:id/orders/:orderId", () -> {
     DataSet info = order.getByUserAndOrder(userId, orderId);
 
     if(info.next()) {
-        j.success(info);
+        return j.success(info);
     } else {
-        j.error("NOT_FOUND", "주문을 찾을 수 없습니다.");
+        return j.error("NOT_FOUND", "주문을 찾을 수 없습니다.");
     }
 });
 ```
@@ -228,9 +228,9 @@ api.get("/:id", () -> {
             j.put("orders", orders);
         }
 
-        j.success();
+        return j.success();
     } else {
-        j.error("NOT_FOUND", "사용자를 찾을 수 없습니다.");
+        return j.error("NOT_FOUND", "사용자를 찾을 수 없습니다.");
     }
 });
 ```
@@ -269,7 +269,7 @@ api.get("/", () -> {
     j.put("total", total);
     j.put("page", page);
     j.put("size", size);
-    j.success();
+    return j.success();
 });
 
 // GET /api/product/:category - 카테고리별 목록
@@ -281,7 +281,7 @@ api.get("/:category", () -> {
 
     j.put("products", list);
     j.put("category", category);
-    j.success();
+    return j.success();
 });
 
 // GET /api/product/:category/:id - 특정 상품 조회
@@ -293,9 +293,9 @@ api.get("/:category/:id", () -> {
     DataSet info = product.get(id);
 
     if(info.next() && category.equals(info.s("category"))) {
-        j.success(info);
+        return j.success(info);
     } else {
-        j.error("NOT_FOUND", "상품을 찾을 수 없습니다.");
+        return j.error("NOT_FOUND", "상품을 찾을 수 없습니다.");
     }
 });
 
@@ -308,9 +308,9 @@ api.post("/", () -> {
     product.item("description", f.get("description"));
 
     if(product.insert()) {
-        j.success("등록되었습니다.", product.id);
+        return j.success("등록되었습니다.", product.id);
     } else {
-        j.error("DATABASE_ERROR", product.getErrMsg());
+        return j.error("DATABASE_ERROR", product.getErrMsg());
     }
 });
 
@@ -326,9 +326,9 @@ api.put("/:id", () -> {
     product.item("description", f.get("description"));
 
     if(product.update()) {
-        j.success("수정되었습니다.");
+        return j.success("수정되었습니다.");
     } else {
-        j.error("DATABASE_ERROR", product.getErrMsg());
+        return j.error("DATABASE_ERROR", product.getErrMsg());
     }
 });
 
@@ -350,9 +350,9 @@ api.patch("/:id", () -> {
     if(price > 0) product.item("price", price);
 
     if(product.update()) {
-        j.success("수정되었습니다.");
+        return j.success("수정되었습니다.");
     } else {
-        j.error("DATABASE_ERROR", product.getErrMsg());
+        return j.error("DATABASE_ERROR", product.getErrMsg());
     }
 });
 
@@ -362,9 +362,9 @@ api.delete("/:id", () -> {
 
     ProductDao product = new ProductDao();
     if(product.delete(id)) {
-        j.success("삭제되었습니다.");
+        return j.success("삭제되었습니다.");
     } else {
-        j.error("DATABASE_ERROR", product.getErrMsg());
+        return j.error("DATABASE_ERROR", product.getErrMsg());
     }
 });
 
@@ -457,7 +457,7 @@ api.get("/:id/comments", () -> {
 
     j.put("comments", list);
     j.put("post_id", postId);
-    j.success();
+    return j.success();
 });
 
 // POST /api/post/:id/comments - 댓글 작성
@@ -471,9 +471,9 @@ api.post("/:id/comments", () -> {
     comment.item("user_id", userId);  // init.jsp에서 설정
 
     if(comment.insert()) {
-        j.success("댓글이 등록되었습니다.", comment.id);
+        return j.success("댓글이 등록되었습니다.", comment.id);
     } else {
-        j.error("DATABASE_ERROR", comment.getErrMsg());
+        return j.error("DATABASE_ERROR", comment.getErrMsg());
     }
 });
 
@@ -486,9 +486,9 @@ api.get("/:id/comments/:commentId", () -> {
     DataSet info = comment.get(commentId);
 
     if(info.next() && postId == info.i("post_id")) {
-        j.success(info);
+        return j.success(info);
     } else {
-        j.error("NOT_FOUND", "댓글을 찾을 수 없습니다.");
+        return j.error("NOT_FOUND", "댓글을 찾을 수 없습니다.");
     }
 });
 
@@ -503,12 +503,12 @@ api.delete("/:id/comments/:commentId", () -> {
     // 권한 체크: 작성자만 삭제 가능
     if(info.next() && info.i("user_id") == userId) {
         if(comment.delete(commentId)) {
-            j.success("삭제되었습니다.");
+            return j.success("삭제되었습니다.");
         } else {
-            j.error("DATABASE_ERROR", comment.getErrMsg());
+            return j.error("DATABASE_ERROR", comment.getErrMsg());
         }
     } else {
-        j.error("FORBIDDEN", "권한이 없습니다.");
+        return j.error("FORBIDDEN", "권한이 없습니다.");
     }
 });
 

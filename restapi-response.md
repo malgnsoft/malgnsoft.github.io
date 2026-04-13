@@ -66,10 +66,10 @@ api.get("/:id", () -> {
     DataSet info = user.get(id);
 
     if(info.next()) {
-        j.success(info);
+        return j.success(info);
     } else {
         // 에러 응답
-        j.error("사용자를 찾을 수 없습니다.");
+        return j.error("사용자를 찾을 수 없습니다.");
     }
 });
 ```
@@ -96,9 +96,9 @@ api.get("/:id", () -> {
     DataSet info = user.get(id);
 
     if(info.next()) {
-        j.success(info);
+        return j.success(info);
     } else {
-        j.error("NOT_FOUND", "사용자를 찾을 수 없습니다.");
+        return j.error("NOT_FOUND", "사용자를 찾을 수 없습니다.");
     }
 });
 ```
@@ -129,8 +129,7 @@ api.post("/", () -> {
         j.put("reason", "required");
 
         // error() 호출 시 자동으로 details에 포함됨
-        j.error("VALIDATION_ERROR", "이메일은 필수입니다.");
-        return;
+        return j.error("VALIDATION_ERROR", "이메일은 필수입니다.");
     }
 
     // 이메일 형식 체크
@@ -139,8 +138,7 @@ api.post("/", () -> {
         j.put("value", email);
         j.put("reason", "invalid_format");
 
-        j.error("VALIDATION_ERROR", "이메일 형식이 올바르지 않습니다.");
-        return;
+        return j.error("VALIDATION_ERROR", "이메일 형식이 올바르지 않습니다.");
     }
 
     // 정상 처리
@@ -148,9 +146,9 @@ api.post("/", () -> {
     user.item("email", email);
 
     if(user.insert()) {
-        j.success("등록되었습니다.", user.id);
+        return j.success("등록되었습니다.", user.id);
     } else {
-        j.error("DATABASE_ERROR", user.getErrMsg());
+        return j.error("DATABASE_ERROR", user.getErrMsg());
     }
 });
 ```
@@ -166,8 +164,7 @@ api.post("/", () -> {
         details.put("field", "email");
         details.put("reason", "required");
 
-        j.error("VALIDATION_ERROR", "이메일은 필수입니다.", details);
-        return;
+        return j.error("VALIDATION_ERROR", "이메일은 필수입니다.", details);
     }
 
     // ...
@@ -191,25 +188,23 @@ api.post("/", () -> {
 
 ### 4. HTTP 상태 코드와 함께
 
+`api.error()`를 사용하면 HTTP 상태코드와 JSON 응답을 한번에 설정할 수 있습니다:
+
 ```jsp
 api.post("/", () -> {
     String email = f.get("email");
 
     if("".equals(email)) {
-        response.setStatus(400);  // Bad Request
-        j.error("VALIDATION_ERROR", "이메일은 필수입니다.");
-        return;
+        return api.error(400, "이메일은 필수입니다.");  // Bad Request
     }
 
     UserDao user = new UserDao();
     user.item("email", email);
 
     if(user.insert()) {
-        response.setStatus(201);  // Created
-        j.success("등록되었습니다.", user.id);
+        return j.success("등록되었습니다.", user.id);
     } else {
-        response.setStatus(500);  // Internal Server Error
-        j.error("DATABASE_ERROR", user.getErrMsg());
+        return api.error(500, user.getErrMsg());  // Internal Server Error
     }
 });
 ```
@@ -297,9 +292,9 @@ api.post("/", () -> {
     if(user.insert()) {
         j.put("user_id", user.id);
         j.put("created_at", System.currentTimeMillis());
-        j.success("등록되었습니다.");  // put()으로 설정한 데이터가 자동 포함
+        return j.success("등록되었습니다.");  // put()으로 설정한 데이터가 자동 포함
     } else {
-        j.error("DATABASE_ERROR", user.getErrMsg());
+        return j.error("DATABASE_ERROR", user.getErrMsg());
     }
 });
 ```
@@ -339,7 +334,7 @@ api.get("/", () -> {
         .put("total", total)
         .put("totalPages", (int) Math.ceil((double) total / size))
     );
-    j.print();
+    return j.print();
 });
 ```
 
@@ -381,7 +376,7 @@ api.get("/", () -> {
     j.put("totalPages", (int) Math.ceil((double) total / size));
     j.put("hasNext", page < Math.ceil((double) total / size));
     j.put("hasPrev", page > 1);
-    j.print();
+    return j.print();
 });
 ```
 
@@ -418,7 +413,7 @@ api.get("/", () -> {
     j.put("data", list);
     j.put("cursor", nextCursor);
     j.put("hasMore", list.size() == size);  // size만큼 가져왔으면 더 있을 가능성
-    j.print();
+    return j.print();
 });
 ```
 

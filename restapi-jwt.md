@@ -35,9 +35,9 @@ api.post("/", () -> {
         j.put("user_id", info.i("id"));
         j.put("user_name", info.s("name"));
         j.put("user_level", info.i("level"));
-        j.success("로그인되었습니다.");
+        return j.success("로그인되었습니다.");
     } else {
-        j.error("INVALID_CREDENTIALS", "이메일 또는 비밀번호가 일치하지 않습니다.");
+        return j.error("INVALID_CREDENTIALS", "이메일 또는 비밀번호가 일치하지 않습니다.");
     }
 });
 
@@ -130,7 +130,7 @@ JWT 토큰으로 인증된 사용자의 권한을 체크합니다.
 
 // 관리자 권한 체크 (userLevel은 init.jsp의 api.auth()에서 자동 로드)
 if(userLevel < 10) {
-    j.error("FORBIDDEN", "관리자만 접근할 수 있습니다.");
+    api.error(403, "관리자만 접근할 수 있습니다.");
     return;
 }
 
@@ -141,7 +141,7 @@ api.get("/", () -> {
 
     j.put("stats", data);
     j.put("requested_by", userName);  // JWT 토큰에서 추출된 userName 사용
-    j.success();
+    return j.success();
 });
 
 %>
