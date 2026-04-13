@@ -8,10 +8,10 @@
 
 로그인 성공 시 JWT 토큰을 생성하여 클라이언트에 전달합니다.
 
-### /api/auth/login.jsp
+### /routes/auth/login.jsp
 
 ```jsp
-<%@ include file="/api/init.jsp" %><%
+<%@ include file="/routes/init.jsp" %><%
 
 // POST /api/auth/login - 로그인
 api.post("/", () -> {
@@ -123,10 +123,10 @@ fetch('/api/user', {
 
 JWT 토큰으로 인증된 사용자의 권한을 체크합니다.
 
-### /api/admin/stats.jsp
+### /routes/admin/stats.jsp
 
 ```jsp
-<%@ include file="/api/init.jsp" %><%
+<%@ include file="/routes/init.jsp" %><%
 
 // 관리자 권한 체크 (userLevel은 init.jsp의 api.auth()에서 자동 로드)
 if(userLevel < 10) {

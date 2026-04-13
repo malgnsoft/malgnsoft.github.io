@@ -9,7 +9,7 @@
 ### 모든 도메인 허용
 
 ```jsp
-<%@ include file="/api/init.jsp" %><%
+<%@ include file="/routes/init.jsp" %><%
 
 // init.jsp에 이미 api.cors() 설정되어 있음
 // 추가 설정 불필요
