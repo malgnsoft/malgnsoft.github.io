@@ -185,163 +185,12 @@ webapp/
 
 ---
 
-## web.xml 없이 직접 호출 방식
-
-web.xml 설정 없이 JSP 파일을 직접 호출하여 REST API를 구현할 수도 있습니다.
-
-### 언제 사용하나?
-
-- **빠른 프로토타이핑**: web.xml 설정이 번거로울 때
-- **간단한 API**: 복잡한 라우팅이 필요 없을 때
-- **레거시 프로젝트**: web.xml을 수정할 수 없을 때
-
-### 장단점
-
-**장점:**
-- ✅ web.xml 설정 불필요
-- ✅ 간단한 구조
-- ✅ 즉시 사용 가능
-
-**단점:**
-- ❌ URL에 `.jsp` 확장자 노출
-- ❌ Path parameter 사용 가능하지만 권장하지 않음 (Query String 권장)
-- ❌ RESTful 스타일 아님
-
-### 사용 예시
-
-#### /routes/user.jsp (직접 호출)
-
-```jsp
-<%@ include file="/routes/init.jsp" %><%
-
-// GET /api/user.jsp - 목록 조회
-api.get("/", () -> {
-    UserDao user = new UserDao();
-    DataSet list = user.find();
-    return j.success("조회되었습니다.", list);
-});
-
-// POST /api/user.jsp - 생성
-api.post("/", () -> {
-    UserDao user = new UserDao();
-    user.item("name", f.get("name"));
-    user.item("email", f.get("email"));
-
-    if(user.insert()) {
-        return j.success("등록되었습니다.", user.id);
-    } else {
-        return j.error("DATABASE_ERROR", user.getErrMsg());
-    }
-});
-
-// PUT /api/user.jsp - 수정 (ID는 query string으로 전달)
-api.put("/", () -> {
-    int id = m.ri("id");  // query string에서 id 추출
-
-    UserDao user = new UserDao();
-    user.get(id);
-    user.item("name", f.get("name"));
-    user.item("email", f.get("email"));
-
-    if(user.update()) {
-        return j.success("수정되었습니다.");
-    } else {
-        return j.error("DATABASE_ERROR", user.getErrMsg());
-    }
-});
-
-// DELETE /api/user.jsp - 삭제 (ID는 query string으로 전달)
-api.delete("/", () -> {
-    int id = m.ri("id");  // query string에서 id 추출
-
-    UserDao user = new UserDao();
-    if(user.delete(id)) {
-        return j.success("삭제되었습니다.");
-    } else {
-        return j.error("DATABASE_ERROR", user.getErrMsg());
-    }
-});
-
-%>
-```
-
-**주의:**
-- `routes/init.jsp`를 include하면 CORS, OPTIONS, 인증 처리가 자동으로 적용됩니다
-- `api`, `m`, `f`, `j` 객체가 자동으로 생성됩니다
-- JWT 인증이 필요하면 `routes/init.jsp`에서 `api.publicRoute()`로 퍼블릭 경로를 지정하세요
-
-### 클라이언트 호출
-
-```javascript
-// GET /api/user.jsp - 목록 조회
-fetch('/api/user.jsp')
-    .then(response => response.json())
-    .then(data => console.log(data));
-
-// POST /api/user.jsp - 생성
-fetch('/api/user.jsp', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'name=홍길동&email=hong@example.com'
-})
-    .then(response => response.json())
-    .then(data => console.log(data));
-
-// PUT /api/user.jsp?id=123 - 수정 (query string으로 ID 전달)
-fetch('/api/user.jsp?id=123', {
-    method: 'PUT',
-    headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'name=김철수&email=kim@example.com'
-})
-    .then(response => response.json())
-    .then(data => console.log(data));
-
-// DELETE /api/user.jsp?id=123 - 삭제 (query string으로 ID 전달)
-fetch('/api/user.jsp?id=123', {
-    method: 'DELETE'
-})
-    .then(response => response.json())
-    .then(data => console.log(data));
-```
-
-### 주의사항
-
-1. **Path Parameter는 Query String 사용 권장**
-   - ⚠️ Path parameter 사용 가능: `/api/user.jsp/123`
-   - ✅ Query string 권장: `/api/user.jsp?id=123`
-   - **이유:** JSP 직접 호출 시 Path parameter는 서버 설정에 따라 작동하지 않을 수 있습니다
-
-2. **모든 HTTP 메소드 지원**
-   - GET, POST, PUT, DELETE, PATCH 모두 사용 가능
-
-3. **init.jsp include 권장**
-   - `routes/init.jsp`를 include하면 CORS, OPTIONS, JWT 인증이 자동으로 처리됩니다
-   - `api`, `m`, `f`, `j` 객체가 자동으로 생성되어 편리합니다
-   - 각 파일마다 객체 생성 코드를 작성할 필요가 없습니다
-
-4. **인증이 필요 없는 경우**
-   - 퍼블릭 API는 `routes/init.jsp`에서 `api.publicRoute()`로 지정
-   - 또는 `routes/init.jsp`의 `api.auth()` 부분을 주석 처리
-
-**권장사항:**
-- 프로덕션 환경에서는 **web.xml 라우팅 방식**을 권장합니다
-- web.xml 없이 직접 호출 시 **Query String** 방식을 권장합니다
-
----
-
 ## 기본 사용법
 
 ### /routes/user.jsp 예시 (라우팅 그룹 방식)
 
 ```jsp
 <%@ include file="/routes/init.jsp" %><%
-
-// 이 파일의 base path 설정 (선택사항 - 생략하면 자동으로 /api/user 사용)
-api.setBasePath("/api/user");
 
 // GET /api/user - 목록 조회
 api.get("/", () -> {
@@ -454,12 +303,6 @@ api.delete("/:id", () -> {
 
 %>
 ```
-
-**Base Path 자동 설정:**
-- `RestAPI` 객체 생성 시 현재 JSP 파일 경로에서 자동 설정됩니다
-- 예: `/routes/user.jsp` → basePath는 `/api/user`
-- 예: `/routes/admin/stats.jsp` → basePath는 `/api/admin/stats`
-- 다르게 사용하고 싶으면 `api.setBasePath("/api/user")` 호출
 
 **장점:**
 - **라우팅 그룹**: `/api/user` 관련 모든 경로를 user.jsp에서 처리
