@@ -82,13 +82,13 @@ routes 폴더의 모든 JSP 파일에서 공통으로 사용할 객체와 인증
 ```jsp
 <%@ page contentType="application/json; charset=utf-8" %><%@ page import="java.util.*, java.io.*, dao.*, malgnsoft.db.*, malgnsoft.util.*" %><%
 
-RestAPI api = new RestAPI(request, response);
-
 // 직접 호출 차단 (/routes/index.jsp 를 통한 forward만 허용)
 if(request.getAttribute("__forward_original_uri__") == null) {
     response.sendError(403);
     return;
 }
+
+RestAPI api = new RestAPI(request, response);
 
 // 퍼블릭 라우팅 설정 (인증 불필요)
 api.publicRoute(
@@ -97,15 +97,15 @@ api.publicRoute(
     "/api/public/*"  // 와일드카드 사용 가능
 );
 
+// JWT 토큰 인증 (퍼블릭 라우팅 자동 체크)
+if(!api.auth()) return;
+
 Malgn m = new Malgn(request, response, out);
 
 Form f = new Form();
 f.setRequest(request);
 
 Json j = new Json();
-
-// JWT 토큰 인증 (퍼블릭 라우팅 자동 체크)
-if(!api.auth()) return;
 
 // 인증된 사용자 정보
 int userId = api.getDataInt("user_id");
