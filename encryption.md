@@ -169,11 +169,10 @@ String apiKey = Config.get("apiKey");
 String requestBody = m.reqBody();
 String receivedSignature = request.getHeader("X-Signature");
 
-// 서명 생성
-String expectedSignature = Malgn.hmacSha256(apiKey, requestBody);
-
-// 서명 검증
-if(!expectedSignature.equals(receivedSignature)) {
+// 서명 검증: equals로 직접 비교하지 말고 verifyHmacSha256을 쓴다.
+// (equals는 비상수 시간이고, apiKey가 비어 있으면 hmacSha256이 빈 문자열을 돌려주므로 서명을 비워 보낸 요청이 통과한다.
+//  verifyHmacSha256은 키·서명이 비어 있으면 false이고 상수 시간으로 비교한다.)
+if(!Malgn.verifyHmacSha256(apiKey, requestBody, receivedSignature)) {
     j.error(401, "서명이 올바르지 않습니다");
     return;
 }
@@ -238,6 +237,65 @@ m.p(encrypted);
 String decrypted = SimpleAES.decrypt(encrypted);
 m.p(decrypted);
 ```
+
+### KeyVault와 ENC: 암호문
+
+`config.xml`의 비밀 값(S3 키, SMTP 비밀번호 등)이나 DB 비밀번호를 평문 대신 **암호문**으로 둘 수 있습니다(1.18.11~, 옵트인). 값이 `ENC:`로 시작하면 프레임워크가 읽을 때 풀어 쓰며, 키와 평문은 로그에 남지 않습니다.
+
+| 형식 | 마스터 키 |
+|------|-----------|
+| `ENC:v1:{키id}:{용도}:…` | 로컬 마스터 키 (16진수 64자) |
+| `ENC:kms:{용도}:…` | AWS KMS |
+| `ENC:nhn:{용도}:…` | NHN Cloud KMS |
+
+용도는 `config`(config.xml 값), `tenants`(멀티테넌시 DB 비밀번호), `aes`(`aes.key.enc`), `resin`(Resin 설정 파일), `dek`(개인정보 데이터 키)이며, 용도가 다른 자리에 쓴 값은 풀리지 않습니다.
+
+```bash
+# 로컬 마스터 키 만들기 (권한 600, 이미 있으면 거부, 키 값은 출력하지 않음)
+bin/malgn vault gen-key /home/mysite/keys/vault.key
+
+# 값 감싸기: 평문은 표준입력 또는 숨김 프롬프트로 받는다 (명령행 인자로 받지 않음)
+export MALGN_VAULT_KEYFILE=/home/mysite/keys/vault.key
+bin/malgn vault wrap config
+```
+
+출력된 `ENC:v1:…` 값을 `config.xml`에 그대로 넣고, 서버에는 `vaultKeyFile`(또는 환경변수 `MALGN_VAULT_KEY`)로 마스터 키를 알려 줍니다. KMS를 쓰려면 `keyProvider`(`awskms`/`nhnkms`)를 설정합니다. 설정 키의 정본은 `config.xml.sample`입니다.
+
+### aes.key (SimpleAES·AES 키 파일)
+
+`SimpleAES`와 `AES`는 키를 따로 정하지 않으면 `WEB-INF/aes.key`를 씁니다. **코드에 내장된 키는 없으므로** 파일이 없으면 `SimpleAES.encrypt/decrypt`, `AES.encrypt/decrypt`가 `IllegalStateException`을 던집니다. 파일은 자동으로 만들어지지 않으며 환경마다 새로 만들고(공유 금지) 서버가 여러 대면 모든 서버에 같은 파일을 둡니다. 권한은 600입니다.
+
+| 상황 | 명령 |
+|------|------|
+| 새로 시작하는 사이트 (기존 암호문 없음) | `bin/malgn aes-key` |
+| 옛 JAR의 내장 키로 만든 암호문을 계속 읽어야 함 | `bin/malgn aes-legacy-export` (옛 JAR에서 키를 꺼내 `aes.key`로 저장) |
+| 확인 | `bin/malgn aes-check` |
+
+`aes-key`로 만든 새 키로는 이전 키의 암호문을 읽을 수 없습니다. 파일이 이미 있으면 덮어쓰지 않습니다. 키 파일 자체를 평문으로 두고 싶지 않으면 위 KeyVault로 감싼 `aes.key.enc`(용도 `aes`)를 대신 둘 수 있습니다. `SimpleAES`(ECB)와 `AES`(고정 IV)는 무결성 검증이 없는 **전환 기간용**이므로 신규 코드에는 쓰지 않습니다.
+
+### 개인정보 암호화 (고객사별 데이터 키)
+
+이메일·휴대전화 같은 개인정보를 고객사별 데이터 키(DEK)로 암호화하는 방법입니다(1.19.0~). DEK는 마스터 키(KMS 또는 위 KeyVault)로 **감싼 값**으로 만들어 **앱이 자기 DB에 저장**하며, 저장 위치와 구조는 앱이 정합니다.
+
+```java
+// 최초 1회: 감싼 DEK를 만들어 앱의 DB에 저장
+String wrapped = AES.newDek();
+
+// 사용: DB에서 읽은 감싼 값으로
+AES aes = AES.withDek(wrapped);
+String enc = aes.pii("email", email);
+String idx = aes.piiIndex("email", email);
+String plain = aes.piiDecrypt(enc);
+
+// 마스터 키를 교체한 뒤 다시 감싸기
+String rewrapped = AES.rewrapDek(wrapped);
+```
+
+- 고객사 id와 DEK 버전은 감싼 값 안에 들어 있어 따로 줄 필요가 없습니다.
+- [멀티테넌시](multitenancy.md)에서는 현재 사이트와 감싼 값 안의 고객사가 다르면 예외입니다(다른 고객사의 값을 끼워 넣는 것을 막음). 요청 밖 배치는 `TenantContext.run(사이트, …)` 안에서 호출합니다. 사이트가 지정되지 않은 단일 사이트의 `newDek()`은 고객사 `default`로 만듭니다.
+- 푼 DEK는 `piiDekCacheSec`(기본 600초, 최대 3600, `0`/`off`면 끔) 동안 재사용합니다. KMS에서 키를 비활성화해도 이 시간 동안은 이미 푼 키가 쓰입니다. `AES.clearDekCache()`로 즉시 비웁니다.
+
+관련 설정은 [보안 설정 모음](security-settings.md)을 참고하세요.
 
 ---
 
@@ -516,6 +574,9 @@ Malgn.logger("info", "로그인 시도: " + f.get("user_id"));
 |--------|------|
 | Malgn.hmacSha256(key, data) | HMAC-SHA256 |
 | Malgn.hmacSha512(key, data) | HMAC-SHA512 |
+| Malgn.verifyHmacSha256(key, data, signature) | HMAC-SHA256 서명 검증 (상수 시간 비교, 키·서명이 비면 false) |
+| Malgn.verifyHmacSha512(key, data, signature) | HMAC-SHA512 서명 검증 |
+| Malgn.verifyHmac(key, data, signature, "HmacSHA256") | 알고리즘을 지정한 서명 검증 |
 
 ### AES 암호화
 

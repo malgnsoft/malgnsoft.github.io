@@ -198,6 +198,36 @@ excel.setPassword("1234");
 excel.write(response, "보호문서.xlsx");
 ```
 
+### 읽기 한도
+
+사용자가 올린 엑셀이 서버 메모리를 소진하지 않도록 `ExcelX.read()`와 `ExcelReader.getDataSet()`은 읽을 크기에 상한을 둡니다(1.18.9~, 기본 켜짐). xlsx는 **파일을 열기 전에 시트의 사용 영역을 훑어** 초과하면 메모리에 올리지 않고 거부합니다. 거부되면 빈 `DataSet`이 돌아오고 사유는 `getErrMsg()`에 남습니다.
+
+| 설정 | 기본 | 설명 |
+|------|------|------|
+| excelMaxRows | 1048576 | 최대 행 수 |
+| excelMaxCols | 256 | 한 행의 최대 열 수 |
+| excelMaxCells | 힙÷1800 (10만~500만) | 전체 칸 수. 메모리를 지키는 기준 |
+| excelMaxEntrySize | 힙÷20 (8~512MB) | 압축을 푼 내부 파일 하나의 최대 크기 (압축 폭탄 방어) |
+
+값을 적으면 그 값이 쓰이고, `0`/`off`는 제한 없음입니다. 코드의 `setMaxRows`·`setMaxCols`·`setMaxCells`가 설정보다 우선합니다. 정상적인 대형 시트가 막히면 실제 파일을 기준으로 값을 늘리세요. 자세한 내용은 [보안 설정 모음](security-settings.md)을 참고하세요.
+
+### ExcelTemplate - 템플릿으로 엑셀 만들기
+
+jxls 템플릿에 데이터를 채워 엑셀을 만듭니다. `.xls`와 `.xlsx` 템플릿 모두 동작을 확인했습니다. 템플릿 셀에는 `${변수}`, `${변수.필드}`를 쓰고 반복은 `jx:forEach`로 적습니다.
+
+```java
+ExcelTemplate t = new ExcelTemplate();
+t.setVar("title", "회원 목록");           // ${title}
+t.setVar("info", infoDataSet);            // ${info.필드} (첫 행)
+t.setLoop("list", listDataSet);           // jx:forEach로 반복
+
+t.transfer(response, Config.getDocRoot() + "/WEB-INF/template/member.xlsx", "member.xlsx");
+// 파일로 저장: t.transfer(src, target);
+```
+
+- **서버에 배포된 관리자 작성 템플릿만** 쓰세요. 셀의 식을 JEXL로 평가하므로 사용자가 올렸거나 경로·이름을 사용자가 정할 수 있는 파일을 `src`로 넘기면 안 됩니다. 사용자 입력은 `setVar`·`setLoop`로 데이터에만 넣습니다.
+- `transfer(response, src, filename)`는 임시 파일을 `.xls`로 만들므로, `.xlsx` 템플릿이면 `filename`에 `.xlsx`를 붙이세요.
+
 ---
 
 ## 실전 예제

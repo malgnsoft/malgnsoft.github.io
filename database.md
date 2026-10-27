@@ -177,6 +177,27 @@ user.execute("DELETE FROM tb_user WHERE id = 'hong'");
 | setOrderBy(order) | 정렬 설정 | void |
 | setDebug(out) | 디버깅 설정 | void |
 
+## 쿼리 제한 시간
+
+모든 쿼리에는 기본 제한 시간 **30초**가 적용됩니다(`queryTimeout`, 1.20.2~, 설정 키가 없어도 적용). 넘으면 쿼리가 중단되고 에러 로그에 남습니다. 끄려면 `config.xml`에 `<queryTimeout>0</queryTimeout>`(또는 `off`)을 씁니다.
+
+30초를 넘는 엑셀·통계·배치 쿼리는 해당 쿼리만 `setTimeout(초)`로 늘립니다. `DB`, `DataObject`, `ListManager` 모두 지원하며 **코드의 값이 설정보다 우선**합니다(`0`이면 제한 없음).
+
+```java
+DataObject dao = new DataObject("tb_report");
+dao.setTimeout(120);
+
+ListManager lm = new ListManager();
+lm.setTimeout(120);
+
+DB db = new DB();
+db.setTimeout(120);
+```
+
+`slowQueryMs`(기본 10000ms)는 그 시간 이상 걸린 쿼리를 에러 로그에 `{DB.slowQuery}`로 남기며 동작은 바꾸지 않습니다. 제한 시간을 정하기 전에 이 로그로 실제 느린 쿼리를 먼저 확인하세요.
+
+검색 조건을 만드는 `addSearch`·`addFilter`·`setOrderBy(String)` 등은 기본으로 필드·연산자 문법을 제한합니다(`strictColumns`·`strictOper`·`strictFields`, 기본 Y). 허용 문법과 끄는 방법은 [보안 설정 모음](security-settings.md)을 참고하세요.
+
 ---
 
 ## 읽기/쓰기 분리 (Read/Write Splitting)

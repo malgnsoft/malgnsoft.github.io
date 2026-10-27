@@ -8,6 +8,12 @@
 
 맑은프레임워크는 **세션 및 쿠키 기반**의 강력한 인증 시스템을 제공합니다.
 
+> **1.18~1.20 변경 요약**
+> - 로그인 쿠키·API 토큰은 `WEB-INF/auth.keys`의 키로 서명합니다. 파일이 없으면 토큰 검증이 항상 실패하므로 `bin/malgn auth-keys new`로 만들어 두어야 합니다(키를 바꾸면 모든 사용자가 다시 로그인).
+> - 인증 쿠키 기본값이 바뀌었습니다: `SameSite=Lax`, `HttpOnly`, `Secure`, 무활동 만료 2시간(7200초). HTTP 개발 환경은 `authSecure=N`이 필요합니다.
+> - 로그아웃(`delete()`)한 쿠키는 같은 서버에서 더는 인증되지 않습니다(`authLogoutRevoke`).
+> - 키별 기본값과 끄는 방법은 [보안 설정 모음](security-settings.md)의 인증 표를 참고하세요.
+
 ### 핵심 개념
 
 **Auth 클래스는 init.jsp에서 주로 사용됩니다:**
@@ -121,6 +127,18 @@ Auth 클래스는 다양한 설정을 지원합니다:
 | setSameSite(String) | null | SameSite 속성 (Strict/Lax/None) |
 | setValidTime(int) | -1 | 인증 유효 시간 (초), -1이면 무제한 |
 | setMaxAge(int) | -1 | 쿠키 유효 기간 (초), -1이면 브라우저 종료 시 삭제 |
+
+위 표의 메소드 기본값과 별개로, 1.18.0부터 `config.xml`의 다음 키가 기본값을 정합니다. 코드에서 메소드를 호출하면 그 값이 우선합니다.
+
+| config.xml 키 | 기본 | 설명 |
+|--------------|------|------|
+| authSameSite | Lax | 인증 쿠키 SameSite (`Lax`/`Strict`/`None`/`off`). PG 결제처럼 다른 사이트가 POST로 돌려보내는 흐름은 `off` |
+| authHttpOnly | Y | JavaScript에서 쿠키 접근 차단. `N`으로 끔 |
+| authSecure | Y | HTTPS에서만 전송. HTTP 개발 환경은 `N` |
+| authValidTime | 7200 | 무활동 만료(초, 슬라이딩). `0`이면 만료 없음 |
+| authAbsoluteTime | 꺼짐 | 처음 로그인부터의 절대 만료(초) |
+| authLogoutRevoke | Y | 로그아웃한 쿠키를 같은 서버에서 거부. `N`이면 지우기만 함 |
+| authKeyFile | WEB-INF/auth.keys | 키 파일 위치. 사이트마다 별도 파일을 쓸 것 |
 
 **설정 예시:**
 

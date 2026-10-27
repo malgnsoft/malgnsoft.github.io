@@ -28,6 +28,7 @@
 - [인증 처리](authentication.md)
 - [암호화](encryption.md)
 - [OAuth 소셜 로그인](oauth.md)
+- [보안 설정 모음](security-settings.md)
 
 **REST API 개발**
 
@@ -47,6 +48,7 @@
 - [OpenAI 통합](openai.md)
 - [파일 전송 및 압축](file-transfer.md)
 - [환경설정 및 캐시](configuration.md)
+- [멀티테넌시](multitenancy.md)
 
 **기타**
 

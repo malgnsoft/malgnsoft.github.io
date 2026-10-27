@@ -256,6 +256,16 @@ if(m.isPost() && f.validate()) {
 }
 ```
 
+### 7. 알려진 제약
+
+#### Content-Length가 없거나 2GB를 넘는 업로드는 거부됨
+
+`Form`은 multipart 업로드의 본문 길이를 요청 헤더 `Content-Length`로 확인합니다. `Content-Length`가 없는 요청(`Transfer-Encoding: chunked`로 보내는 클라이언트·프록시)이나 2GB(2,147,483,647바이트)를 넘는 요청은 길이를 알 수 없는 것(-1)으로 처리되어 업로드로 읽히지 않고 거부됩니다(`Corrupt form data` 오류, 폼 값과 파일을 읽지 못함). 브라우저의 일반 폼 전송은 `Content-Length`를 보내므로 영향이 없습니다. 2GB 이상의 파일은 분할해서 올리거나 S3 직접 업로드(presigned URL) 같은 방식을 사용하세요.
+
+#### `application/x-macbinary` 파트는 데이터 포크 길이로 잘림
+
+파일 파트의 `Content-Type`이 `application/x-macbinary`이면 MacBinary 형식으로 보고, 앞 128바이트 헤더를 버린 뒤 헤더에 적힌 데이터 포크 길이만큼만 저장합니다. 실제 MacBinary 파일이 아닌데 이 `Content-Type`으로 올라온 파일은 앞 128바이트가 사라지고 뒤가 잘려 저장되므로 원본과 다릅니다. `Content-Type`은 클라이언트가 정하는 값이라 서버에서 구분할 수 없습니다. 저장된 파일이 원본과 같아야 하는 서비스는 클라이언트가 계산한 해시와 저장 후 해시를 비교해 확인하세요.
+
 ---
 
 ## 파일 다운로드

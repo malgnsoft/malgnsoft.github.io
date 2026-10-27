@@ -90,10 +90,12 @@ p.setBody("main.list");  // Config.getTplRoot() + "/main/list.vm"
         <!-- Redis 설정 (선택사항) -->
         <redisURI>redis://localhost:6379/0?timeout=3s</redisURI>
 
-        <!-- AWS 설정 (선택사항) -->
-        <awsRegion>ap-northeast-2</awsRegion>
-        <awsAccessKey>YOUR_AWS_ACCESS_KEY</awsAccessKey>
-        <awsSecretKey>YOUR_AWS_SECRET_KEY</awsSecretKey>
+        <!-- S3 설정 (선택사항, S3 전용 IAM 사용자의 최소 권한 키) -->
+        <s3Region>ap-northeast-2</s3Region>
+        <s3Bucket>my-bucket</s3Bucket>
+        <s3Credentials>static</s3Credentials>
+        <s3AccessKey>YOUR_S3_ACCESS_KEY</s3AccessKey>
+        <s3SecretKey>YOUR_S3_SECRET_KEY</s3SecretKey>
 
         <!-- API 키 -->
         <googleApiKey>YOUR_GOOGLE_API_KEY</googleApiKey>
@@ -106,6 +108,23 @@ p.setBody("main.list");  // Config.getTplRoot() + "/main/list.vm"
     </env>
 </config>
 ```
+
+S3 클래스는 `s3Region`·`s3Bucket`·`s3Credentials`·`s3AccessKey`·`s3SecretKey`를 읽습니다(`awsRegion` 등은 프레임워크가 읽지 않는 키입니다). 키·비밀번호 같은 비밀 값은 평문 대신 `ENC:` 암호문으로 두는 것을 권장합니다([암호화](encryption.md)의 KeyVault 절).
+
+### 보안·한도 설정
+
+1.18~1.20에서 추가되거나 기본값이 바뀐 설정은 [보안 설정 모음](security-settings.md)에 표로 정리되어 있습니다. 자주 쓰는 것만 추립니다.
+
+| 키 | 기본 | 설명 |
+|----|------|------|
+| queryTimeout | 30 (초) | 쿼리 기본 제한 시간. `0`/`off`로 끔 |
+| slowQueryMs | 10000 | 이 시간(ms) 이상 걸린 쿼리를 에러 로그에 기록 |
+| trustedProxies | | 프록시 서버 IP. 프록시(ALB·CDN) 뒤 사이트는 반드시 설정 |
+| forwardedProto | 켜짐 | `X-Forwarded-Proto: https`를 받으면 `https://` URL을 만듦 |
+| strictFields | Y | `addSearch` 등의 필드를 허용 문법으로 제한 |
+| denyExtExtra | `svg,svgz,xht,xhtml` | 기본 거부 업로드 확장자에 더하는 목록 |
+
+여러 고객사를 한 웹앱에서 운영하는 설정은 [멀티테넌시](multitenancy.md)를 참고하세요.
 
 ### 설정 값 읽기
 
