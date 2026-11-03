@@ -263,7 +263,7 @@ if(!info.next()) {
 }
 
 // 비밀번호 확인
-if(!info.s("password").equals(Malgn.sha256(f.get("password")))) {
+if(!Malgn.verifyPassword(f.get("password"), info.s("password"))) {
     j.error("UNAUTHORIZED", "비밀번호가 일치하지 않습니다");
     return;
 }

@@ -34,11 +34,11 @@ m.p("MD5: " + md5);
 String sha1 = Malgn.sha1(password);
 m.p("SHA-1: " + sha1);
 
-// SHA-256 (권장)
+// SHA-256 (데이터 무결성·식별용. 비밀번호 저장에는 쓰지 않는다 → "비밀번호 해싱" 참고)
 String sha256 = Malgn.sha256(password);
 m.p("SHA-256: " + sha256);
 
-// SHA-512 (권장)
+// SHA-512 (같은 용도)
 String sha512 = Malgn.sha512(password);
 m.p("SHA-512: " + sha512);
 
@@ -64,6 +64,15 @@ m.p("SHA-512 with salt: " + hashed512);
 
 ## 비밀번호 해싱
 
+비밀번호는 `Malgn.hashPassword()`로 저장하고 `Malgn.verifyPassword()`로 확인하세요. 사용자마다 다른 솔트가 들어간 PBKDF2(SHA-256, 반복 12만 회)라 같은 비밀번호도 저장값이 다르고, `sha256()`·`md5()` 한 번으로 만든 값보다 무차별 대입에 훨씬 강합니다. 저장값은 `pbkdf2$반복횟수$솔트$해시` 형식(약 110자)이므로 비밀번호 컬럼은 `VARCHAR(255)` 이상으로 둡니다.
+
+| 메소드 | 설명 |
+|--------|------|
+| `Malgn.hashPassword(password)` | 새 솔트로 해시를 만든다(반복 12만 회). 빈 값이면 `""` |
+| `Malgn.hashPassword(password, iterations)` | 반복 횟수를 지정(1만~500만으로 보정) |
+| `Malgn.verifyPassword(password, stored)` | 저장값과 일치하면 `true`. `pbkdf2$…` 형식이 아니면 예전 방식(솔트 없는 SHA-256 64자 hex, MD5 32자 hex)으로도 검증한다 |
+| `Malgn.needsRehash(stored)` | 저장값이 예전 방식이거나 반복 횟수가 기본보다 낮으면 `true` |
+
 ### 회원가입 시 비밀번호 저장
 
 ```jsp
@@ -75,22 +84,16 @@ f.addElement("name", null, "required:Y");
 
 if(m.isPost() && f.validate()) {
 
-    String userId = f.get("user_id");
-    String plainPassword = f.get("password");
-
-    // 비밀번호 해시화
-    String hashedPassword = Malgn.sha256(plainPassword);
-
     UserDao user = new UserDao();
-    user.item("user_id", userId);
-    user.item("password", hashedPassword);
+    user.item("user_id", f.get("user_id"));
+    user.item("password", Malgn.hashPassword(f.get("password")));   // 솔트 포함 PBKDF2
     user.item("name", f.get("name"));
     user.item("reg_date", m.time());
     user.insert();
 
     m.jsAlert("회원가입이 완료되었습니다");
     m.jsReplace("/login.jsp");
-    
+
     return;
 }
 
@@ -98,6 +101,8 @@ if(m.isPost() && f.validate()) {
 ```
 
 ### 로그인 시 비밀번호 확인
+
+솔트가 저장값 안에 있으므로 `password = ?`로 조회할 수 없습니다. 아이디로 먼저 찾고 `verifyPassword()`로 비교합니다.
 
 ```jsp
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
@@ -107,20 +112,18 @@ f.addElement("password", null, "required:Y");
 
 if(m.isPost() && f.validate()) {
 
-    String userId = f.get("user_id");
-    String plainPassword = f.get("password");
-
-    // 입력된 비밀번호 해시화
-    String hashedPassword = Malgn.sha256(plainPassword);
-
-    // DB에서 사용자 확인
     UserDao user = new UserDao();
-    DataSet info = user.query("WHERE user_id = ? AND password = ?", new Object[]{userId, hashedPassword});
+    DataSet info = user.query("WHERE user_id = ?", new Object[]{f.get("user_id")});
 
-    if(user.next()) {
-        // 로그인 성공
-        auth.put("user_id", user.getInt("id"));
-        auth.put("user_name", user.getString("name"));
+    if(info.next() && Malgn.verifyPassword(f.get("password"), info.s("password"))) {
+        // 예전 방식으로 저장된 비밀번호는 로그인에 성공했을 때 새 방식으로 바꿔 저장한다
+        if(Malgn.needsRehash(info.s("password"))) {
+            user.item("password", Malgn.hashPassword(f.get("password")));
+            user.update("id = ?", new Object[]{info.i("id")});
+        }
+
+        auth.put("user_id", info.i("id"));
+        auth.put("user_name", info.s("name"));
         auth.save();
 
         m.jsReplace("/main/index.jsp");
@@ -133,6 +136,8 @@ if(m.isPost() && f.validate()) {
 
 %>
 ```
+
+예전 SHA-256·MD5 값이 이미 저장된 시스템도 코드만 위처럼 바꾸면 기존 사용자는 그대로 로그인되고, 로그인할 때마다 새 방식으로 바뀝니다(별도 일괄 변환 불필요).
 
 ---
 
@@ -248,7 +253,7 @@ m.p(decrypted);
 | `ENC:kms:{용도}:…` | AWS KMS |
 | `ENC:nhn:{용도}:…` | NHN Cloud KMS |
 
-용도는 `config`(config.xml 값), `tenants`(멀티테넌시 DB 비밀번호), `aes`(`aes.key.enc`), `resin`(Resin 설정 파일), `dek`(개인정보 데이터 키)이며, 용도가 다른 자리에 쓴 값은 풀리지 않습니다.
+용도는 `config`(config.xml 값), `tenants`(멀티테넌시 DB 비밀번호), `auth`(`auth.keys.enc`, 1.20.4~), `aes`(`aes.key.enc`), `resin`(Resin 설정 파일), `dek`(개인정보 데이터 키)이며, 용도가 다른 자리에 쓴 값은 풀리지 않습니다.
 
 ```bash
 # 로컬 마스터 키 만들기 (권한 600, 이미 있으면 거부, 키 값은 출력하지 않음)
@@ -272,6 +277,8 @@ bin/malgn vault wrap config
 | 확인 | `bin/malgn aes-check` |
 
 `aes-key`로 만든 새 키로는 이전 키의 암호문을 읽을 수 없습니다. 파일이 이미 있으면 덮어쓰지 않습니다. 키 파일 자체를 평문으로 두고 싶지 않으면 위 KeyVault로 감싼 `aes.key.enc`(용도 `aes`)를 대신 둘 수 있습니다. `SimpleAES`(ECB)와 `AES`(고정 IV)는 무결성 검증이 없는 **전환 기간용**이므로 신규 코드에는 쓰지 않습니다.
+
+**인증 키 파일 감싸기 (`auth.keys.enc`, 1.20.4~, 옵트인)**: 인증 키 파일 `auth.keys`를 평문 대신 KeyVault로 감싼 `auth.keys.enc`로 둘 수 있습니다. 평문 `auth.keys`가 있으면 평문이 우선입니다. `bin/malgn auth-keys new <경로> --enc`(평문 없이 바로 생성), `wrap`(기존 파일을 감쌈), `rotate`, `check`와 `KeyTool doctor`가 감싼 파일을 다룹니다. 평문과 `.enc`가 함께 있거나 `.enc`를 쓰던 중 평문이 나타나 갈아타면 경고 로그(`KEY-AUTHKEYS-ENC-BOTH`/`-DOWNGRADE`)를 남깁니다(동작은 그대로 평문 우선). 설정하지 않으면 동작이 같습니다.
 
 ### 개인정보 암호화 (고객사별 데이터 키)
 
@@ -563,8 +570,11 @@ Malgn.logger("info", "로그인 시도: " + f.get("user_id"));
 |--------|------|
 | Malgn.md5(str) | MD5 해시 |
 | Malgn.sha1(str) | SHA-1 해시 |
-| Malgn.sha256(str) | SHA-256 해시 (권장) |
+| Malgn.sha256(str) | SHA-256 해시 (무결성·식별용, 비밀번호 저장에는 hashPassword) |
 | Malgn.sha256(str, salt) | SHA-256 with salt |
+| Malgn.hashPassword(str) | 비밀번호 저장용 해시(솔트 포함 PBKDF2, 약 110자) |
+| Malgn.verifyPassword(str, stored) | 저장된 비밀번호 해시와 일치하는지(예전 SHA-256·MD5 값도 확인) |
+| Malgn.needsRehash(stored) | 예전 방식이거나 반복 횟수가 낮아 다시 저장할지 |
 | Malgn.sha512(str) | SHA-512 해시 (권장) |
 | Malgn.sha512(str, salt) | SHA-512 with salt |
 
@@ -602,12 +612,11 @@ Malgn.logger("info", "로그인 시도: " + f.get("user_id"));
 ### 1. 비밀번호 해싱
 
 ```jsp
-// Good - SHA-256 or SHA-512
-String hashed = Malgn.sha256(password);
+// 비밀번호는 hashPassword / verifyPassword (솔트 포함 PBKDF2)
+String stored = Malgn.hashPassword(password);
+boolean ok = Malgn.verifyPassword(password, stored);
 
-// Better - with salt
-String salt = Malgn.getUniqId(16);
-String hashed = Malgn.sha256(password, salt);
+// sha256()·md5()는 비밀번호 저장용이 아니다(무결성 확인·식별용 해시)
 ```
 
 ### 2. 키 관리

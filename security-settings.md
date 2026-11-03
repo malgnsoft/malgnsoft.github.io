@@ -36,7 +36,7 @@
 | `strictColumns` | Y | `DataObject.item(Map)` 키가 컬럼 이름 형식이 아니면 거부 |
 | `strictOper` | Y | `addSearch`의 연산자를 허용 목록(`= <> != < > <= >= LIKE %LIKE% LIKE% %LIKE`)으로 제한 |
 | `strictFields` | Y | `addSearch`·`addFilter`·`addSearchLike`·`setOrderBy(String)`의 필드를 문법으로 제한. `AES_DEC(col)`, `LOWER/UPPER/TRIM(col)`, `IS [NOT] NULL`, `col <op> 정수`, `ORDER BY 1`, `-col`은 허용 |
-| `sqlFilter` | `log` | 위험한 SQL(주석, `INTO OUTFILE`, `SLEEP(` 등)을 `{DB.sqlFilter}` 로그로 기록. `block`이면 실행을 차단(주석·여러 문장을 보내는 코드가 있으면 실패하므로 로그로 확인한 뒤 전환). 근본 대책은 항상 `?` 바인딩 |
+| `sqlFilter` | `log` | 값은 `off`/`log`/`block`/`audit`. 위험한 SQL(주석, `INTO OUTFILE`, `SLEEP(` 등)을 `{DB.sqlFilter}` 로그로 기록. 1.20.6부터 기본 `log`는 `WHERE` 뒤에 `?` 바인딩이 아닌 문자열 리터럴이 있다는 이유(`LITERAL_IN_WHERE`) 하나만으로는 기록하지 않음(다른 규칙과 함께 걸리면 기록). `audit`는 그 단독 경우도 기록(문자열 이어 붙임 후보를 점검할 때 잠깐 켬, 실행 결과는 불변). `block`이면 실행을 차단(주석·여러 문장을 보내는 코드가 있으면 실패하므로 로그로 확인한 뒤 전환). 근본 대책은 항상 `?` 바인딩 |
 
 쿼리 제한 시간을 개별로 바꾸는 방법:
 

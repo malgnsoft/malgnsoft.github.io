@@ -156,6 +156,8 @@ int timestamp = m.getUnixTime("20251231");
 Date d1 = Malgn.strToDate("20250623");                        // yyyyMMdd 자동 인식
 Date d2 = Malgn.strToDate("2025-06-23");                      // yyyy-MM-dd 자동 인식
 Date d3 = Malgn.strToDate("yyyy년 MM월 dd일", "2025년 06월 23일");  // 커스텀 포맷
+Date d4 = Malgn.strToDate("2025-10-27 15:12:40.0");           // 소수초 형식 (1.20.4~)
+Date d5 = Malgn.strToDate("2025-10-27T15:12");                // 초 없는 T 형식 (1.20.4~)
 ```
 
 ---
@@ -843,6 +845,7 @@ Date Malgn.strToDate(String format, String source, Locale locale)
 ```jsp
 String now = Malgn.time();
 String hashed = Malgn.sha256("password");
+String stored = Malgn.hashPassword("password");           // 비밀번호 저장용(솔트 포함 PBKDF2). 확인은 Malgn.verifyPassword("password", stored)
 String formatted = Malgn.numberFormat(1234567);
 ```
 

@@ -181,6 +181,8 @@ user.execute("DELETE FROM tb_user WHERE id = 'hong'");
 
 모든 쿼리에는 기본 제한 시간 **30초**가 적용됩니다(`queryTimeout`, 1.20.2~, 설정 키가 없어도 적용). 넘으면 쿼리가 중단되고 에러 로그에 남습니다. 끄려면 `config.xml`에 `<queryTimeout>0</queryTimeout>`(또는 `off`)을 씁니다.
 
+1.20.4부터 이 제한은 연결마다 스레드를 만들던 `Statement.setQueryTimeout` 대신 내부 `QueryGuard`가 감시합니다. 동작은 같고, 시간을 넘겼을 때 예외 문구만 다를 수 있습니다.
+
 30초를 넘는 엑셀·통계·배치 쿼리는 해당 쿼리만 `setTimeout(초)`로 늘립니다. `DB`, `DataObject`, `ListManager` 모두 지원하며 **코드의 값이 설정보다 우선**합니다(`0`이면 제한 없음).
 
 ```java

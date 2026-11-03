@@ -11,7 +11,7 @@ Path Parameter를 사용하면 URL 경로에서 값을 추출할 수 있습니�
 ### 기본 사용법
 
 ```jsp
-<%@ include file="/routes/init.jsp" %><%
+<%@ include file="/api/init.jsp" %><%
 
 // GET /api/user/:id - 단일 조회
 api.get("/:id", () -> {
@@ -248,10 +248,10 @@ fetch('/api/user/123?includeOrders=true')
 
 ## RESTful 라우팅 예시
 
-### /routes/product.jsp
+### /api/product.jsp
 
 ```jsp
-<%@ include file="/routes/init.jsp" %><%
+<%@ include file="/api/init.jsp" %><%
 
 api.setBasePath("/api/product");
 
@@ -441,10 +441,10 @@ fetch('/api/product/123', {
 
 ## 중첩 리소스 라우팅
 
-### /routes/post.jsp
+### /api/post.jsp
 
 ```jsp
-<%@ include file="/routes/init.jsp" %><%
+<%@ include file="/api/init.jsp" %><%
 
 api.setBasePath("/api/post");
 

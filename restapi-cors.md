@@ -8,10 +8,10 @@
 
 ### 모든 도메인 허용
 
-CORS 설정과 OPTIONS preflight 처리는 `/routes/index.jsp`에서 합니다:
+CORS 설정과 OPTIONS preflight 처리는 `/api/index.jsp`에서 합니다:
 
 ```jsp
-// /routes/index.jsp
+// /api/index.jsp
 router.cors();
 
 // OPTIONS 요청 (preflight) 처리
@@ -24,7 +24,7 @@ router.forward();
 
 ## 2. 특정 도메인만 허용
 
-### /routes/index.jsp 수정
+### /api/index.jsp 수정
 
 ```jsp
 // 특정 도메인만 허용
@@ -38,7 +38,7 @@ if(router.handlePreflight()) return;
 
 ## 3. 여러 도메인 허용 (화이트리스트)
 
-### /routes/index.jsp 수정
+### /api/index.jsp 수정
 
 ```jsp
 // 여러 도메인 허용 - String 배열
@@ -102,7 +102,7 @@ api.cors("https://yourdomain.com", "GET, POST", "Content-Type, Authorization", 7
 CORS preflight 요청을 자동으로 처리합니다:
 
 ```jsp
-// /routes/index.jsp
+// /api/index.jsp
 router.cors();
 
 // OPTIONS 요청 처리
@@ -165,7 +165,7 @@ fetch('https://api.yourdomain.com/api/user', {
 
 **해결:**
 ```jsp
-// /routes/index.jsp에 추가
+// /api/index.jsp에 추가
 router.cors();
 ```
 
@@ -182,7 +182,7 @@ router.cors();
 
 **해결:**
 ```jsp
-// /routes/index.jsp
+// /api/index.jsp
 router.cors();
 if(router.handlePreflight()) return;
 ```

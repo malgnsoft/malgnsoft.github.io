@@ -757,7 +757,7 @@ if(m.isPost() && f.validate()) {
 
         // 사용자 등록
         user.item("email", f.get("email"));
-        user.item("passwd", Malgn.sha256(f.get("passwd")));
+        user.item("passwd", Malgn.hashPassword(f.get("passwd")));
         user.item("name", f.get("name"));
         user.item("status", 1);
         user.insert();

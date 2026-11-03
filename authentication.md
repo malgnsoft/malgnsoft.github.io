@@ -138,7 +138,7 @@ Auth 클래스는 다양한 설정을 지원합니다:
 | authValidTime | 7200 | 무활동 만료(초, 슬라이딩). `0`이면 만료 없음 |
 | authAbsoluteTime | 꺼짐 | 처음 로그인부터의 절대 만료(초) |
 | authLogoutRevoke | Y | 로그아웃한 쿠키를 같은 서버에서 거부. `N`이면 지우기만 함 |
-| authKeyFile | WEB-INF/auth.keys | 키 파일 위치. 사이트마다 별도 파일을 쓸 것 |
+| authKeyFile | WEB-INF/auth.keys | 키 파일 위치. 사이트마다 별도 파일을 쓸 것. 평문 대신 KeyVault로 감싼 `<경로>.enc`(기본 `auth.keys.enc`)를 둘 수 있다(1.20.4~, `bin/malgn auth-keys new <경로> --enc` 또는 `wrap`). 평문이 있으면 평문이 우선 |
 
 **설정 예시:**
 
@@ -172,9 +172,9 @@ if(m.isPost() && f.validate()) {
 
     // 데이터베이스에서 사용자 확인
     UserDao user = new UserDao();
-    DataSet userInfo = user.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
+    DataSet userInfo = user.query("WHERE user_id = ?", new Object[]{id});
 
-    if(userInfo.next()) {
+    if(userInfo.next() \&\& Malgn.verifyPassword(passwd, userInfo.s("passwd"))) {
         // 로그인 성공 - 인증 정보 저장
         auth.put("user_id", userInfo.getInt("id"));
         auth.put("user_name", user.getString("name"));
@@ -371,9 +371,9 @@ if(m.isPost() && f.validate()) {
 
     // 사용자 확인
     UserDao user = new UserDao();
-    DataSet userInfo = user.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
+    DataSet userInfo = user.query("WHERE user_id = ?", new Object[]{id});
 
-    if(userInfo.next()) {
+    if(userInfo.next() \&\& Malgn.verifyPassword(passwd, userInfo.s("passwd"))) {
         // 로그인 성공
         auth.put("user_id", userInfo.getInt("id"));
         auth.put("user_name", user.getString("name"));
@@ -477,9 +477,9 @@ if(m.isPost() && f.validate()) {
     String autoLogin = f.get("auto_login");
 
     UserDao user = new UserDao();
-    DataSet userInfo = user.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
+    DataSet userInfo = user.query("WHERE user_id = ?", new Object[]{id});
 
-    if(userInfo.next()) {
+    if(userInfo.next() \&\& Malgn.verifyPassword(passwd, userInfo.s("passwd"))) {
         auth.put("user_id", userInfo.getInt("id"));
         auth.put("user_name", user.getString("name"));
         auth.save();
@@ -515,9 +515,9 @@ if(m.isPost() && f.validate()) {
     String passwd = f.get("passwd");
 
     UserDao user = new UserDao();
-    DataSet userInfo = user.query("WHERE user_id = ? AND passwd = ?", new Object[]{id, Malgn.sha256(passwd)});
+    DataSet userInfo = user.query("WHERE user_id = ?", new Object[]{id});
 
-    if(userInfo.next()) {
+    if(userInfo.next() \&\& Malgn.verifyPassword(passwd, userInfo.s("passwd"))) {
         int userId = userInfo.getInt("id");
 
         // 마지막 로그인 시간 업데이트
@@ -625,18 +625,27 @@ j.success("인증 성공", result);
 
 ## 비밀번호 암호화
 
-### SHA-256 해시
+### 비밀번호는 hashPassword / verifyPassword (권장)
+
+비밀번호처럼 되돌릴 필요가 없는 값은 `Malgn.hashPassword()`로 저장하고 `Malgn.verifyPassword()`로 확인합니다. 사용자마다 다른 솔트가 들어간 PBKDF2(SHA-256, 반복 12만 회) 값이라 같은 비밀번호도 저장값이 다르고, 빠른 무차별 대입에 훨씬 강합니다. 저장값은 `pbkdf2$반복횟수$솔트$해시` 형식(약 110자)이므로 비밀번호 컬럼은 `VARCHAR(255)` 이상으로 둡니다.
 
 ```jsp
-// 회원가입 시 비밀번호 암호화
-String plainPassword = f.get("passwd");
-String hashedPassword = Malgn.sha256(plainPassword);
-
+// 회원가입 시 비밀번호 저장
 UserDao user = new UserDao();
 user.item("user_id", f.get("id"));
-user.item("passwd", hashedPassword);
+user.item("passwd", Malgn.hashPassword(f.get("passwd")));
 user.item("name", f.get("name"));
 user.insert();
+
+// 로그인 시 확인: 솔트가 있어 "passwd = ?"로 조회할 수 없다. 아이디로 찾은 뒤 verifyPassword로 비교한다.
+DataSet info = user.query("WHERE user_id = ?", new Object[]{f.get("id")});
+if(info.next() && Malgn.verifyPassword(f.get("passwd"), info.s("passwd"))) {
+    // 로그인 성공. 예전 방식(SHA-256·MD5)으로 저장된 값이면 지금 새 방식으로 바꿔 저장한다.
+    if(Malgn.needsRehash(info.s("passwd"))) {
+        user.item("passwd", Malgn.hashPassword(f.get("passwd")));
+        user.update("id = ?", new Object[]{info.i("id")});
+    }
+}
 ```
 
 ### 다양한 해시 알고리즘

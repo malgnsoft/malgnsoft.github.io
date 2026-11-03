@@ -181,6 +181,8 @@ Resin 풀은 기본값이 느슨해서 `max-connections`만 줄여도 상한이 
 | `auth-keys new [파일]` | 새 `auth.keys` 생성 |
 | `auth-keys rotate [파일] [보관개수]` | 키 교체(새 키를 맨 위에 추가) |
 | `auth-keys check [파일]` | `auth.keys` 점검 |
+| `auth-keys new [파일] --enc` | 평문 없이 감싼 `<파일>.enc`를 바로 생성 (1.20.4~, 마스터 키/KMS 필요) |
+| `auth-keys wrap <파일> [출력]` | 기존 `auth.keys`를 감싼 `auth.keys.enc`로 만듦 (평문은 지우지 않음) |
 | `vault gen-key <파일>` | 무작위 마스터 키 파일 생성(권한 600, 이미 있으면 거부) |
 | `vault wrap <용도>` | 평문을 `ENC:` 값으로 감쌈. 용도: config, tenants, aes, resin, dek |
 | `aes-key [파일] [비트]` | 새 무작위 `aes.key` (전환 기간 전용) |
@@ -204,6 +206,8 @@ bin/malgn jsp-compile public_html --jobs 8 --skip-excluded
 - `--jobs N`: 동시 JVM 수(기본 CPU 수, 최대 8).
 - `--changed`: 이전 컴파일 이후 바뀐 JSP만 컴파일한다. jar·클래스·태그·설정이 바뀌었으면 링크 오류를 막으려고 자동으로 전체를 다시 컴파일한다.
 - `--skip-excluded`: 컴파일이 안 되는 것으로 기록된 JSP(`excluded.txt`)는 건너뛴다.
+- `--direct`: 출력 폴더를 생략하면 `WEB-INF/work`에 바로 컴파일한다.
+- 전체 컴파일(1.20.5~)은 임시 폴더에 만든 뒤 끝에 교체하므로 운영 중 404가 나지 않고, 실패하면 옛 `_jsp`가 보존된다. 컴파일된 클래스가 하나도 없으면 종료 코드 1을 돌려주고 `last-errors.log`를 남긴다. Resin `ext-lib`도 클래스패스에 포함한다.
 
 ### 불변 배포
 

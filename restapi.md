@@ -6,7 +6,9 @@
 
 ## URL 라우팅 설정
 
-REST API에서는 `/api/user`와 같이 확장자 없는 깔끔한 URL을 사용합니다. `/api/*` 경로를 `APIRouter` 서블릿으로 매핑하고, `/routes/index.jsp`에서 라우팅을 처리합니다.
+REST API에서는 `/api/user`와 같이 확장자 없는 깔끔한 URL을 사용합니다. `/api/*` 경로를 `APIFilter` 필터로 매핑하고, `/api/index.jsp`에서 라우팅을 처리합니다. API JSP는 같은 `/api` 폴더에 `/api/user.jsp`처럼 두고 `/api/user`로 접속합니다.
+
+> **1.20.6부터**: 예전의 `APIRouter` 서블릿은 삭제되었고, 필터 `malgnsoft.util.APIFilter`로 바뀌었습니다. 서블릿은 `/api/*`의 JSP까지 가로채서 JSP를 `/routes` 같은 다른 폴더에 둘 수밖에 없었지만, 필터는 그렇지 않아 `/api` 폴더에 JSP를 둘 수 있습니다. `APIRouter`를 쓰던 사이트는 아래 web.xml 설정으로 바꾸세요. 기존 `/routes/xxx.jsp` 배치도 그대로 동작합니다(`/routes`를 먼저 찾습니다).
 
 ### 1. web.xml 설정
 
@@ -18,24 +20,23 @@ REST API에서는 `/api/user`와 같이 확장자 없는 깔끔한 URL을 사용
          http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
          version="3.1">
 
-    <!-- /api/* 요청을 APIRouter 서블릿으로 매핑 -->
-    <servlet>
-        <servlet-name>APIRouter</servlet-name>
-        <servlet-class>malgnsoft.util.APIRouter</servlet-class>
-        <init-param>
-            <param-name>routerJsp</param-name>
-            <param-value>/routes/index.jsp</param-value>
-        </init-param>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>APIRouter</servlet-name>
+    <!-- /api/* 요청을 APIFilter 필터로 매핑 (라우터 JSP 기본값은 /api/index.jsp) -->
+    <filter>
+        <filter-name>api</filter-name>
+        <filter-class>malgnsoft.util.APIFilter</filter-class>
+        <!-- 라우터 JSP를 다른 곳에 두려면 init-param routerJsp 로 지정 -->
+    </filter>
+    <filter-mapping>
+        <filter-name>api</filter-name>
         <url-pattern>/api/*</url-pattern>
-    </servlet-mapping>
+    </filter-mapping>
 
 </web-app>
 ```
 
-### 2. /routes/index.jsp 라우터 구현
+필터는 서블릿보다 앞에 둡니다(DTD 2.3 순서). 샘플은 `public_html/WEB-INF/web.xml.sample`을 참고하세요.
+
+### 2. /api/index.jsp 라우터 구현
 
 라우팅 그룹을 등록하고 요청을 해당 JSP로 포워딩합니다.
 
@@ -51,10 +52,10 @@ router.cors();
 if(router.handlePreflight()) return;
 
 // 라우팅 그룹 등록
-router.use("/api/user", "/routes/user.jsp");
-router.use("/api/product", "/routes/product.jsp");
-router.use("/api/admin/user", "/routes/admin/user.jsp");
-router.use("/api/admin/stats", "/routes/admin/stats.jsp");
+router.use("/api/user", "/api/user.jsp");
+router.use("/api/product", "/api/product.jsp");
+router.use("/api/admin/user", "/api/admin/user.jsp");
+router.use("/api/admin/stats", "/api/admin/stats.jsp");
 
 // 등록된 라우트로 자동 포워딩
 router.forward();
@@ -75,14 +76,14 @@ router.cors(new String[]{
 if(router.handlePreflight()) return;
 ```
 
-### 3. /routes/init.jsp 공통 초기화 파일
+### 3. /api/init.jsp 공통 초기화 파일
 
-routes 폴더의 모든 JSP 파일에서 공통으로 사용할 객체와 인증을 초기화합니다.
+api 폴더의 모든 JSP 파일에서 공통으로 사용할 객체와 인증을 초기화합니다.
 
 ```jsp
 <%@ page contentType="application/json; charset=utf-8" %><%@ page import="java.util.*, java.io.*, dao.*, malgnsoft.db.*, malgnsoft.util.*" %><%
 
-// 직접 호출 차단 (/routes/index.jsp 를 통한 forward만 허용)
+// 직접 호출 차단 (/api/index.jsp 를 통한 forward만 허용)
 if(request.getAttribute("__forward_original_uri__") == null) {
     response.sendError(403);
     return;
@@ -160,7 +161,7 @@ int userLevel = api.getDataInt("user_level");
 
 ```
 webapp/
-├── routes/
+├── api/
 │   ├── index.jsp          (라우터)
 │   ├── init.jsp           (공통 초기화)
 │   ├── user.jsp           → /api/user (인증 필요)
@@ -178,19 +179,26 @@ webapp/
 
 ### 6. 동작 방식
 
-- `/api/user` → `APIRouter` → `/routes/user.jsp` → `api.get("/", ...)`
-- `/api/user/123` → `APIRouter` → `/routes/user.jsp` → `api.get("/:id", ...)` (path parameter)
-- `/api/user?keyword=홍길동` → `APIRouter` → `/routes/user.jsp` → `api.get("/", ...)` (query string)
-- `/api/admin/stats` → `APIRouter` → `/routes/admin/stats.jsp`
+- `RestAPI.forward()`는 `/api/xxx`에 맞는 `/api/xxx.jsp`를 찾습니다(기존 호환으로 `/routes/xxx.jsp`가 있으면 그쪽을 먼저 씁니다).
+- 직접 요청한 `/api/xxx.jsp`도 필터를 거쳐 라우터로 가며, `.jsp`로 끝나는 주소는 경로로 인정하지 않아 404입니다(라우터의 CORS·인증을 건너뛸 수 없습니다).
+- 파일명이 `init.jsp`인 JSP는 공용 헬퍼라서 자동 라우팅에서 제외됩니다(`/api/init`은 404).
+- 경로에 `..`, `%`, `\`, `;`, `WEB-INF`가 있으면 자동 라우팅에서 제외됩니다.
+
+예:
+
+- `/api/user` → `APIFilter` → `/api/user.jsp` → `api.get("/", ...)`
+- `/api/user/123` → `APIFilter` → `/api/user.jsp` → `api.get("/:id", ...)` (path parameter)
+- `/api/user?keyword=홍길동` → `APIFilter` → `/api/user.jsp` → `api.get("/", ...)` (query string)
+- `/api/admin/stats` → `APIFilter` → `/api/admin/stats.jsp`
 
 ---
 
 ## 기본 사용법
 
-### /routes/user.jsp 예시 (라우팅 그룹 방식)
+### /api/user.jsp 예시 (라우팅 그룹 방식)
 
 ```jsp
-<%@ include file="/routes/init.jsp" %><%
+<%@ include file="/api/init.jsp" %><%
 
 // GET /api/user - 목록 조회
 api.get("/", () -> {
@@ -316,12 +324,12 @@ api.delete("/:id", () -> {
 
 ## 인증 처리
 
-`/routes/init.jsp`에서 기본적인 인증 체크를 수행하지만, 각 API에서 추가 인증이 필요한 경우 처리할 수 있습니다.
+`/api/init.jsp`에서 기본적인 인증 체크를 수행하지만, 각 API에서 추가 인증이 필요한 경우 처리할 수 있습니다.
 
-### /routes/admin/user.jsp 예시 (관리자 전용 API)
+### /api/admin/user.jsp 예시 (관리자 전용 API)
 
 ```jsp
-<%@ include file="/routes/init.jsp" %><%
+<%@ include file="/api/init.jsp" %><%
 
 // 로그인 체크
 if(userId == 0) {
@@ -404,7 +412,7 @@ api.delete("/:id", () -> {
 ```
 
 **장점:**
-- `routes/init.jsp`에서 기본 인증 처리 (userId, userName 설정)
+- `api/init.jsp`에서 기본 인증 처리 (userId, userName 설정)
 - 각 API에서 필요한 추가 권한 체크만 수행
 - 로그인 사용자 정보 자동 설정
 
