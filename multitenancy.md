@@ -108,6 +108,26 @@ Tenants.forEach(tenant -> {
 });
 ```
 
+### 스레드 풀·비동기 작업에 사이트 넘기기 (1.20.7~)
+
+스레드 풀에 넘기는 작업은 다른 스레드에서 돌기 때문에 요청 스레드의 사이트가 따라가지 않습니다. `TenantContext.wrap`으로 **요청 스레드에서** 감싸서 넘기세요. 감쌀 때의 사이트로 실행하고, 끝나면(예외여도) 그 스레드의 이전 값으로 되돌려 풀 스레드에 사이트가 남지 않습니다.
+
+```java
+executor.submit(TenantContext.wrap(() -> sendMail()));            // Runnable
+Future<String> f = executor.submit(TenantContext.wrap(() -> load())); // Callable (반환값·예외 그대로)
+executor.submit(TenantContext.wrap("site001", () -> batch()));     // 사이트를 직접 지정
+```
+
+감쌀 때 사이트가 없었으면 실행 중에도 사이트 없음으로 둡니다(풀 스레드에 남은 값이 새어 들어가지 않음).
+
+## 로그
+
+멀티테넌시에서 사이트가 정해진 요청·작업의 로그에는 사이트 id가 붙습니다(단일 사이트는 형식이 그대로).
+
+- 에러 로그: `[시각] [site:site001] 메시지`
+- 감사 로그(`audit_yyyyMMdd.log`): 7칸 뒤에 8번째 칸으로 사이트 id
+- 설정 변경은 감사 로그에 자동으로 남습니다: `TENANT_RELOAD`(건수), `TENANT_ADD`, `TENANT_REMOVE`, `TENANT_STATUS`(예: `ACTIVE->MAINTENANCE`), `TENANT_DB_CHANGE`(접속 정보가 바뀐 사실만, 비밀번호·URL은 기록하지 않음), 잘못된 설정을 거부했을 때 `TENANT_RELOAD FAIL`. 서버 시작 때의 첫 로드는 남기지 않습니다.
+
 ## 운영
 
 - 통계·헬스: `/__tenant/stats` (로컬 접속만).
